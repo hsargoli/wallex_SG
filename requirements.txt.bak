@@ -1,0 +1,23 @@
+# --- Core ---
+pydantic>=2.7
+pydantic-settings>=2.3
+python-dotenv>=1.0
+
+# --- HTTP & WS ---
+httpx>=0.27
+websockets>=12.0
+
+# --- App ---
+fastapi>=0.111
+uvicorn[standard]>=0.30
+
+# --- Utils ---
+structlog>=24.1
+tenacity>=8.3
+
+# --- Dev ---
+pytest>=8.2
+pytest-asyncio>=0.23
+ruff>=0.5
+mypy>=1.10
+
