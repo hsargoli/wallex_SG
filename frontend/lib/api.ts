@@ -145,6 +145,159 @@ export interface CandlesResponse {
   candles: Candle[];
 }
 
+// ---------- Signal Types ----------
+
+export type SignalType = "buy" | "sell" | "hold";
+export type SignalStrength = "weak" | "medium" | "strong";
+
+export interface SignalRule {
+  name: string;
+  passed: boolean;
+  score: number;
+  reason: string;
+}
+
+export interface SignalResponse {
+  symbol: string;
+  timeframe: string;
+  signal: SignalType;
+  strength: SignalStrength;
+  confidence: number;
+  current_price: string;
+  reasons: string[];
+  rules: SignalRule[];
+  buy_score: number;
+  sell_score: number;
+  stop_loss: string | null;
+  take_profit: string | null;
+  risk_reward: string | null;
+  indicators: Record<string, string | null>;
+}
+
+export interface MultiTfSignal {
+  signal: SignalType | "no_data" | "error";
+  strength?: SignalStrength;
+  confidence?: number;
+  reasons?: string[];
+  message?: string;
+}
+
+export interface Confluence {
+  status: string;
+  label: string;
+  buy_count: number;
+  sell_count: number;
+  hold_count: number;
+}
+
+export interface MultiTfResponse {
+  symbol: string;
+  timeframes: Record<string, MultiTfSignal>;
+  confluence: Confluence;
+}
+
+// ---------- Levels Types ----------
+
+export interface PivotLevels {
+  pp: string;
+  r1: string;
+  r2: string;
+  r3: string;
+  s1: string;
+  s2: string;
+  s3: string;
+  basis_high: string;
+  basis_low: string;
+  basis_close: string;
+}
+
+export interface SwingLevel {
+  price: string;
+  type: "support" | "resistance";
+  touches: number;
+  last_time: number;
+  strength: "weak" | "medium" | "strong";
+  distance_pct: string;
+}
+
+export interface LevelsResponse {
+  symbol: string;
+  timeframe: string;
+  current_price: string;
+  pivot: PivotLevels | null;
+  swings: SwingLevel[];
+}
+
+// ---------- Indicators Types ----------
+
+export interface IndicatorsResponse {
+  symbol: string;
+  timeframe: string;
+  count: number;
+  candles: Array<{
+    time: number;
+    open: string;
+    high: string;
+    low: string;
+    close: string;
+    volume: string;
+  }>;
+  sma_20: (string | null)[];
+  sma_50: (string | null)[];
+  ema_9: (string | null)[];
+  ema_21: (string | null)[];
+  rsi_14: (string | null)[];
+  volume_ma_20: (string | null)[];
+  macd: (string | null)[];
+  macd_signal: (string | null)[];
+  macd_hist: (string | null)[];
+  bb_upper: (string | null)[];
+  bb_middle: (string | null)[];
+  bb_lower: (string | null)[];
+  atr_14: (string | null)[];
+}
+
+// ---------- Scanner Types ----------
+
+export interface TrendResult {
+  symbol: string;
+  current_price: string;
+  trend_score: number;
+  direction: "bullish" | "bearish" | "neutral";
+  strength: "weak" | "medium" | "strong";
+  pattern: "trending" | "choppy" | "ranging";
+  volatility_pct: string;
+  ema_alignment: "aligned" | "mixed" | "counter";
+  reasons: string[];
+  change_3h: string | null;
+  change_12h: string | null;
+  change_24h: string | null;
+  signal: "buy" | "sell" | "hold";
+  risk_reward: string | null;
+  sparkline: number[];
+}
+
+export interface ScannerListMeta {
+  symbol: string;
+  quote: string;
+  daily_volume: string;
+}
+
+export interface ScannerListResponse {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  quote: string;
+  symbols: string[];
+  items_meta: ScannerListMeta[];
+}
+
+export interface ScannerScanResponse {
+  count: number;
+  items: TrendResult[];
+}
+
 // ---------- API methods ----------
 
 export const api = {
@@ -186,4 +339,42 @@ export const api = {
   // Portfolio
   getPortfolio: () =>
     client.get<PortfolioResponse>("/v1/account/portfolio").then((r) => r.data),
+
+  // Signals
+  getSignal: (symbol: string, timeframe: string = "1h") =>
+    client
+      .get<SignalResponse>(`/v1/signals/${symbol}`, {
+        params: { tf: timeframe },
+      })
+      .then((r) => r.data),
+  getMultiTfSignals: (symbol: string) =>
+    client
+      .get<MultiTfResponse>(`/v1/signals/${symbol}/multi`)
+      .then((r) => r.data),
+  getLevels: (symbol: string, timeframe: string = "1h") =>
+    client
+      .get<LevelsResponse>(`/v1/signals/levels/${symbol}`, {
+        params: { tf: timeframe },
+      })
+      .then((r) => r.data),
+  getIndicators: (symbol: string, timeframe: string = "1h", limit: number = 500) =>
+    client
+      .get<IndicatorsResponse>(`/v1/signals/indicators/${symbol}`, {
+        params: { tf: timeframe, limit },
+      })
+      .then((r) => r.data),
+
+  // Scanner
+  getScannerList: (page: number = 1, pageSize: number = 15, quote: string = "TMN") =>
+    client
+      .get<ScannerListResponse>("/v1/scanner/list", {
+        params: { page, page_size: pageSize, quote },
+      })
+      .then((r) => r.data),
+  scanSymbols: (symbols: string[]) =>
+    client
+      .get<ScannerScanResponse>("/v1/scanner/scan", {
+        params: { symbols: symbols.join(",") },
+      })
+      .then((r) => r.data),
 };

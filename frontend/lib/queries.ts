@@ -92,3 +92,61 @@ export function useCandles(
     refetchInterval: 60_000,
   });
 }
+
+
+export function useSignal(symbol: string | null, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["signal", symbol, timeframe],
+    queryFn: () => api.getSignal(symbol!, timeframe),
+    enabled: !!symbol,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMultiTfSignals(symbol: string | null) {
+  return useQuery({
+    queryKey: ["signal-multi", symbol],
+    queryFn: () => api.getMultiTfSignals(symbol!),
+    enabled: !!symbol,
+    refetchInterval: 120_000,
+  });
+}
+
+
+export function useLevels(symbol: string | null, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["levels", symbol, timeframe],
+    queryFn: () => api.getLevels(symbol!, timeframe),
+    enabled: !!symbol,
+    refetchInterval: 120_000,
+  });
+}
+
+
+export function useIndicators(symbol: string | null, timeframe: string = "1h", limit: number = 500) {
+  return useQuery({
+    queryKey: ["indicators", symbol, timeframe, limit],
+    queryFn: () => api.getIndicators(symbol!, timeframe, limit),
+    enabled: !!symbol,
+    staleTime: 30_000,
+  });
+}
+
+
+export function useScannerList(page: number, pageSize: number = 15, quote: string = "TMN") {
+  return useQuery({
+    queryKey: ["scanner-list", page, pageSize, quote],
+    queryFn: () => api.getScannerList(page, pageSize, quote),
+    staleTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useScanSymbols(symbols: string[]) {
+  return useQuery({
+    queryKey: ["scanner-scan", symbols.join(",")],
+    queryFn: () => api.scanSymbols(symbols),
+    enabled: symbols.length > 0,
+    staleTime: 60_000,
+  });
+}

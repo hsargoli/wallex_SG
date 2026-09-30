@@ -10,6 +10,8 @@ import {
   Activity,
   Coins,
   PieChart,
+  Zap,
+  Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
@@ -20,6 +22,8 @@ const nav = [
   { href: "/wallet", label: "کیف پول", icon: Coins },
   { href: "/budget", label: "بودجه", icon: Wallet },
   { href: "/markets", label: "بازارها", icon: TrendingUp },
+  { href: "/signals", label: "سیگنال‌ها", icon: Zap },
+  { href: "/scanner", label: "اسکنر بازار", icon: Radar },
   { href: "/profitability", label: "محاسبه سود", icon: Calculator },
 ];
 
