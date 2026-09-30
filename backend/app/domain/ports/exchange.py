@@ -3,6 +3,7 @@
 from typing import Any, Protocol, runtime_checkable
 
 from app.domain.entities.balance import Balance
+from app.domain.entities.candle import Candle
 from app.domain.entities.market import Market
 
 
@@ -24,6 +25,16 @@ class ExchangePort(Protocol):
 
     async def get_order_book(self, symbol: str) -> dict[str, Any]:
         """دفتر سفارشات خام برای یک نماد."""
+        ...
+
+    async def get_candles(
+        self,
+        symbol: str,
+        resolution: str,
+        from_ts: int,
+        to_ts: int,
+    ) -> list[Candle]:
+        """دریافت کندل‌های تاریخی OHLCV از صرافی."""
         ...
 
     async def health_check(self) -> bool:

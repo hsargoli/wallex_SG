@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { ArrowRight, LineChart, TrendingUp } from "lucide-react";
 import { useOrderBook } from "@/lib/queries";
 import { formatNumber, formatPrice } from "@/lib/format";
 import {
@@ -31,12 +31,19 @@ export default function SymbolPage({
         >
           <ArrowRight className="h-4 w-4" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="font-mono text-2xl font-bold tracking-tight">
             {symbol}
           </h1>
           <p className="text-sm text-muted-foreground">دفتر سفارشات زنده</p>
         </div>
+        <Link
+          href={`/markets/${symbol}/chart`}
+          className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition hover:border-emerald-500/50 hover:bg-emerald-500/15"
+        >
+          <LineChart className="h-4 w-4" />
+          مشاهده‌ی چارت
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

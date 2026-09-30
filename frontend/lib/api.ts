@@ -125,6 +125,26 @@ export interface PortfolioResponse {
   items: PortfolioItem[];
 }
 
+// ---------- Candle Types ----------
+
+export type Timeframe = "15m" | "1h" | "4h" | "1D";
+
+export interface Candle {
+  time: number;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+}
+
+export interface CandlesResponse {
+  symbol: string;
+  timeframe: Timeframe;
+  count: number;
+  candles: Candle[];
+}
+
 // ---------- API methods ----------
 
 export const api = {
@@ -145,6 +165,12 @@ export const api = {
   getOrderBook: (symbol: string) =>
     client
       .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)
+      .then((r) => r.data),
+  getCandles: (symbol: string, timeframe: Timeframe, limit = 500) =>
+    client
+      .get<CandlesResponse>(`/v1/markets/candles/${symbol}`, {
+        params: { tf: timeframe, limit },
+      })
       .then((r) => r.data),
 
   // Profitability

@@ -10,6 +10,7 @@ import structlog
 
 from app.core.config import Settings
 from app.domain.entities.balance import Balance
+from app.domain.entities.candle import Candle
 from app.domain.entities.market import Market
 from app.domain.exceptions import (
     ExchangeAuthError,
@@ -18,7 +19,7 @@ from app.domain.exceptions import (
     ExchangeUnavailableError,
     InvalidSymbolError,
 )
-from app.infrastructure.exchange.wallex.mapper import map_balance, map_market
+from app.infrastructure.exchange.wallex.mapper import map_balance, map_candles, map_market
 
 
 class WallexExchange:
@@ -128,3 +129,26 @@ class WallexExchange:
         response = await self._client.get("/v1/depth", params={"symbol": symbol})
         response.raise_for_status()
         return response.json()
+
+    async def get_candles(
+        self,
+        symbol: str,
+        resolution: str,
+        from_ts: int,
+        to_ts: int,
+    ) -> list[Candle]:
+        """دریافت کندل‌های تاریخی از UDF endpoint والکس.
+
+        Args:
+            symbol: نماد (مثلاً BTCTMN)
+            resolution: تایم‌فریم والکس ('15' برای 1m, '60' برای 1h, 'D' برای 1d)
+            from_ts: شروع (Unix timestamp ثانیه)
+            to_ts: پایان (Unix timestamp ثانیه)
+        """
+        raw = await self._get(
+            "/v1/udf/history",
+            symbol=symbol,
+            resolution=resolution,
+            **{"from": from_ts, "to": to_ts},
+        )
+        return map_candles(raw)

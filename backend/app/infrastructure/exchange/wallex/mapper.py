@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from app.domain.entities.balance import Balance
+from app.domain.entities.candle import Candle
 from app.domain.entities.market import Market, TickerStats
 from app.domain.value_objects.symbol import Symbol
 
@@ -130,3 +131,54 @@ def map_order_book(raw_response: dict[str, Any], symbol: str) -> dict[str, Any]:
         "bids": bids,
         "asks": asks,
     }
+
+
+def map_candles(raw_response: dict[str, Any]) -> list[Candle]:
+    """تبدیل پاسخ UDF والکس به لیست Candle.
+
+    ساختار پاسخ UDF:
+        {
+            "s": "ok",
+            "t": [ts1, ts2, ...],
+            "o": ["open1", "open2", ...],
+            "h": [...],
+            "l": [...],
+            "c": [...],
+            "v": [...]
+        }
+    """
+    if raw_response.get("s") != "ok":
+        return []
+
+    times = raw_response.get("t", [])
+    opens = raw_response.get("o", [])
+    highs = raw_response.get("h", [])
+    lows = raw_response.get("l", [])
+    closes = raw_response.get("c", [])
+    volumes = raw_response.get("v", [])
+
+    n = len(times)
+    if not (len(opens) == len(highs) == len(lows) == len(closes) == len(volumes) == n):
+        raise ValueError("UDF response has mismatched array lengths")
+
+    candles: list[Candle] = []
+    for i in range(n):
+        o = _dec(opens[i])
+        h = _dec(highs[i])
+        lo = _dec(lows[i])
+        c = _dec(closes[i])
+        v = _dec(volumes[i])
+        if None in (o, h, lo, c, v):
+            continue
+        candles.append(
+            Candle(
+                time=int(times[i]),
+                open=o,
+                high=h,
+                low=lo,
+                close=c,
+                volume=v,
+            )
+        )
+
+    return candles

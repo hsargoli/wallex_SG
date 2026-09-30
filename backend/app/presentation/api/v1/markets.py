@@ -50,3 +50,45 @@ async def get_order_book_endpoint(symbol: str, exchange: ExchangeDep):
     """دریافت دفتر سفارشات یک نماد."""
     raw_data = await exchange.get_order_book(symbol=symbol)
     return map_order_book(raw_data, symbol=symbol)
+
+
+@router.get("/candles/{symbol}")
+async def get_candles_endpoint(
+    symbol: str,
+    exchange: ExchangeDep,
+    tf: str = "1h",
+    limit: int = 500,
+):
+    """دریافت کندل‌های تاریخی OHLCV.
+
+    Args:
+        symbol: نماد (مثل BTCTMN)
+        tf: تایم‌فریم (15m, 1h, 4h, 1D)
+        limit: تعداد کندل (حداکثر ۱۰۰۰)
+    """
+    from app.application.use_cases.get_candles import GetCandlesUseCase
+
+    try:
+        use_case = GetCandlesUseCase(exchange=exchange)
+        candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
+    except ValueError as e:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+    return {
+        "symbol": symbol,
+        "timeframe": tf,
+        "count": len(candles),
+        "candles": [
+            {
+                "time": c.time,
+                "open": str(c.open),
+                "high": str(c.high),
+                "low": str(c.low),
+                "close": str(c.close),
+                "volume": str(c.volume),
+            }
+            for c in candles
+        ],
+    }

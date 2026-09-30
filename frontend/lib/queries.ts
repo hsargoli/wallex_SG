@@ -78,3 +78,17 @@ export function usePortfolio() {
     refetchInterval: 15_000,
   });
 }
+
+export function useCandles(
+  symbol: string | null,
+  timeframe: import("./api").Timeframe,
+  limit = 500,
+) {
+  return useQuery({
+    queryKey: ["candles", symbol, timeframe, limit],
+    queryFn: () => api.getCandles(symbol!, timeframe, limit),
+    enabled: !!symbol,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}
