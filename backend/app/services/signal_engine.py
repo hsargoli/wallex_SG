@@ -22,6 +22,7 @@ from app.services.indicators import (
     rsi,
     volume_sma,
 )
+from app.services.levels import find_swing_levels, pivot_from_candles
 
 
 class SignalType(StrEnum):
@@ -264,23 +265,70 @@ def generate_signal(candles: list[Candle]) -> Signal:
         strength = SignalStrength.WEAK
         confidence = min(60, 35 + max_score * 5)
 
-    # ---------- Stop Loss / Take Profit (بر اساس ATR) ----------
+    # ---------- Stop Loss / Take Profit بر اساس سطوح کلیدی ----------
     stop_loss = None
     take_profit = None
     risk_reward = None
-    if current_atr is not None and current_atr > 0:
-        if sig_type == SignalType.BUY:
-            stop_loss = last_close - (current_atr * Decimal(2))
-            take_profit = last_close + (current_atr * Decimal(4))
-        else:
-            stop_loss = last_close + (current_atr * Decimal(2))
-            take_profit = last_close - (current_atr * Decimal(4))
 
-        if stop_loss and take_profit:
-            risk = abs(last_close - stop_loss)
-            reward = abs(take_profit - last_close)
-            if risk > 0:
-                risk_reward = reward / risk
+    # پیدا کردن سطوح نزدیک
+    pivot = pivot_from_candles(candles)
+    swings = find_swing_levels(candles, lookback=5, tolerance_pct=0.5)
+
+    supports = sorted(
+        [s for s in swings if s.type == "support" and s.price < last_close],
+        key=lambda x: -x.price,
+    )
+    resistances = sorted(
+        [s for s in swings if s.type == "resistance" and s.price > last_close],
+        key=lambda x: x.price,
+    )
+
+    nearest_support = supports[0].price if supports else None
+    nearest_resistance = resistances[0].price if resistances else None
+
+    # اگه حمایت/مقاومت نزدیک نبود، از Pivot استفاده کن
+    if nearest_support is None and pivot:
+        nearest_support = pivot.s1 if pivot.s1 < last_close else pivot.s2
+    if nearest_resistance is None and pivot:
+        nearest_resistance = pivot.r1 if pivot.r1 > last_close else pivot.r2
+
+    # ATR برای حد ضرر اضطراری
+    atr_sl_dist = current_atr * Decimal("1.5") if current_atr else last_close * Decimal("0.02")
+
+    if sig_type == SignalType.BUY:
+        # SL: نزدیک‌ترین حمایت (کمی زیرش)
+        if nearest_support and (last_close - nearest_support) / last_close < Decimal("0.05"):
+            stop_loss = nearest_support * Decimal("0.997")
+        else:
+            # اگه حمایت دور بود، از ATR استفاده کن
+            stop_loss = last_close - atr_sl_dist
+
+        # TP: نزدیک‌ترین مقاومت
+        if nearest_resistance:
+            take_profit = nearest_resistance
+        elif pivot and pivot.r1 > last_close:
+            take_profit = pivot.r1
+        else:
+            take_profit = last_close + (atr_sl_dist * Decimal("2"))
+
+    else:  # SELL
+        if nearest_resistance and (nearest_resistance - last_close) / last_close < Decimal("0.05"):
+            stop_loss = nearest_resistance * Decimal("1.003")
+        else:
+            stop_loss = last_close + atr_sl_dist
+
+        if nearest_support:
+            take_profit = nearest_support
+        elif pivot and pivot.s1 < last_close:
+            take_profit = pivot.s1
+        else:
+            take_profit = last_close - (atr_sl_dist * Decimal("2"))
+
+    if stop_loss and take_profit:
+        risk = abs(last_close - stop_loss)
+        reward = abs(take_profit - last_close)
+        if risk > 0:
+            risk_reward = reward / risk
 
     return Signal(
         type=sig_type,
