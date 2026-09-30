@@ -1,0 +1,88 @@
+"""Endpointهای حساب کاربری."""
+
+from decimal import Decimal
+
+from fastapi import APIRouter
+
+from app.application.use_cases.get_balances import GetBalancesUseCase
+from app.application.use_cases.get_portfolio import GetPortfolioUseCase
+from app.presentation.api.deps import ExchangeDep
+from app.presentation.api.v1.schemas import (
+    BalanceOut,
+    BalancesResponse,
+    KeyBalancesResponse,
+    PortfolioItemOut,
+    PortfolioResponse,
+)
+
+router = APIRouter(prefix="/account", tags=["account"])
+
+
+@router.get("/balances", response_model=BalancesResponse)
+async def get_balances(exchange: ExchangeDep) -> BalancesResponse:
+    """موجودی همه دارایی‌های کاربر در والکس."""
+    use_case = GetBalancesUseCase(exchange=exchange)
+    balances = await use_case.execute()
+    items = [BalanceOut.model_validate(b, from_attributes=True) for b in balances]
+    return BalancesResponse(count=len(items), items=items)
+
+
+@router.get("/key-assets", response_model=KeyBalancesResponse)
+async def get_key_assets(exchange: ExchangeDep) -> KeyBalancesResponse:
+    """دریافت لحظه‌ای دارایی‌های اصلی معاملاتی (TMN, USDT, XRP)."""
+    use_case = GetBalancesUseCase(exchange=exchange)
+    balances = await use_case.execute()
+    balance_map = {b.asset.upper(): b for b in balances}
+
+    tmn = balance_map.get("TMN") or balance_map.get("IRT")
+    usdt = balance_map.get("USDT")
+    xrp = balance_map.get("XRP")
+
+    return KeyBalancesResponse(
+        tmn_available=tmn.available if tmn else Decimal("0"),
+        tmn_locked=tmn.locked if tmn else Decimal("0"),
+        usdt_available=usdt.available if usdt else Decimal("0"),
+        usdt_locked=usdt.locked if usdt else Decimal("0"),
+        xrp_available=xrp.available if xrp else Decimal("0"),
+        xrp_locked=xrp.locked if xrp else Decimal("0"),
+    )
+
+
+@router.get("/portfolio", response_model=PortfolioResponse)
+async def get_portfolio(exchange: ExchangeDep) -> PortfolioResponse:
+    """سبد دارایی با ارزش‌گذاری به تتر و تومان."""
+    use_case = GetPortfolioUseCase(exchange=exchange)
+    portfolio = await use_case.execute()
+
+    items = [
+        PortfolioItemOut(
+            asset=it.asset,
+            fa_name=it.fa_name,
+            available=it.available,
+            locked=it.locked,
+            total=it.total,
+            price_usdt_bid=it.price_usdt_bid,
+            price_usdt_last=it.price_usdt_last,
+            price_tmn_bid=it.price_tmn_bid,
+            price_tmn_last=it.price_tmn_last,
+            value_usdt_bid=it.value_usdt_bid,
+            value_usdt_last=it.value_usdt_last,
+            value_tmn_bid=it.value_tmn_bid,
+            value_tmn_last=it.value_tmn_last,
+            share_pct_bid=it.share_pct_bid,
+            share_pct_last=it.share_pct_last,
+            has_tmn_pair=it.has_tmn_pair,
+            has_usdt_pair=it.has_usdt_pair,
+        )
+        for it in portfolio.items
+    ]
+
+    return PortfolioResponse(
+        count=len(items),
+        total_value_tmn_bid=portfolio.total_value_tmn_bid,
+        total_value_tmn_last=portfolio.total_value_tmn_last,
+        total_value_usdt_bid=portfolio.total_value_usdt_bid,
+        total_value_usdt_last=portfolio.total_value_usdt_last,
+        usdt_tmn_rate=portfolio.usdt_tmn_rate,
+        items=items,
+    )
