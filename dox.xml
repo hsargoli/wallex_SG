@@ -653,3 +653,47 @@ tree -L 3 app -I '__pycache__'
     Wallex API → Adapter → Mapper → Entity → UseCase → Schema → HTTP response.
   </next_immediate_step>
 </project_summary>
+
+
+
+
+
+
+
+
+
+
+
+
+عالی رفیق! 🎯 انتخاب‌های تو:
+تصمیم	انتخاب
+Target	direction_4 — آیا ۴ کندل بعد صعودیه؟ (0/1)
+Model	RandomForest مستقیم
+Candles	پارامتری — الان کم، بعداً زیاد
+
+نکته‌ی خوب: چون تعداد کندل‌ها پارامتریه، از اول limit رو متغیر می‌ذاریم. الان با ۱۰۰۰-۲۰۰۰ شروع می‌کنیم، بعداً ۱۰,۰۰۰.
+🚀 امروز فقط دو تا کار می‌کنیم
+
+۱. نصب کتابخونه‌ها
+۲. ساخت اولین اسکریپت آموزش ML
+
+بعد از این دو تا، جواب می‌گیریم: ML روی داده‌ی واقعی کار می‌کنه یا نه.
+🔹 قدم ۱: نصب کتابخونه‌ها
+
+فقط این دستور رو بزن:
+bash
+
+cd ~/wallex/backend && uv add scikit-learn pandas numpy joblib 2>&1 | tail -8
+
+بعد این رو بزن:
+bash
+
+cd ~/wallex/backend && uv run python3 -c "
+import sklearn, pandas, numpy, joblib
+print(f'scikit-learn: {sklearn.__version__}')
+print(f'pandas:       {pandas.__version__}')
+print(f'numpy:        {numpy.__version__}')
+print(f'joblib:       {joblib.__version__}')
+"
+
+خروجی رو بفرست 👇
