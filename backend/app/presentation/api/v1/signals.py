@@ -50,9 +50,7 @@ async def get_indicators(
         use_case = GetCandlesUseCase(exchange=exchange)
         candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     if not candles:
         raise HTTPException(
@@ -96,9 +94,7 @@ async def get_signal(
         use_case = GetCandlesUseCase(exchange=exchange)
         candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     if not candles:
         raise HTTPException(
@@ -146,9 +142,7 @@ async def get_levels(
         use_case = GetCandlesUseCase(exchange=exchange)
         candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     if not candles:
         raise HTTPException(

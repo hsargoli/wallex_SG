@@ -14,6 +14,7 @@ from app.domain.entities.candle import Candle
 @dataclass(slots=True)
 class PivotLevels:
     """سطوح Pivot Point برای یک دوره."""
+
     pp: Decimal  # Pivot Point
     r1: Decimal
     r2: Decimal
@@ -29,6 +30,7 @@ class PivotLevels:
 @dataclass(slots=True)
 class SwingLevel:
     """یک سطح Support/Resistance."""
+
     price: Decimal
     type: str  # "support" یا "resistance"
     touches: int  # چند بار قیمت بهش واکنش داده
@@ -46,8 +48,16 @@ def pivot_points(high: Decimal, low: Decimal, close: Decimal) -> PivotLevels:
     r3 = high + 2 * (pp - low)
     s3 = low - 2 * (high - pp)
     return PivotLevels(
-        pp=pp, r1=r1, r2=r2, r3=r3, s1=s1, s2=s2, s3=s3,
-        basis_high=high, basis_low=low, basis_close=close,
+        pp=pp,
+        r1=r1,
+        r2=r2,
+        r3=r3,
+        s1=s1,
+        s2=s2,
+        s3=s3,
+        basis_high=high,
+        basis_low=low,
+        basis_close=close,
     )
 
 
