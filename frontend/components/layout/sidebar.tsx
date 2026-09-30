@@ -8,12 +8,16 @@ import {
   TrendingUp,
   Calculator,
   Activity,
+  Coins,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
 
 const nav = [
   { href: "/", label: "داشبورد", icon: LayoutDashboard },
+  { href: "/portfolio", label: "سبد دارایی", icon: PieChart },
+  { href: "/wallet", label: "کیف پول", icon: Coins },
   { href: "/budget", label: "بودجه", icon: Wallet },
   { href: "/markets", label: "بازارها", icon: TrendingUp },
   { href: "/profitability", label: "محاسبه سود", icon: Calculator },

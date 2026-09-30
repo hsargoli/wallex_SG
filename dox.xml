@@ -15,10 +15,22 @@ npm run dev
 
 
 
+----------------------------
 
+cd ~/wallex/backend
+source .venv/bin/activate
 
+----------------------------
 
+cd ~/wallex/backend
 
+# هر دستوری رو با uv run بزن
+uv run python script.py
+uv run pytest
+uv run uvicorn app.main:app --reload
+uv run python -c "import sys; print(sys.executable)"
+
+----------------------------
 
 
 

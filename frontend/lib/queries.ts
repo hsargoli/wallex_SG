@@ -61,3 +61,20 @@ export function useHealth() {
     retry: 1,
   });
 }
+
+export function useWallet() {
+  return useQuery({
+    queryKey: ["wallet"],
+    queryFn: () => api.getWalletBalances(),
+    refetchInterval: 10_000,
+  });
+}
+
+
+export function usePortfolio() {
+  return useQuery({
+    queryKey: ["portfolio"],
+    queryFn: () => api.getPortfolio(),
+    refetchInterval: 15_000,
+  });
+}

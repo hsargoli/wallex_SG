@@ -1,8 +1,11 @@
-/**
- * Type-safe API client for the Wallex backend.
- */
+import axios from "axios";
 
-const API_BASE = "/api/backend";
+// استفاده از Next.js rewrite که توی next.config.ts تعریف کردیم
+// /api/backend/* → http://127.0.0.1:8000/*
+const client = axios.create({
+  baseURL: "/api/backend",
+  headers: { "Content-Type": "application/json" },
+});
 
 // ---------- Types ----------
 
@@ -13,6 +16,18 @@ export interface BudgetStatus {
   currency: string;
 }
 
+export interface Market {
+  symbol: string;
+  base_asset: string;
+  quote_asset: string;
+  last_price: string | null;
+}
+
+export interface MarketsResponse {
+  count: number;
+  items: Market[];
+}
+
 export interface OrderBookLevel {
   price: string;
   quantity: string;
@@ -21,12 +36,26 @@ export interface OrderBookLevel {
 
 export interface OrderBookResponse {
   symbol: string;
-  best_bid: string;
-  best_ask: string;
-  spread: string;
-  spread_pct: string;
+  best_bid: string | null;
+  best_ask: string | null;
+  spread: string | null;
+  spread_pct: string | null;
   bids: OrderBookLevel[];
   asks: OrderBookLevel[];
+}
+
+export interface WalletBalance {
+  asset: string;
+  available: string;
+  locked: string;
+  total: string;
+  fa_name: string | null;
+  en_name: string | null;
+}
+
+export interface WalletResponse {
+  count: number;
+  items: WalletBalance[];
 }
 
 export type OrderType = "maker" | "taker";
@@ -64,72 +93,69 @@ export interface ProfitabilityResponse {
   notes: string[];
 }
 
-export interface Market {
-  symbol: string;
-  base_asset: string;
-  quote_asset: string;
-  fa_name?: string;
-  en_name?: string;
-  base_precision?: number;
-  quote_precision?: number;
+export interface PortfolioItem {
+  asset: string;
+  fa_name: string | null;
+  available: string;
+  locked: string;
+  total: string;
+  price_usdt_bid: string | null;
+  price_usdt_last: string | null;
+  price_tmn_bid: string | null;
+  price_tmn_last: string | null;
+  value_usdt_bid: string | null;
+  value_usdt_last: string | null;
+  value_tmn_bid: string | null;
+  value_tmn_last: string | null;
+  share_pct_bid: string;
+  share_pct_last: string;
+  has_tmn_pair: boolean;
+  has_usdt_pair: boolean;
 }
 
-// ---------- Error handling ----------
-
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public detail: string,
-  ) {
-    super(`${status}: ${detail}`);
-    this.name = "ApiError";
-  }
+export interface PortfolioResponse {
+  count: number;
+  total_value_tmn_bid: string;
+  total_value_tmn_last: string;
+  total_value_usdt_bid: string;
+  total_value_usdt_last: string;
+  usdt_tmn_rate: string | null;
+  items: PortfolioItem[];
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    ...init,
-  });
-
-  if (!res.ok) {
-    let detail = res.statusText;
-    try {
-      const body = await res.json();
-      detail = body.detail || JSON.stringify(body);
-    } catch {
-      // ignore
-    }
-    throw new ApiError(res.status, detail);
-  }
-
-  return res.json() as Promise<T>;
-}
-
-// ---------- Endpoints ----------
+// ---------- API methods ----------
 
 export const api = {
-  health: () => request<{ status: string }>("/health"),
+  health: () =>
+    client.get<{ status: string }>("/health").then((r) => r.data),
 
-  getBudget: () => request<BudgetStatus>("/v1/bot/budget"),
+  // Budget
+  getBudget: () =>
+    client.get<BudgetStatus>("/v1/bot/budget").then((r) => r.data),
   setBudget: (amount: number) =>
-    request<BudgetStatus>("/v1/bot/budget", {
-      method: "POST",
-      body: JSON.stringify({ allocated_budget: amount }),
-    }),
+    client
+      .post<BudgetStatus>("/v1/bot/budget", { allocated_budget: amount })
+      .then((r) => r.data),
 
+  // Markets
   listMarkets: () =>
-    request<{ count: number; items: Market[] }>("/v1/markets"),
-  getMarket: (symbol: string) => request<Market>(`/v1/markets/${symbol}`),
+    client.get<MarketsResponse>("/v1/markets").then((r) => r.data),
   getOrderBook: (symbol: string) =>
-    request<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`),
+    client
+      .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)
+      .then((r) => r.data),
 
+  // Profitability
   evaluateProfitability: (payload: ProfitabilityRequest) =>
-    request<ProfitabilityResponse>("/v1/profitability/evaluate", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    client
+      .post<ProfitabilityResponse>("/v1/profitability/evaluate", payload)
+      .then((r) => r.data),
+
+  // Wallet
+  getWalletBalances: () =>
+    client.get<WalletResponse>("/v1/account/balances").then((r) => r.data),
+
+  // Portfolio
+  getPortfolio: () =>
+    client.get<PortfolioResponse>("/v1/account/portfolio").then((r) => r.data),
 };
