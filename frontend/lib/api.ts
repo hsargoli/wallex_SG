@@ -21,6 +21,8 @@ export interface Market {
   base_asset: string;
   quote_asset: string;
   last_price: string | null;
+  fa_name: string | null;
+  en_name: string | null;
 }
 
 export interface MarketsResponse {
