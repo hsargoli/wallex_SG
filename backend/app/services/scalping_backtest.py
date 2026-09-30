@@ -80,17 +80,19 @@ def run_scalping_backtest(
                 pnl_tmn = value * (pnl_pct_net / 100)
                 capital += pnl_tmn
 
-                trades.append(ScalpingTrade(
-                    symbol=pos_symbol,
-                    entry_time=pos.entry_time,
-                    exit_time=candle.time,
-                    entry_price=pos.entry_price,
-                    exit_price=exit_price,
-                    pnl_tmn=pnl_tmn,
-                    pnl_pct=pnl_pct_net,
-                    exit_reason=reason,
-                    duration_candles=idx - pos.entry_candle_idx,
-                ))
+                trades.append(
+                    ScalpingTrade(
+                        symbol=pos_symbol,
+                        entry_time=pos.entry_time,
+                        exit_time=candle.time,
+                        entry_price=pos.entry_price,
+                        exit_price=exit_price,
+                        pnl_tmn=pnl_tmn,
+                        pnl_pct=pnl_pct_net,
+                        exit_reason=reason,
+                        duration_candles=idx - pos.entry_candle_idx,
+                    )
+                )
                 equity_curve.append(capital)
                 to_close.append(pos_symbol)
 

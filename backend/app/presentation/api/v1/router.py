@@ -7,6 +7,7 @@ from app.presentation.api.v1 import (
     backtest,
     bot,
     markets,
+    ml_bottom,
     profitability,
     scalping,
     scanner,
@@ -22,3 +23,4 @@ router.include_router(signals.router)
 router.include_router(scanner.router)
 router.include_router(backtest.router)
 router.include_router(scalping.router)
+router.include_router(ml_bottom.router)

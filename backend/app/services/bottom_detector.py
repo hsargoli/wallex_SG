@@ -19,9 +19,10 @@ from app.services.levels import find_swing_levels
 @dataclass(slots=True)
 class BottomSignal:
     """نتیجه‌ی تشخیص کف."""
+
     is_bottom: bool
-    score: int                # 0-10
-    strength: str             # none / weak / medium / strong
+    score: int  # 0-10
+    strength: str  # none / weak / medium / strong
     reasons: list[str] = field(default_factory=list)
     price: Decimal = Decimal(0)
     time: int = 0
@@ -52,7 +53,9 @@ def _has_recent_bottom(candles: list[Candle], idx: int, hours: int = 4) -> bool:
     return False
 
 
-def detect_bottom(candles: list[Candle], idx: int | None = None, _internal: bool = False) -> BottomSignal:
+def detect_bottom(
+    candles: list[Candle], idx: int | None = None, _internal: bool = False
+) -> BottomSignal:
     """
     تشخیص کف در کندل شماره idx (پیش‌فرض: آخرین کندل).
     از کندل‌های [0..idx] استفاده می‌کنه (بدون نگاه به آینده).
@@ -121,7 +124,7 @@ def detect_bottom(candles: list[Candle], idx: int | None = None, _internal: bool
             # حجم بالا بدون RSI پایین = نویز
             if vol_ratio > Decimal("3"):
                 score += 1
-                reasons.append(f"حجم بالا (بدون RSI oversold)")
+                reasons.append("حجم بالا (بدون RSI oversold)")
 
     # ---------- ۴. Rejection Wick ----------
     hl_range = current.high - current.low
@@ -133,10 +136,10 @@ def detect_bottom(candles: list[Candle], idx: int | None = None, _internal: bool
 
         if lower_wick_ratio > Decimal("0.6") and body_ratio < Decimal("0.3"):
             score += 2
-            reasons.append(f"سایه‌ی پایینی بلند ({lower_wick_ratio*100:.0f}%)")
+            reasons.append(f"سایه‌ی پایینی بلند ({lower_wick_ratio * 100:.0f}%)")
         elif lower_wick_ratio > Decimal("0.5"):
             score += 1
-            reasons.append(f"سایه‌ی پایینی ({lower_wick_ratio*100:.0f}%)")
+            reasons.append(f"سایه‌ی پایینی ({lower_wick_ratio * 100:.0f}%)")
 
     # ---------- ۵. Support Touch ----------
     if idx >= 50:
@@ -159,6 +162,7 @@ def detect_bottom(candles: list[Candle], idx: int | None = None, _internal: bool
 
     # ---------- ۶. فیلتر روند (CRITICAL) ----------
     from app.services.indicators import ema
+
     ema20_vals = ema(window, 20)
     ema50_vals = ema(window, 50)
     ema20 = _last(ema20_vals)

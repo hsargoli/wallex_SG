@@ -52,8 +52,12 @@ def evaluate_entry(candles: list[Candle], symbol: str) -> EntrySignal | None:
     if rr < Decimal("1.3"):
         return None
     return EntrySignal(
-        symbol=symbol, price=price, take_profit=tp, stop_loss=sl,
-        confidence=signal.confidence, reason=f"BUY conf={signal.confidence}%",
+        symbol=symbol,
+        price=price,
+        take_profit=tp,
+        stop_loss=sl,
+        confidence=signal.confidence,
+        reason=f"BUY conf={signal.confidence}%",
     )
 
 
