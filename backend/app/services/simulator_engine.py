@@ -1,28 +1,26 @@
-from app.services.smart_dispatcher import dispatcher
-from app.domain.entities.candle import Candle
-# فرض بر این است که ریپازیتوری کندل‌ها را داری؛ مسیرش را چک کن
-from app.repositories.candle_repo import get_candles_by_date 
+from app.domain.strategy import BaseStrategy
+from app.domain.repository import MarketDataRepository
 
-def run_simulation(target_date: str):
-    # دریافت کندل‌های یک روز خاص
-    candles = get_candles_by_date(target_date)
-    
-    results = []
-    equity = 300000.0  # سرمایه اولیه
-    
-    # اجرای حلقه زمانی
-    for i in range(len(candles)):
-        current_chunk = candles[:i+1]
-        symbol = candles[i].symbol
+class Simulator:
+    def __init__(self, strategy: BaseStrategy, repo: MarketDataRepository):
+        self.strategy = strategy
+        self.repo = repo
+        self.balance = 1000.0  # Initial capital
+        self.position = 0.0
+
+    def run(self, symbol: str, start_date: str, end_date: str):
+        prices = self.repo.get_prices(symbol, start_date, end_date)
+        total_pnl = 0.0
         
-        # گرفتن تصمیم از دیسپچر
-        decision = dispatcher.make_decision(symbol, current_chunk)
+        for price in prices:
+            action = self.strategy.on_tick(price)
+            if action == "BUY" and self.balance >= price:
+                self.position = self.balance / price
+                self.balance = 0.0
+            elif action == "SELL" and self.position > 0:
+                new_balance = self.position * price
+                total_pnl += (new_balance - 1000.0) # Simple PnL calculation
+                self.balance = new_balance
+                self.position = 0.0
         
-        if decision and decision.get("should_trade"):
-            results.append({
-                "time": candles[i].timestamp,
-                "symbol": symbol,
-                "action": decision
-            })
-            
-    return {"final_equity": equity, "trades_count": len(results), "trades": results}
+        return {"final_balance": self.balance + (self.position * prices[-1]), "total_pnl": total_pnl}
