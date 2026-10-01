@@ -133,7 +133,7 @@ def should_start_grid(
         return GridSignal(False, None, "spacing صفر", adx, is_ranging)
 
     # ---------- ساخت سطوح ----------
-    capital_per_level = available_capital * (config.capital_per_level_pct / 100)
+    capital_per_level = available_capital * (config.cash_per_level_pct / 100)
 
     plan = GridPlan(
         symbol=symbol,
