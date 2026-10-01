@@ -135,7 +135,7 @@ class TestCandlesEndpoint:
 
     def test_limit_out_of_range_returns_400(self, client, fake_exchange_factory):
         fake_exchange_factory([])
-        r = client.get("/v1/markets/candles/BTCTMN?tf=1h&limit=2000")
+        r = client.get("/v1/markets/candles/BTCTMN?tf=1h&limit=3500")
         assert r.status_code == 400
         assert "limit" in r.json()["detail"].lower()
 

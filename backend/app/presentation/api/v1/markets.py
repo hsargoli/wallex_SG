@@ -64,7 +64,7 @@ async def get_candles_endpoint(
     Args:
         symbol: نماد (مثل BTCTMN)
         tf: تایم‌فریم (15m, 1h, 4h, 1D)
-        limit: تعداد کندل (حداکثر ۱۰۰۰)
+        limit: تعداد کندل (حداکثر ۳۰۰۰)
     """
     from app.application.use_cases.get_candles import GetCandlesUseCase
 
