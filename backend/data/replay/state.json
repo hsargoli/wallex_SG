@@ -1,0 +1,582 @@
+{
+  "is_running": true,
+  "is_finished": false,
+  "mode": "replay",
+  "start_date": "2026-09-01",
+  "end_date": "2026-09-03",
+  "speed": 300,
+  "current_candle_time": 1788259740,
+  "progress_pct": 19.9,
+  "processed_candles": 4300,
+  "total_candles": 21605,
+  "initial_capital": 300000.0,
+  "capital": 291795.30254704907,
+  "peak_capital": 300000.0,
+  "max_drawdown_pct": 3.2127500756615577,
+  "total_trades": 31,
+  "wins": 10,
+  "losses": 21,
+  "open_positions": [],
+  "recent_trades": [
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788256800,
+      "exit_time": 1788258240,
+      "entry_price": 21526230.0,
+      "exit_price": 21562172.0,
+      "quantity": 0.006968242929672312,
+      "pnl_pct": -0.033031608414479774,
+      "pnl_tmn": -49.7978652090961,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788255060,
+      "exit_time": 1788256500,
+      "entry_price": 21481774.0,
+      "exit_price": 21567804.0,
+      "quantity": 0.006982663536074814,
+      "pnl_pct": 0.20047902933901812,
+      "pnl_tmn": 300.1178254645077,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788254220,
+      "exit_time": 1788255660,
+      "entry_price": 286014.0,
+      "exit_price": 288845.0,
+      "quantity": 0.5244498521051417,
+      "pnl_pct": 0.7898116875397767,
+      "pnl_tmn": 1183.2328137783466,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 9
+    },
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788253500,
+      "exit_time": 1788254940,
+      "entry_price": 21481774.0,
+      "exit_price": 21510000.0,
+      "quantity": 0.006982663536074814,
+      "pnl_pct": -0.0686048926871628,
+      "pnl_tmn": -103.10443169172154,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788250740,
+      "exit_time": 1788252180,
+      "entry_price": 21547358.0,
+      "exit_price": 21350880.0,
+      "quantity": 0.006961410303759746,
+      "pnl_pct": -1.1118426491080744,
+      "pnl_tmn": -1666.3962096884454,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.43053720405731183,
+      "rule_score": 8
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788250680,
+      "exit_time": 1788252120,
+      "entry_price": 17367.0,
+      "exit_price": 17328.0,
+      "quantity": 8.637070305752289,
+      "pnl_pct": -0.4245638279495643,
+      "pnl_tmn": -636.5088961824149,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788248460,
+      "exit_time": 1788249900,
+      "entry_price": 17386.0,
+      "exit_price": 17453.0,
+      "quantity": 8.627631427585413,
+      "pnl_pct": 0.18536753709881298,
+      "pnl_tmn": 277.47325434257453,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.4258050111987981,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788248280,
+      "exit_time": 1788249720,
+      "entry_price": 288063.0,
+      "exit_price": 289496.0,
+      "quantity": 0.5207194259589049,
+      "pnl_pct": 0.297460624932744,
+      "pnl_tmn": 445.4447464617116,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 9
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788246000,
+      "exit_time": 1788247440,
+      "entry_price": 17309.0,
+      "exit_price": 17441.0,
+      "quantity": 8.666011901323012,
+      "pnl_pct": 0.5626090473164205,
+      "pnl_tmn": 842.7696574036629,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.6318551669833906,
+      "rule_score": 6
+    },
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788245760,
+      "exit_time": 1788247200,
+      "entry_price": 21550000.0,
+      "exit_price": 21475193.0,
+      "quantity": 0.0069605568445475635,
+      "pnl_pct": -0.5471322505800511,
+      "pnl_tmn": -820.1776774941995,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.670325585117781,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788244560,
+      "exit_time": 1788246000,
+      "entry_price": 288701.0,
+      "exit_price": 287650.0,
+      "quantity": 0.5195686887125435,
+      "pnl_pct": -0.5640444612245885,
+      "pnl_tmn": -845.5206251450463,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.656589097272891,
+      "rule_score": 10
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788244260,
+      "exit_time": 1788245700,
+      "entry_price": 17422.0,
+      "exit_price": 17360.0,
+      "quantity": 8.609803696475721,
+      "pnl_pct": -0.5558718861209953,
+      "pnl_tmn": -833.2740213523133,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.5665763333272419,
+      "rule_score": 9
+    },
+    {
+      "symbol": "SOLTMN",
+      "entry_time": 1788243000,
+      "exit_time": 1788244440,
+      "entry_price": 21783000.0,
+      "exit_price": 21718095.0,
+      "quantity": 0.006886103842445944,
+      "pnl_pct": -0.49796171326264,
+      "pnl_tmn": -746.49562732406,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788242760,
+      "exit_time": 1788244200,
+      "entry_price": 290966.0,
+      "exit_price": 289456.0,
+      "quantity": 0.5155241505880412,
+      "pnl_pct": -0.7189609782586313,
+      "pnl_tmn": -1077.6630259205542,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.3357822193542137,
+      "rule_score": 9
+    },
+    {
+      "symbol": "BTCTMN",
+      "entry_time": 1788241560,
+      "exit_time": 1788243000,
+      "entry_price": 16493218049.0,
+      "exit_price": 16494105731.0,
+      "quantity": 9.094647239511555e-06,
+      "pnl_pct": -0.19461789689942927,
+      "pnl_tmn": -291.9349185037868,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788238380,
+      "exit_time": 1788239820,
+      "entry_price": 289442.0,
+      "exit_price": 289092.0,
+      "quantity": 0.518238541745842,
+      "pnl_pct": -0.3209223264073578,
+      "pnl_tmn": -481.20210612143376,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "ETHTMN",
+      "entry_time": 1788237540,
+      "exit_time": 1788238980,
+      "entry_price": 516512673.0,
+      "exit_price": 517789639.0,
+      "quantity": 0.0002904091377444286,
+      "pnl_pct": 0.047228396659293626,
+      "pnl_tmn": 70.47175239396302,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 7
+    },
+    {
+      "symbol": "ETHTMN",
+      "entry_time": 1788235260,
+      "exit_time": 1788236700,
+      "entry_price": 517454209.0,
+      "exit_price": 517395582.0,
+      "quantity": 0.00028988072256650637,
+      "pnl_pct": -0.21132989141460207,
+      "pnl_tmn": -316.9778422847847,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 8
+    },
+    {
+      "symbol": "BTCTMN",
+      "entry_time": 1788235140,
+      "exit_time": 1788236580,
+      "entry_price": 16382391259.0,
+      "exit_price": 16443108549.0,
+      "quantity": 9.156172479862758e-06,
+      "pnl_pct": 0.17062531983322876,
+      "pnl_tmn": 255.38204177009635,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788231900,
+      "exit_time": 1788233340,
+      "entry_price": 288045.0,
+      "exit_price": 288854.0,
+      "quantity": 0.520751965838671,
+      "pnl_pct": 0.08085889357565285,
+      "pnl_tmn": 120.86705202312135,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 10
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788231360,
+      "exit_time": 1788232800,
+      "entry_price": 17343.0,
+      "exit_price": 17344.0,
+      "quantity": 8.649022660439371,
+      "pnl_pct": -0.19423398489304394,
+      "pnl_tmn": -291.3596263622211,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.4185773490574219,
+      "rule_score": 8
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788229500,
+      "exit_time": 1788230940,
+      "entry_price": 287405.0,
+      "exit_price": 289000.0,
+      "quantity": 0.5219115881769628,
+      "pnl_pct": 0.35496598876150215,
+      "pnl_tmn": 531.6165341591134,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 7
+    },
+    {
+      "symbol": "BTCTMN",
+      "entry_time": 1788228960,
+      "exit_time": 1788230400,
+      "entry_price": 16340111159.0,
+      "exit_price": 16373633742.0,
+      "quantity": 9.179864111106809e-06,
+      "pnl_pct": 0.00515517106221014,
+      "pnl_tmn": 7.425023836705975,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.3355897851267247,
+      "rule_score": 7
+    },
+    {
+      "symbol": "ETHTMN",
+      "entry_time": 1788225180,
+      "exit_time": 1788226620,
+      "entry_price": 516640238.0,
+      "exit_price": 515145933.0,
+      "quantity": 0.00029033743206041186,
+      "pnl_pct": -0.48923511761002053,
+      "pnl_tmn": -733.4188237386188,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 7
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788225120,
+      "exit_time": 1788226560,
+      "entry_price": 17331.0,
+      "exit_price": 17287.0,
+      "quantity": 8.655011251514628,
+      "pnl_pct": -0.45388033004443146,
+      "pnl_tmn": -680.4396745715769,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 10
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788219600,
+      "exit_time": 1788221040,
+      "entry_price": 17311.0,
+      "exit_price": 17327.0,
+      "quantity": 8.665010686846514,
+      "pnl_pct": -0.10757321934029546,
+      "pnl_tmn": -161.49846918144533,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 8
+    },
+    {
+      "symbol": "BTCTMN",
+      "entry_time": 1788217740,
+      "exit_time": 1788219180,
+      "entry_price": 16350000000.0,
+      "exit_price": 16341000000.0,
+      "quantity": 9.174311926605504e-06,
+      "pnl_pct": -0.2550458715596336,
+      "pnl_tmn": -382.48623853211006,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.3704955663652288,
+      "rule_score": 6
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788216120,
+      "exit_time": 1788217560,
+      "entry_price": 17351.0,
+      "exit_price": 17290.0,
+      "quantity": 8.645034868307302,
+      "pnl_pct": -0.5515647513111619,
+      "pnl_tmn": -826.8197798397787,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": null,
+      "rule_score": 8
+    },
+    {
+      "symbol": "BTCTMN",
+      "entry_time": 1788216120,
+      "exit_time": 1788217560,
+      "entry_price": 16395688014.0,
+      "exit_price": 16359991789.0,
+      "quantity": 9.148746906620665e-06,
+      "pnl_pct": -0.4177171520311938,
+      "pnl_tmn": -626.2491523187384,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.3157196610182562,
+      "rule_score": 6
+    },
+    {
+      "symbol": "DOGETMN",
+      "entry_time": 1788214500,
+      "exit_time": 1788215940,
+      "entry_price": 17354.0,
+      "exit_price": 17353.0,
+      "quantity": 8.643540394145441,
+      "pnl_pct": -0.20576236026276212,
+      "pnl_tmn": -308.6348968537513,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.289582391008074,
+      "rule_score": 6
+    },
+    {
+      "symbol": "XRPTMN",
+      "entry_time": 1788214440,
+      "exit_time": 1788215880,
+      "entry_price": 289440.0,
+      "exit_price": 289325.0,
+      "quantity": 0.5182421227197347,
+      "pnl_pct": -0.23973189607517914,
+      "pnl_tmn": -359.53824626865674,
+      "exit_reason": "timeout",
+      "duration_candles": 0,
+      "ml_prob": 0.42343153186094556,
+      "rule_score": 6
+    }
+  ],
+  "equity_curve": [
+    {
+      "time": 1788215880,
+      "capital": 299640.5
+    },
+    {
+      "time": 1788215940,
+      "capital": 299331.8
+    },
+    {
+      "time": 1788217560,
+      "capital": 298705.6
+    },
+    {
+      "time": 1788217560,
+      "capital": 297878.8
+    },
+    {
+      "time": 1788219180,
+      "capital": 297496.3
+    },
+    {
+      "time": 1788221040,
+      "capital": 297334.8
+    },
+    {
+      "time": 1788226560,
+      "capital": 296654.3
+    },
+    {
+      "time": 1788226620,
+      "capital": 295920.9
+    },
+    {
+      "time": 1788230400,
+      "capital": 295928.3
+    },
+    {
+      "time": 1788230940,
+      "capital": 296460.0
+    },
+    {
+      "time": 1788232800,
+      "capital": 296168.6
+    },
+    {
+      "time": 1788233340,
+      "capital": 296289.5
+    },
+    {
+      "time": 1788236580,
+      "capital": 296544.8
+    },
+    {
+      "time": 1788236700,
+      "capital": 296227.9
+    },
+    {
+      "time": 1788238980,
+      "capital": 296298.3
+    },
+    {
+      "time": 1788239820,
+      "capital": 295817.1
+    },
+    {
+      "time": 1788243000,
+      "capital": 295525.2
+    },
+    {
+      "time": 1788244200,
+      "capital": 294447.5
+    },
+    {
+      "time": 1788244440,
+      "capital": 293701.0
+    },
+    {
+      "time": 1788245700,
+      "capital": 292867.8
+    },
+    {
+      "time": 1788246000,
+      "capital": 292022.2
+    },
+    {
+      "time": 1788247200,
+      "capital": 291202.1
+    },
+    {
+      "time": 1788247440,
+      "capital": 292044.8
+    },
+    {
+      "time": 1788249720,
+      "capital": 292490.3
+    },
+    {
+      "time": 1788249900,
+      "capital": 292767.8
+    },
+    {
+      "time": 1788252120,
+      "capital": 292131.3
+    },
+    {
+      "time": 1788252180,
+      "capital": 290464.9
+    },
+    {
+      "time": 1788254940,
+      "capital": 290361.7
+    },
+    {
+      "time": 1788255660,
+      "capital": 291545.0
+    },
+    {
+      "time": 1788256500,
+      "capital": 291845.1
+    },
+    {
+      "time": 1788258240,
+      "capital": 291795.3
+    }
+  ]
+}

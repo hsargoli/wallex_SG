@@ -6,8 +6,8 @@ from decimal import Decimal
 from app.domain.entities.candle import Candle
 from app.services.signal_engine import SignalType, generate_signal
 
-TAKE_PROFIT_PCT = Decimal("1.5")
-STOP_LOSS_PCT = Decimal("1.0")
+TAKE_PROFIT_PCT = Decimal("2.0")
+STOP_LOSS_PCT = Decimal("1.5")
 TIMEOUT_CANDLES = 4
 MIN_CONFIDENCE = 45
 

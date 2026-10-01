@@ -17,7 +17,7 @@ TIMEFRAME_MAP: dict[str, tuple[str, int, int]] = {
 VALID_TIMEFRAMES = tuple(TIMEFRAME_MAP.keys())
 
 # برای اطمینان، حداکثر کندل پایه که می‌گیریم
-MAX_BASE_CANDLES = 5000
+MAX_BASE_CANDLES = 30000  # Wallex max ~27k
 
 
 @dataclass(slots=True)
@@ -35,8 +35,8 @@ class GetCandlesUseCase:
             raise ValueError(
                 f"Unsupported timeframe '{timeframe}'. Valid: {', '.join(VALID_TIMEFRAMES)}"
             )
-        if limit <= 0 or limit > 1000:
-            raise ValueError("limit must be between 1 and 1000")
+        if limit <= 0 or limit > 3000:
+            raise ValueError("limit must be between 1 and 3000")
 
         resolution, factor, seconds_per_candle = TIMEFRAME_MAP[timeframe]
 

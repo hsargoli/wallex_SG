@@ -1,0 +1,14 @@
+{
+  "is_running": true,
+  "initial_capital": 300000.0,
+  "capital": 300000.0,
+  "peak_capital": 300000.0,
+  "max_drawdown_pct": 0.0,
+  "total_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "last_check_time": 1790836094,
+  "open_positions": [],
+  "recent_trades": [],
+  "equity_curve": []
+}
