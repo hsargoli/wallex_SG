@@ -108,8 +108,25 @@ def evaluate_entry(candles: list[Candle], config: TrendFollowConfig) -> TrendSig
                 golden_cross = True
                 break
 
+    # ---------- دو مسیر ورود ----------
+    # مسیر ۱: Golden Cross تازه (کلاسیک)
+    # مسیر ۲: EMA aligned + ADX قوی (continuation entry) — وقتی رژیم trending_up هست
+    entry_mode = "cross"
     if not golden_cross:
-        return None
+        # چک کن continuation باشه: EMA20 > EMA50 > EMA100 (اگه داریم)
+        ema_long = ema(candles, config.long_ema_period) if len(candles) >= config.long_ema_period else []
+        curr_long = _last(ema_long)
+        aligned = (
+            curr_fast is not None
+            and curr_slow is not None
+            and curr_fast > curr_slow
+        )
+        if config.use_long_trend_filter and curr_long is not None:
+            aligned = aligned and curr_slow > curr_long
+
+        if not aligned:
+            return None
+        entry_mode = "continuation"
 
     adx_val = _calc_adx(candles, config.adx_period)
     if adx_val < config.adx_threshold:
@@ -137,7 +154,7 @@ def evaluate_entry(candles: list[Candle], config: TrendFollowConfig) -> TrendSig
         entry_price=entry,
         initial_sl=initial_sl,
         trailing_distance=trailing_dist,
-        reason=f"Golden Cross + ADX={adx_val:.0f}",
+        reason=f"{entry_mode} + ADX={adx_val:.0f}",
         confidence=confidence,
         adx=adx_val,
     )

@@ -3,7 +3,7 @@ tree -L 4 -I 'venv|__pycache__'
 
 
 
-
+پروژه ترید والکس
 
 cd ~/wallex/backend
 uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -46,6 +46,661 @@ curl -s "http://127.0.0.1:8000/v1/paper/status" | python3 -m json.tool | head -2
 
 
 
+
+
+
+<dschat1>
+
+
+تیم: ROSHD_SARV
+سرمایه هدف: ۳۰۰٬۰۰۰ تومان (اولیه)
+وضعیت: ۵ ربات ساخته شده، آماده برای Paper Trading
+🏗️ ساختار کلی پروژه
+text
+
+~/wallex/
+├── backend/                    ← FastAPI + Python 3.12
+│   ├── app/
+│   │   ├── main.py            ← Application Factory
+│   │   ├── core/              ← config, logging, exceptions
+│   │   ├── domain/            ← Entities, Ports, Value Objects
+│   │   ├── application/       ← Use Cases
+│   │   ├── infrastructure/    ← Wallex adapter
+│   │   ├── presentation/      ← API routers
+│   │   └── services/          ← Business logic
+│   │       ├── indicators.py
+│   │       ├── bottom_detector.py
+│   │       ├── regime_detector.py
+│   │       ├── signal_engine.py
+│   │       ├── levels.py
+│   │       ├── trend.py
+│   │       ├── ml_bottom_model.py
+│   │       ├── anomaly_detector.py
+│   │       ├── volatility_predictor.py
+│   │       ├── paper_trader.py
+│   │       ├── paper_trader_v2.py
+│   │       ├── historical_replay.py
+│   │       ├── budget_service.py
+│   │       ├── smart_dispatcher.py
+│   │       └── bots/          ← 🆕 معماری ربات‌ها
+│   │           ├── base.py
+│   │           ├── registry.py
+│   │           ├── mean_revert/
+│   │           ├── trend_follow/
+│   │           ├── grid_bot/
+│   │           ├── volatility_hunter/
+│   │           └── smart_portfolio/
+│   │
+│   ├── scripts/ml/            ← اسکریپت‌های تحلیل
+│   ├── tests/                 ← ۷۶ تست
+│   ├── data/                  ← SQLite, models, state
+│   └── .venv/
+│
+├── frontend/                  ← Next.js 16 + Tailwind v4
+│   ├── app/
+│   │   ├── layout.tsx         ← RTL + Vazirmatn
+│   │   ├── page.tsx           ← Dashboard
+│   │   ├── bots/              ← 🆕 لیست و جزئیات ربات‌ها
+│   │   ├── portfolio/         ← سبد دارایی
+│   │   ├── wallet/            ← کیف پول
+│   │   ├── markets/           ← بازارها + چارت
+│   │   ├── signals/           ← سیگنال‌ها
+│   │   ├── scanner/           ← اسکنر بازار
+│   │   └── paper-trading/     ← Paper Trading
+│   ├── components/
+│   │   ├── layout/sidebar.tsx
+│   │   ├── ui/                ← shadcn components
+│   │   ├── portfolio/
+│   │   ├── signals/
+│   │   ├── markets/
+│   │   └── charts/
+│   ├── lib/
+│   │   ├── api.ts             ← API client
+│   │   ├── queries.ts         ← React Query hooks
+│   │   ├── format.ts
+│   │   └── utils.ts
+│   └── package.json
+│
+└── docs/
+    ├── README.md
+    └── reports/
+        ├── 2026-09-30.md
+        ├── 2026-09-30_ML_Experiments.md
+        └── ML_JOURNEY.md
+
+🚀 مسیر طی‌شده (Timeline)
+📌 Milestone 1-4: زیرساخت (قبلاً)
+text
+
+✅ راه‌اندازی FastAPI
+✅ اتصال به والکس (API client)
+✅ مپ کردن داده‌ها (mapper)
+✅ endpoint موجودی (key-assets)
+✅ Budget Manager (مدیریت بودجه)
+
+📌 Milestone 5: Market Data Layer
+text
+
+✅ دریافت Order Book
+✅ محاسبه best_bid, best_ask, spread
+✅ Candlestick data (15m, 1h, 4h, 1D)
+✅ Candle aggregator (ادغام 1m → 15m)
+✅ Depth chart در فرانت
+
+📌 Milestone 6: Profitability Checker
+text
+
+✅ محاسبه سود با کارمزد
+✅ پشتیبانی Maker/Taker
+✅ Slippage calculation
+✅ min_profitable_spread
+✅ is_profitable flag
+
+📌 Indicator & Signal Engine
+text
+
+✅ RSI, EMA, MACD, Bollinger, ATR
+✅ ۶ قانون سیگنال (rules-based)
+✅ Pivot Points + S/R Levels
+✅ Signal history
+✅ Multi-timeframe analysis
+
+📌 ML Experiments (پروژه موقت)
+text
+
+❌ RandomForest, LightGBM, XGBoost
+❌ AUC بین 0.31-0.72 (overfitting شدید)
+❌ در-sample 0.96 / out-sample 0.52
+📝 نتیجه: داده کافی نیست (فقط 20 روز)
+
+درس مهم: ML در ترید بدون داده کافی شکست می‌خوره
+
+📌 Paper Trading
+text
+
+✅ PaperTrader (نسخه ۱)
+✅ PaperTraderV2 (با Smart Dispatcher)
+✅ HistoricalReplayBot (تست روی گذشته)
+✅ ذخیره‌سازی state
+✅ Equity curve tracking
+
+📌 Scanner & Per-Asset Analysis
+text
+
+✅ اسکن ۱۸۷ مارکت با صفحه‌بندی
+✅ مرتب‌سازی بر اساس حجم
+✅ Trend score هر نماد
+✅ تشخیص استراتژی مناسب هر نماد
+
+📌 ۵ ربات معاملاتی 🆕
+🥇 کف‌زن (Mean Revert Bot)
+text
+
+slug: mean_revert | v0.1.0
+استراتژی: کف می‌خره، سود کوچک
+R/DD: 2.38
+بازده: +8.1%  |  DD: 3.4%
+
+🥈 روندرو (Trend Follow Bot)
+text
+
+slug: trend_follow | v0.1.0
+استراتژی: EMA Cross + ADX + Trailing Stop
+R/DD: 2.41
+بازده: +6.8%  |  DD: 2.8%
+
+🥉 نوسان‌گیر (Volatility Hunter Bot) 🏆
+text
+
+slug: volatility_hunter | v0.1.0
+استراتژی: تشخیص range + خرید کف + فروش سقف
+R/DD: 6.25 (بهترین!)
+بازده: +31.85%  |  DD: 5.1%
+
+📊 شبکه‌ای (Grid Bot)
+text
+
+slug: grid_bot | v0.1.0
+استراتژی: پله‌ای خرید/فروش در محدوده
+R/DD: 1.00
+بازده: +8.9%  |  DD: 8.9%
+
+🧠 پورتفوی هوشمند (Smart Portfolio)
+text
+
+slug: smart_portfolio | v0.1.0
+نقش: مسیریابی بین ۴ ربات بر اساس رژیم
+نقشه: trending_up → روندرو
+      ranging → کف‌زن + شبکه‌ای
+      choppy → نوسان‌گیر
+      trending_down → هیچکس
+
+🔬 ابزارهای تحلیلی ساخته‌شده
+۱. Indicator Engine
+text
+
+SMA, EMA, RSI, MACD, Bollinger Bands, ATR
+
+۲. Regime Detector
+text
+
+معیارها:
+  • ADX (قدرت روند)
+  • ATR% (نوسان)
+  • EMA Alignment (جهت)
+
+رژیم‌ها:
+  • trending_up
+  • trending_down
+  • ranging
+  • choppy
+
+۳. Bottom Detector
+text
+
+۵ نشانه‌ی کف:
+  • RSI oversold
+  • RSI divergence
+  • Volume spike
+  • Rejection wick
+  • Support touch
+
+۴. Smart Dispatcher
+text
+
+انتخاب استراتژی مناسب هر نماد
+(از پیکربندی JSON)
+
+۵. Anomaly Detector
+text
+
+Isolation Forest
+تشخیص وضعیت غیرعادی بازار
+
+۶. Volatility Predictor
+text
+
+Gradient Boosting
+پیش‌بینی نوسان آینده
+
+🎨 فرانت‌اند (Next.js 16)
+صفحات ساخته‌شده
+text
+
+/dashboard        ← نمای کلی
+/wallet           ← کیف پول والکس (۹.۳M تومان)
+/portfolio        ← سبد دارایی با toggle bid/last
+/markets          ← لیست ۳۷۳ بازار
+/markets/[symbol] ← Order Book + Depth Chart
+/markets/[symbol]/chart ← چارت کندل استیک
+/signals/[symbol] ← تحلیل کامل نماد
+/scanner          ← اسکنر با صفحه‌بندی
+/paper-trading    ← Paper Trading live
+/bots             ← 🆕 لیست ۵ ربات
+/bots/[slug]      ← جزئیات ربات با کنترل
+/budget           ← مدیریت بودجه
+/profitability    ← محاسبه سود
+
+ویژگی‌های UI
+text
+
+✅ RTL کامل + فونت Vazirmatn
+✅ Dark theme تریدینگ
+✅ React Query با auto-refetch
+✅ Sidebar با وضعیت live API
+✅ Equity charts
+✅ Order Book table
+✅ Candlestick chart (TradingView style)
+
+📊 آمار نهایی
+متریک	مقدار
+فایل‌های Python	~۸۰
+تست‌ها	۷۶ (۱۰۰٪ پاس)
+Ruff	✅ All checks passed
+فایل‌های TypeScript	~۵۰
+صفحات Next.js	۱۲
+کامپوننت‌های React	۱۵
+TypeScript errors	۰
+ربات‌ها	۵
+اسکریپت‌های ML	۲۵+
+خطوط کد کل	~۱۵,۰۰۰
+💡 درس‌های کلیدی
+۱. ML در ترید
+text
+
+❌ ML بدون داده کافی = شکست
+❌ Overfitting شدید حتی با ۸ مدل مختلف
+✅ ML به عنوان کمک‌کننده، نه تصمیم‌گیرنده
+
+۲. Backtest و Reality
+text
+
+⚠️ نتایج "too good to be true" = باگ
+⚠️ حتماً حساب‌داری رو چک کن
+⚠️ per-symbol analysis ضروریه
+
+۳. Architecture
+text
+
+✅ BaseBot + Registry
+✅ Per-asset strategy
+✅ Regime-based routing
+✅ Paper-first approach
+
+۴. Perception تیم
+text
+
+این پروژه ۳ روزه ساخته شد:
+  • روز ۱: زیرساخت + ML experiments
+  • روز ۲: Candles + Charts + Signals
+  • روز ۳: ۵ ربات + Smart Portfolio
+
+🎯 مسیر ادامه
+کوتاه‌مدت
+text
+
+🔄 تست کامل Smart Portfolio
+🔄 Paper Trading با ۵ ربات
+🔄 Live Execution Engine (dry-run)
+
+میان‌مدت
+text
+
+🔜 Live با ۱۰۰K تومان
+🔜 جمع‌آوری داده (۶ ماه)
+🔜 ML با داده کافی
+
+بلندمدت
+text
+
+🔮 ربات‌های بیشتر
+🔮 Pairs Trading
+🔮 Volume Profile
+🔮 مقیاس‌بندی سرمایه
+
+🏆 دستاوردهای اصلی
+text
+
+✅ معماری حرفه‌ای (DDD + Clean)
+✅ ۵ ربات متنوع
+✅ Smart Portfolio (رویکرد کوانت واقعی)
+✅ بهترین ربات: نوسان‌گیر (R/DD 6.25)
+✅ فرانت کامل با ۱۲ صفحه
+✅ ۷۶ تست پاس
+✅ مستندات کامل
+
+آخرین Commit:
+text
+
+feat(volatility-hunter): wide test + reality check (R/DD 6.25)
+
+</dschat1>
+
+
+
+<info>
+
+🎯 سفر تریدینگ ما — یک مرور کامل
+
+رفیق، بذار یه مرور صادقانه و کامل از کاری که این چند روز روی ترید انجام دادیم بکنم. از کجا شروع کردیم، چی یاد گرفتیم، و به کجا رسیدیم.
+📖 فصل ۱: شروع — از کجا اومدیم؟
+
+وضعیت اولیه:
+text
+
+یه پلتفرم FastAPI + Next.js ساخته بودیم که:
+  - کندل‌ها رو از والکس می‌گرفت
+  - Order Book رو نشون می‌داد
+  - سبد دارایی رو نمایش می‌داد
+  
+ولی هیچ ربات تریدی نداشتیم.
+
+هدف:
+text
+
+یه ربات که با ۳۰۰ هزار تومان کار کنه،
+در کف بخره، در سود بفروشه،
+و از ضرر بزرگ جلوگیری کنه.
+
+📖 فصل ۲: اولین تلاش — ML
+
+ایده‌ی اولیه: بیایم با Machine Learning کف رو تشخیص بدیم.
+
+چی ساختیم:
+text
+
+- Random Forest برای تشخیص کف
+- Logistic Regression
+- LightGBM
+- XGBoost
+- SVM, k-NN, Gaussian Process
+- Position Sizer (رگرسیون)
+- Anomaly Detector (Isolation Forest)
+- Volatility Predictor
+
+چی یاد گرفتیم:
+text
+
+❌ ML با داده کم کار نمی‌کنه (فقط 20 روز داده داشتیم)
+❌ Overfitting شدید (AUC در-sample 0.96 → out-of-sample 0.52)
+❌ Non-stationarity مشکل اصلیه
+❌ ساده‌ترین مدل (Logistic) بهترین generalization رو داشت
+
+درس طلایی:
+
+    «اگه یه استراتژی نتایج too good to give بده، ۹۹٪ مواقع یه باگ هست، ۱٪ مواقع یه کشف ناب. کار یه کوانت واقعی: تفاوت این دو رو بفهمه.»
+
+این جمله‌ی تو بود — و تبدیل شد به اصل کار ما.
+📖 فصل ۳: تصمیم درست — Rule-Based
+
+بعد از شکست ML، تصمیم گرفتیم:
+text
+
+✅ به جای ML، از قوانین ساده‌ی ترید استفاده کنیم
+✅ ML رو بذاریم کنار برای بعد (وقتی داده کافی داشته باشیم)
+✅ ساختار پروژه رو حرفه‌ای کنیم (BaseBot + Registry)
+
+۴ ربات ساختیم:
+۱. 🌊 کف‌زن (Mean Revert)
+text
+
+استراتژی: خرید در کف‌شناسی + EMA filter
+TP: 2%, SL: 1.5%
+زمان‌بندی: 15m
+نتیجه: +8.1% بازده، WR 59.6%, R/DD 2.38
+
+۲. 🚀 روندرو (Trend Follow)
+text
+
+استراتژی: Golden Cross + ADX > 25 + حجم
+Exit: Trailing Stop (2.5×ATR)
+زمان‌بندی: 1h
+نتیجه: +6.79% بازده، WR 52.6%, R/DD 2.41
+
+۳. ↔️ شبکه‌ای (Grid Bot)
+text
+
+استراتژی: سطوح خرید/فروش در range
+Range: ADX { 25
+نتیجه: +8.94% بازده، WR 90.4%, R/DD 1.00
+نکته: بعد از بهینه‌سازی 60 ترکیب
+
+۴. 🌪️ نوسان‌گیر (Volatility Hunter) 🏆
+text
+
+استراتژی: 
+  - تشخیص ولتیلیتی (ATR% ) 1.0)
+  - تشخیص range (7%-30%)
+  - خرید در 10% بالای کف
+  - فروش در 10% زیر سقف
+
+نتیجه: +31.85% بازده، WR 56.2%, R/DD 6.25
+بهترین ربات تا حالا!
+
+📖 فصل ۴: چیزهایی که اشتباه کردیم (و یاد گرفتیم)
+🐛 باگ ۱: Grid با رشد نمایی
+text
+
+نتیجه اولیه: 10^24 تومان!!!
+کشف: capital در هر tick آپدیت می‌شد ولی cash جدا نبود
+درس: حساب‌داری در backtest باید **دقیق** باشه
+
+🐛 باگ ۲: Regime Detector
+text
+
+مشکل: همه‌ی نمادها → "ranging"
+ZEC با ATR=1.32% هم ranging می‌شد!
+
+کشف: ADX پایین ≠ بازار آروم
+       ADX پایین + ATR بالا = choppy
+درس: یه معیار کافی نیست، چند تا لازمه
+
+🐛 باگ ۳: R/R=2 همیشه
+text
+
+مشکل: R/R همیشه 2.0 بود چون SL/TP از ATR محاسبه می‌شد
+کشف: R/R باید از **سطوح واقعی** (Support/Resistance) بیاد
+درس: math ≠ reality
+
+🐛 باگ ۴: قیمت BTC
+text
+
+مشکل: BTC در والکس 20 میلیارد ریاله
+       30,000 تومان / 20B = qty ناچیز → خطای Decimal
+درس: برای تست، از ارزهای ارزون (DOGE, XRP, UNIT) استفاده کن
+
+📖 فصل ۵: معماری نهایی
+text
+
+┌──────────────────────────────────────────────┐
+│  Smart Portfolio (پورتفوی هوشمند)          │
+│  - رژیم بازار رو تشخیص می‌ده                 │
+│  - ربات مناسب رو انتخاب می‌کنه               │
+│  - سرمایه رو تقسیم می‌کنه                    │
+└──────────────────┬───────────────────────────┘
+                   ↓
+       ┌───────────┼───────────┬───────────┐
+       ↓           ↓           ↓           ↓
+   ┌────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐
+   │ کف‌زن  │ │ روندرو  │ │ شبکه‌ای │ │نوسان‌گیر │
+   │ranging │ │trending │ │ranging  │ │choppy    │
+   └────────┘ └─────────┘ └─────────┘ └──────────┘
+
+نقشه‌ی رژیم → ربات:
+رژیم	ربات فعال	وزن
+trending_up	روندرو	100%
+trending_down	هیچ ربات	—
+ranging	کف‌زن + شبکه‌ای	60% + 40%
+choppy	نوسان‌گیر	100%
+📖 فصل ۶: آمار کلی
+متریک	مقدار
+ربات‌ها	۵ (۴ ربات + پورتفوی)
+تست‌ها	۷۶ (همه پاس)
+فایل‌های کد	۴۰+ در bots/
+خطوط کد	~۵,۰۰۰+
+بهینه‌سازی	۶۰+ ترکیب تست شد
+باگ‌های کشف‌شده	۱۰+
+
+بازده‌ی ربات‌ها (backtest):
+text
+
+🏆 نوسان‌گیر:   +31.85% (R/DD 6.25)
+🥈 شبکه‌ای:     +8.94%  (R/DD 1.00)
+🥉 کف‌زن:       +8.10%  (R/DD 2.38)
+   روندرو:      +6.79%  (R/DD 2.41)
+
+📖 فصل ۷: درس‌های طلایی
+🎓 درس ۱: از ساده شروع کن
+text
+
+ML = پیچیده، ناپایدار، نیاز به داده زیاد
+Rules = ساده، قابل فهم، کار می‌کنه
+
+🎓 درس ۲: حساب‌داری دقیق
+text
+
+backtest اگه درست نباشه، 
+همه‌ی نتایجش بی‌ارزشه.
+
+۳ بار باگ حساب‌داری داشتیم که همه‌چی رو خراب کرد.
+
+🎓 درس ۳: Reality Check همیشه
+text
+
+هر استراتژی که نتیجه‌ی خیلی خوب داد:
+  ۱. per-symbol تست کن
+  ۲. بدون برندگان تست کن
+  ۳. توزیع سود رو ببین
+
+🎓 درس ۴: Diversification
+text
+
+۴ ربات = تنوع
+Smart Portfolio = انتخاب بهترین در هر لحظه
+
+DD کمتر، بازده بیشتر، R/DD بالاتر
+
+🎓 درس ۵: صبر کن، tune کن
+text
+
+Grid از R/DD 0.72 → 1.00 (بعد از ۶۰ تست)
+نوسان‌گیر از R/DD 1.46 → 6.25 (بعد از ۶۴ تست)
+
+🎯 الان کجاییم؟
+text
+
+✅ ۵ ربات حرفه‌ای ساخته شد
+✅ معماری BaseBot + Registry تمیز
+✅ Backtest دقیق با حساب‌داری درست
+✅ بهینه‌سازی علمی (نه حدس)
+✅ Reality check انجام شد
+🚧 Smart Portfolio — تازه ساختیم، تست مونده
+⬜ Live Execution Engine
+⬜ Paper Trading 24h
+
+
+</info>
+
+
+
+📝 Commit Message پیشنهادی
+bash
+
+cd ~/wallex && git add -A && git commit -q -m "feat(bots): smart portfolio + regime detector fix
+
+New bot: smart_portfolio (پورتفوی هوشمند) v0.1.0
+- Meta-bot that routes capital based on market regime
+- Regime map:
+  * trending_up   → روندرو
+  * trending_down → (هیچ رباتی)
+  * ranging       → کف‌زن + شبکه‌ای
+  * choppy        → نوسان‌گیر
+- Files: config.py, allocator.py, bot.py
+
+Regime detector fix:
+- Previously: all low-ADX markets → ranging
+- Now: split into:
+  * ADX < 20 + ATR% < 1.0  → ranging (آرام)
+  * ADX < 20 + ATR% > 1.0  → choppy (پرنوسان)
+- Result: ZEC, XRP, SOL correctly detected as choppy
+
+Bots registry now has 5 bots:
+- mean_revert (کف‌زن)         R/DD 2.38
+- trend_follow (روندرو)       R/DD 2.41
+- grid_bot (شبکه‌ای)          R/DD 1.00
+- volatility_hunter (نوسان‌گیر) R/DD 6.25
+- smart_portfolio (پورتفوی)    جدید
+
+Analysis scripts:
+- test_smart_portfolio.py (backtest routing)
+
+Backtest results (previous): +31.85%, R/DD 6.25 (volatility_hunter)" && git log --oneline -3
+
+🎯 روند کامل Commit
+مرحله ۱: چک وضعیت
+bash
+
+cd ~/wallex && git status --short | head -20
+
+مرحله ۲: fix خطای test_smart_portfolio (اگه هنوز هست)
+مرحله ۳: add همه تغییرات
+bash
+
+git add -A
+
+مرحله ۴: چک تغییرات
+bash
+
+git status --short | wc -l  # تعداد فایل‌های آماده
+git diff --cached --stat | tail -5  # خلاصه
+
+مرحله ۵: commit
+bash
+
+git commit -m "..."  # پیام بالا
+
+مرحله ۶: تأیید
+bash
+
+git log --oneline -5
+
+📋 چک‌لیست قبل از Commit
+
+    □
+
+    test_smart_portfolio.py خطای import نداره
+    □
+
+    سرور بالا میاد (uvicorn)
+    □
+
+    /v1/bots هر ۵ ربات رو نشون می‌ده
+    □
+
+    git status تمیز و منطقیه
+    □
+
+    پیام commit آماده‌ست
 
 
 

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 @dataclass(slots=True)
 class VolatilityHunterConfig:
     """تنظیمات بهینه‌شده نوسان‌گیر."""
+
     timeframe: str = "1h"
     check_interval_sec: int = 300
     fee_pct: float = 0.2

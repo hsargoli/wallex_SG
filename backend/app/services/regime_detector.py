@@ -167,47 +167,78 @@ def detect_regime(candles: list[Candle]) -> RegimeResult:
     regime = RegimeType.RANGING
     confidence = 50
 
+    # کالیبره شده برای 1h crypto:
+    #   ADX >= 25 + EMA aligned + ret_20 هم‌جهت → trending
+    #   ADX >= 25 ولی EMA mixed و ret کم → choppy
+    #   ADX < 20 + ATR بالا → choppy
+    #   ADX < 20 + ATR پایین → ranging
+    #   ADX 20-25 → transitional
+
+    ema_up = ema_alignment == "aligned_up"
+    ema_down = ema_alignment == "aligned_down"
+    ema_mixed = ema_alignment == "mixed"
+
     if adx >= 25:
-        # روند قوی یا نوسان شدید
-        if abs(ret_20) >= 3:
-            # روند واضح
-            if ret_20 > 0 and ema_alignment in ("aligned_up", "mixed"):
+        # روند قوی — آستانه‌ی بازده رو آوردیم پایین
+        if ret_20 >= 1.0 and (ema_up or (ema_mixed and ret_20 >= 2.0)):
+            regime = RegimeType.TRENDING_UP
+            confidence = min(95, 55 + int(adx * 0.8))
+            reasons.insert(0, f"ADX={adx:.0f} + بازده +{ret_20:.1f}% + EMA↑")
+        elif ret_20 <= -1.0 and (ema_down or (ema_mixed and ret_20 <= -2.0)):
+            regime = RegimeType.TRENDING_DOWN
+            confidence = min(95, 55 + int(adx * 0.8))
+            reasons.insert(0, f"ADX={adx:.0f} + بازده {ret_20:.1f}% + EMA↓")
+        elif abs(ret_20) < 0.8:
+            # ADX بالا ولی بدون حرکت — واقعاً choppy
+            regime = RegimeType.CHOPPY
+            confidence = min(80, 50 + int(adx * 0.6))
+            reasons.insert(0, f"ADX={adx:.0f} ولی بدون جهت (ret={ret_20:+.1f}%)")
+        else:
+            # بین 0.8 تا 1.0 — مرزی، به EMA رجوع
+            if ema_up and ret_20 > 0:
                 regime = RegimeType.TRENDING_UP
-                confidence = min(95, 50 + int(adx * 0.9))
-                reasons.insert(0, f"ADX={adx:.0f} + بازده +{ret_20:.1f}%")
-            elif ret_20 < 0 and ema_alignment in ("aligned_down", "mixed"):
+                confidence = 65
+                reasons.insert(0, f"ADX={adx:.0f} + EMA↑ (مرزی)")
+            elif ema_down and ret_20 < 0:
                 regime = RegimeType.TRENDING_DOWN
-                confidence = min(95, 50 + int(adx * 0.9))
-                reasons.insert(0, f"ADX={adx:.0f} + بازده {ret_20:.1f}%")
+                confidence = 65
+                reasons.insert(0, f"ADX={adx:.0f} + EMA↓ (مرزی)")
             else:
                 regime = RegimeType.CHOPPY
                 confidence = 55
                 reasons.insert(0, "سیگنال‌های متناقض")
-        else:
-            # ADX بالا ولی بدون جهت = choppy
-            regime = RegimeType.CHOPPY
-            confidence = min(85, 50 + int(adx * 0.6))
-            reasons.insert(0, f"ADX={adx:.0f} ولی بدون جهت (ret={ret_20:+.1f}%)")
+
     elif adx < 20:
-        # بازار آرام
-        if atr_pct > 2.5:
+        # بدون روند
+        if atr_pct > 1.5:
+            # نوسان بالا بدون جهت = choppy
             regime = RegimeType.CHOPPY
-            confidence = 60
-            reasons.insert(0, f"ATR={atr_pct:.1f}% بالا با ADX پایین")
+            confidence = min(85, 50 + int(atr_pct * 12))
+            reasons.insert(0, f"ADX={adx:.0f} پایین + ATR={atr_pct:.2f}% بالا")
         else:
+            # آرام = ranging
             regime = RegimeType.RANGING
             confidence = min(90, 60 + int(20 - adx))
-            reasons.insert(0, f"ADX={adx:.0f} (بدون روند)")
+            reasons.insert(0, f"ADX={adx:.0f} + ATR={atr_pct:.2f}% (آرام)")
+
     else:
-        # ADX بین 20-25 → انتقالی
+        # ADX 20-25 → transitional
         if atr_pct > 2.5:
             regime = RegimeType.CHOPPY
             confidence = 55
-            reasons.insert(0, f"ADX={adx:.0f} + ATR={atr_pct:.1f}%")
+            reasons.insert(0, f"ADX={adx:.0f} + ATR={atr_pct:.1f}% بالا")
+        elif ema_up and ret_20 >= 1.5:
+            regime = RegimeType.TRENDING_UP
+            confidence = 60
+            reasons.insert(0, f"ADX={adx:.0f} + EMA↑ (شروع روند)")
+        elif ema_down and ret_20 <= -1.5:
+            regime = RegimeType.TRENDING_DOWN
+            confidence = 60
+            reasons.insert(0, f"ADX={adx:.0f} + EMA↓ (شروع روند)")
         else:
             regime = RegimeType.RANGING
             confidence = 55
-            reasons.insert(0, f"ADX={adx:.0f} (گذار به روند)")
+            reasons.insert(0, f"ADX={adx:.0f} (گذار)")
 
     # آیا قابل تریده؟
     # در روند صعودی: بله (فقط خرید)
