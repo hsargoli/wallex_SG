@@ -50,6 +50,7 @@ def make_simple_decision(candles: list[Candle]) -> SimpleDecision:
 
     # ---------- فیلتر روند (CRITICAL) ----------
     from app.services.indicators import ema
+
     ema20_vals = ema(candles, 20)
     ema50_vals = ema(candles, 50)
     ema20 = next((v for v in reversed(ema20_vals) if v is not None), None)
@@ -60,9 +61,13 @@ def make_simple_decision(candles: list[Candle]) -> SimpleDecision:
     if ema20 is not None and ema50 is not None and ema20 < ema50:
         # روند نزولی → معامله نکن
         return SimpleDecision(
-            should_trade=False, action="hold",
-            entry_price=entry_price, take_profit=0, stop_loss=0,
-            position_pct=0, confidence=0,
+            should_trade=False,
+            action="hold",
+            entry_price=entry_price,
+            take_profit=0,
+            stop_loss=0,
+            position_pct=0,
+            confidence=0,
             reason="روند نزولی (EMA20 < EMA50)",
         )
 

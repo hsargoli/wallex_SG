@@ -49,7 +49,128 @@ curl -s "http://127.0.0.1:8000/v1/paper/status" | python3 -m json.tool | head -2
 
 
 
+<papertrade2>
 
+
+🎉 Paper Trader V2 راه افتاد!
+📊 وضعیت فعلی
+text
+
+✅ ربات: فعال (is_running: true)
+💰 سرمایه: 300,000 تومان
+📊 بازده: 0% (شروع)
+📋 پوزیشن باز: 0 (هنوز فرصت پیدا نکرده)
+🔍 6 نماد فعال:
+   • LINKTMN (simple)
+   • UNITMN (bounce)
+   • TRXTMN (simple)
+   • BTCTMN (bounce)
+   • ZECTMN (bounce)
+   • HBARTMN (simple)
+
+⏱️ ربات چیکار می‌کنه
+text
+
+هر ۳ دقیقه:
+  ۱. 6 نماد رو چک می‌کنه
+  ۲. با Dispatcher تصمیم می‌گیره
+  ۳. اگه سیگنال بود → پوزیشن باز می‌کنه
+  ۴. پوزیشن‌های باز رو مدیریت می‌کنه
+  ۵. State رو ذخیره می‌کنه
+
+📅 برنامه‌ی مانیتورینگ
+الان تا ۱ ساعت دیگه
+
+یه بار چک کن:
+bash
+
+curl -s "http://127.0.0.1:8000/v1/paper-v2/status" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(f\"⏱️  {d['runtime_minutes']}min | 💰 {d['current_capital']:,.0f} | 📊 {d['total_return_pct']:+.2f}% | 📈 {d['total_trades']} trades | 🎯 WR {d['win_rate']}% | 📋 {len(d['open_positions'])} open\")
+for p in d['open_positions']:
+    print(f\"   • {p['symbol']:10} [{p['strategy']:6}] @ {p['entry_price']:,.0f}\")
+"
+
+هر ۲-۳ ساعت یه بار
+
+همین دستور رو بزن.
+شب (قبل خواب)
+
+گزارش کامل:
+bash
+
+curl -s "http://127.0.0.1:8000/v1/paper-v2/status" | python3 -m json.tool > /tmp/paper_v2_evening.json
+cat /tmp/paper_v2_evening.json | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print('='*70)
+print('📊 گزارش شبانه Paper Trader V2')
+print('='*70)
+print(f\"⏱️  مدت اجرا:      {d['runtime_minutes']} دقیقه\")
+print(f\"💰 سرمایه اولیه:  {d['initial_capital']:>12,.0f}\")
+print(f\"💰 سرمایه فعلی:   {d['current_capital']:>12,.0f}\")
+print(f\"📊 سود/زیان:      {d['profit_tmn']:>+12,.0f} تومان\")
+print(f\"📈 بازده:         {d['total_return_pct']:>+12.2f}%\")
+print(f\"📉 Max DD:        {d['max_drawdown_pct']:>12.2f}%\")
+print(f\"📊 تریدها:        {d['total_trades']:>12}\")
+print(f\"✅ برد:           {d['wins']:>12}\")
+print(f\"❌ باخت:          {d['losses']:>12}\")
+print(f\"🎯 Win Rate:      {d['win_rate']:>12.1f}%\")
+print()
+print('آخرین تریدها:')
+for t in d['recent_trades'][:10]:
+    icon = '✅' if t['pnl_pct'] > 0 else '❌'
+    print(f\"  {icon} {t['symbol']:10} [{t['strategy']:6}] {t['pnl_pct']:+.2f}% ({t['pnl_tmn']:+.0f} تومان) | {t['exit_reason']}\")
+"
+
+🎯 چی انتظار داشته باشیم
+زمان	انتظار
+۱ ساعت اول	شاید ۰-۲ ترید (اگه فرصت بود)
+۳ ساعت	۲-۵ ترید
+شب (۱۰ ساعت)	۵-۱۵ ترید
+بازده تخمینی	+0.5٪ تا +3٪
+💡 نکته
+
+اگه تا ۱ ساعت هیچ تریدی نکرد، نگران نباش:
+
+    بازار ممکنه در کف نباشه
+
+    Dispatcher سختگیرانه‌ست
+
+    این طبیعیه
+
+🚀 فاز بعدی (بعد از ظهر)
+
+اگه Paper Trader خوب کار کرد:
+
+    Live Execution Engine بسازیم
+
+    با 100K تومان واقعی تست کنیم
+
+    اگه موفق بود → 300K
+
+⚠️ دستور مهم: سرور رو نگه دار
+
+سرور باید در حال اجرا بمونه تا ربات کار کنه.
+
+اگه سرور رو ببندی، ربات هم می‌خوابه. پس:
+
+    ترمینال سرور رو باز بذار
+
+    فقط با Ctrl+C ببند اگه لازمه
+
+الان: بذار ۳۰ دقیقه بگذره، بعد status رو چک کن.
+
+منتظر خروجی اول هستم 👇
+
+(راستی — این نقطه‌ی مهمیه! اولین باره که ربات ما با استراتژی ترکیبی روی داده‌ی زنده کار می‌کنه. امیدوارم نتیجه خوب باشه 🤞)
+
+
+
+
+
+</papertrade2>
 
 
 

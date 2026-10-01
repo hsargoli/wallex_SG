@@ -298,6 +298,112 @@ export interface ScannerScanResponse {
   items: TrendResult[];
 }
 
+// ---------- Paper V2 Types ----------
+
+export interface PaperPosition {
+  symbol: string;
+  strategy: string;
+  entry_price: number;
+  quantity: number;
+  tp: number;
+  sl: number;
+  entry_time: number;
+  entry_idx: number;
+  reason: string;
+}
+
+export interface PaperTrade {
+  symbol: string;
+  strategy: string;
+  entry_time: number;
+  exit_time: number;
+  entry_price: number;
+  exit_price: number;
+  pnl_pct: number;
+  pnl_tmn: number;
+  exit_reason: string;
+  duration_minutes: number;
+}
+
+export interface EquityPoint {
+  time: number;
+  capital: number;
+}
+
+export interface PaperV2Status {
+  is_running: boolean;
+  started_at: number;
+  runtime_minutes: number;
+  initial_capital: number;
+  current_capital: number;
+  total_return_pct: number;
+  profit_tmn: number;
+  max_drawdown_pct: number;
+  total_trades: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  open_positions: PaperPosition[];
+  recent_trades: PaperTrade[];
+  equity_curve: EquityPoint[];
+  last_check_time: number;
+  active_symbols: string[];
+  config: Record<string, unknown>;
+}
+
+// ---------- Paper V2 Types ----------
+
+export interface PaperPosition {
+  symbol: string;
+  strategy: string;
+  entry_price: number;
+  quantity: number;
+  tp: number;
+  sl: number;
+  entry_time: number;
+  entry_idx: number;
+  reason: string;
+}
+
+export interface PaperTrade {
+  symbol: string;
+  strategy: string;
+  entry_time: number;
+  exit_time: number;
+  entry_price: number;
+  exit_price: number;
+  pnl_pct: number;
+  pnl_tmn: number;
+  exit_reason: string;
+  duration_minutes: number;
+}
+
+export interface EquityPoint {
+  time: number;
+  capital: number;
+}
+
+export interface PaperV2Status {
+  is_running: boolean;
+  started_at: number;
+  runtime_minutes: number;
+  initial_capital: number;
+  current_capital: number;
+  total_return_pct: number;
+  profit_tmn: number;
+  max_drawdown_pct: number;
+  total_trades: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  open_positions: PaperPosition[];
+  recent_trades: PaperTrade[];
+  equity_curve: EquityPoint[];
+  last_check_time: number;
+  active_symbols: string[];
+  config: Record<string, unknown>;
+}
+
 // ---------- API methods ----------
 
 export const api = {
@@ -377,4 +483,13 @@ export const api = {
         params: { symbols: symbols.join(",") },
       })
       .then((r) => r.data),
+  // Paper V2
+  getPaperV2Status: () =>
+    client.get<PaperV2Status>("/v1/paper-v2/status").then((r) => r.data),
+  startPaperV2: () =>
+    client.post("/v1/paper-v2/start").then((r) => r.data),
+  stopPaperV2: () =>
+    client.post("/v1/paper-v2/stop").then((r) => r.data),
+  resetPaperV2: () =>
+    client.post("/v1/paper-v2/reset").then((r) => r.data),
 };

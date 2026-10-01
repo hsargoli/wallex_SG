@@ -150,3 +150,45 @@ export function useScanSymbols(symbols: string[]) {
     staleTime: 60_000,
   });
 }
+
+export function usePaperV2Status() {
+  return useQuery({
+    queryKey: ["paper-v2-status"],
+    queryFn: () => api.getPaperV2Status(),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useStartPaperV2() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.startPaperV2(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v2-status"] });
+      toast.success("ربات Paper Trading شروع شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useStopPaperV2() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.stopPaperV2(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v2-status"] });
+      toast.success("ربات متوقف شد");
+    },
+  });
+}
+
+export function useResetPaperV2() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resetPaperV2(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v2-status"] });
+      toast.success("ریست شد");
+    },
+  });
+}

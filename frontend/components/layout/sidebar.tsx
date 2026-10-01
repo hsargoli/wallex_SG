@@ -12,6 +12,7 @@ import {
   PieChart,
   Zap,
   Radar,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
@@ -24,6 +25,7 @@ const nav = [
   { href: "/markets", label: "بازارها", icon: TrendingUp },
   { href: "/signals", label: "سیگنال‌ها", icon: Zap },
   { href: "/scanner", label: "اسکنر بازار", icon: Radar },
+  { href: "/paper-trading", label: "Paper Trading", icon: Bot },
   { href: "/profitability", label: "محاسبه سود", icon: Calculator },
 ];
 

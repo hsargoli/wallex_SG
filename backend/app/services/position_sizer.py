@@ -21,25 +21,32 @@ from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.core.config import get_settings
 from app.domain.entities.candle import Candle
 from app.infrastructure.exchange.wallex.client import WallexExchange
-from app.services.indicators import atr, ema, rsi, volume_sma
 
 
 @dataclass(slots=True)
 class SizingResult:
-    base_size_pct: float       # پایه (از قوانین)
-    adjusted_size_pct: float   # با ML
-    ml_prediction: float       # پیش‌بینی بازده
-    confidence: float          # اطمینان (0-1)
+    base_size_pct: float  # پایه (از قوانین)
+    adjusted_size_pct: float  # با ML
+    ml_prediction: float  # پیش‌بینی بازده
+    confidence: float  # اطمینان (0-1)
     reason: str
 
 
 def build_features(candles: list[Candle]) -> pd.DataFrame:
     """Features برای Position Sizing."""
-    df = pd.DataFrame([
-        {"time": c.time, "open": float(c.open), "high": float(c.high),
-         "low": float(c.low), "close": float(c.close), "volume": float(c.volume)}
-        for c in candles
-    ])
+    df = pd.DataFrame(
+        [
+            {
+                "time": c.time,
+                "open": float(c.open),
+                "high": float(c.high),
+                "low": float(c.low),
+                "close": float(c.close),
+                "volume": float(c.volume),
+            }
+            for c in candles
+        ]
+    )
 
     out = pd.DataFrame(index=df.index)
 
@@ -114,7 +121,7 @@ async def main():
         train_y.append(y.iloc[:split])
         test_X.append(X.iloc[split:])
         test_y.append(y.iloc[split:])
-        print(f"  {symbol:10}  train={split:>5}  test={n-split:>5}")
+        print(f"  {symbol:10}  train={split:>5}  test={n - split:>5}")
 
     X_train = pd.concat(train_X, ignore_index=True)
     y_train = pd.concat(train_y, ignore_index=True)
@@ -136,10 +143,10 @@ async def main():
     print("🎓 آموزش Gradient Boosting Regressor...")
     model = GradientBoostingRegressor(
         n_estimators=100,
-        max_depth=3,          # ← کم عمق، مقاوم
+        max_depth=3,  # ← کم عمق، مقاوم
         learning_rate=0.05,
         min_samples_leaf=30,  # ← برگ بزرگ
-        subsample=0.8,        # ← تصادفی برای جلوگیری از overfit
+        subsample=0.8,  # ← تصادفی برای جلوگیری از overfit
         random_state=42,
     )
     model.fit(X_train, y_train)
@@ -148,16 +155,16 @@ async def main():
     train_pred = model.predict(X_train)
     test_pred = model.predict(X_test)
 
-    print(f"\n{'='*60}")
-    print(f"📊 نتایج:")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("📊 نتایج:")
+    print(f"{'=' * 60}")
     print(f"  Train R²:  {r2_score(y_train, train_pred):.4f}")
     print(f"  Test R²:   {r2_score(y_test, test_pred):.4f}   ← معیار اصلی")
     print(f"  Train MAE: {mean_absolute_error(y_train, train_pred):.4f}%")
     print(f"  Test MAE:  {mean_absolute_error(y_test, test_pred):.4f}%")
 
     # توزیع پیش‌بینی‌ها در test
-    print(f"\n📊 توزیع پیش‌بینی روی test:")
+    print("\n📊 توزیع پیش‌بینی روی test:")
     percentiles = [10, 25, 50, 75, 90]
     for p in percentiles:
         val = np.percentile(test_pred, p)
@@ -165,15 +172,15 @@ async def main():
 
     # Feature importance
     imp = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
-    print(f"\n🔍 Feature Importance:")
+    print("\n🔍 Feature Importance:")
     for name, v in imp.items():
         bar = "█" * int(v * 50)
         print(f"  {name:15} {v:.4f}  {bar}")
 
     # ---------- تحلیل ارتباط ----------
     # آیا پیش‌بینی بالا = بازده بالا؟
-    print(f"\n🎯 تحلیل: پیش‌بینی‌های بالا چقدر دقت دارن؟")
-    print(f"{'─'*60}")
+    print("\n🎯 تحلیل: پیش‌بینی‌های بالا چقدر دقت دارن؟")
+    print(f"{'─' * 60}")
 
     # مرتب بر اساس پیش‌بینی
     idx_sorted = np.argsort(test_pred)[::-1]
