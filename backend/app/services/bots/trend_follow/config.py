@@ -17,11 +17,14 @@ class TrendFollowConfig:
     ema_slow: int = 50
 
     adx_period: int = 14
-    adx_threshold: float = 25.0
+    adx_threshold: float = 20.0
 
-    sl_atr_mult: float = 2.0
-    trail_atr_mult: float = 2.0
+    sl_atr_mult: float = 3.0
+    trail_atr_mult: float = 2.5
     use_trailing: bool = True
 
     max_duration_candles: int = 168
     warmup_candles: int = 100
+    cross_lookback: int = 3
+    use_long_trend_filter: bool = True
+    long_ema_period: int = 100  # cross در 3 کندل آخر

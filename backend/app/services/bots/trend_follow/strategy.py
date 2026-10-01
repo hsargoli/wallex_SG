@@ -95,7 +95,19 @@ def evaluate_entry(candles: list[Candle], config: TrendFollowConfig) -> TrendSig
     if not all([curr_fast, curr_slow, prev_fast, prev_slow]):
         return None
 
-    golden_cross = prev_fast <= prev_slow and curr_fast > curr_slow
+    # چک cross در N کندل آخر
+    lookback = getattr(config, "cross_lookback", 3)
+    golden_cross = False
+    for i in range(1, lookback + 1):
+        f_i = ema_fast[-i] if i <= len(ema_fast) else None
+        s_i = ema_slow[-i] if i <= len(ema_slow) else None
+        f_prev = ema_fast[-i - 1] if i + 1 <= len(ema_fast) else None
+        s_prev = ema_slow[-i - 1] if i + 1 <= len(ema_slow) else None
+        if all([f_i, s_i, f_prev, s_prev]):
+            if f_prev <= s_prev and f_i > s_i:
+                golden_cross = True
+                break
+
     if not golden_cross:
         return None
 
