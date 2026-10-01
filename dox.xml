@@ -32,22 +32,32 @@ uv run python -c "import sys; print(sys.executable)"
 
 ----------------------------
 
+	ربات
 
-🌙 وقت استراحته
+# ربات رو با آستانه‌ی واقعی روشن کن
+curl -s -X POST "http://127.0.0.1:8000/v1/paper/start"
 
-رفیق، امروز واقعاً کار کردیم. از یه پروژه‌ی بهم‌ریخته رسیدیم به یه mono-repo تمیز و حرفه‌ای. لذت بخش بود.
+# هر چند ساعت یه نگاه کن
+curl -s "http://127.0.0.1:8000/v1/paper/status" | python3 -m json.tool | head -20
 
-فردا اگه خواستی برگردیم، اینا منتظرن:
+----------------------------
 
-    🚧 Milestone 7 — Order Execution Engine
 
-    📈 Charts پیشرفته — Sparkline، Candlestick
 
-    🔔 Alerts — Notification روی سیگنال‌ها
 
-مراقب خودت باش، موفق باشی، و ممنون که امروز صبور بودی با من ❤️
 
-تا فردا 👋
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

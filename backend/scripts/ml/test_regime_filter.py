@@ -12,8 +12,8 @@ from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.core.config import get_settings
 from app.infrastructure.exchange.wallex.client import WallexExchange
 from app.services.bottom_detector import detect_bottom
+from app.services.ml_bottom_model import build_features, candles_to_df, load_model
 from app.services.regime_detector import detect_regime
-from app.services.ml_bottom_model import candles_to_df, build_features, load_model
 
 SYMBOLS = ["BTCTMN", "ETHTMN", "XRPTMN", "DOGETMN", "SOLTMN"]
 TF = "15m"
@@ -103,17 +103,8 @@ def run_backtest(markets_data, model, use_regime_filter: bool):
             if open_pos is not None:
                 continue
 
-            # فیلتر Regime
-            if use_regime_filter:
-                # فقط هر 50 کندل regime رو چک کن (سریع‌تر)
-                if idx % 50 == 0 or idx == WARMUP:
-                    recent_candles = candles[:idx + 1][-200:]
-                    regime = detect_regime(recent_candles)
-                    if not regime.is_tradeable:
-                        # برو کندل بعد
-                        continue
-
-            # چک ورود
+            # فیلتر Regime (فقط وقتی سیگنال ورود داریم)
+            # اول چک کن آیا سیگنال هست یا نه
             ml_prob = ml_probs[idx]
             rule = detect_bottom(candles, idx=idx)
 
@@ -123,6 +114,13 @@ def run_backtest(markets_data, model, use_regime_filter: bool):
             )
             if not should_enter:
                 continue
+
+            # حالا اگه فیلتر فعاله، regime رو چک کن
+            if use_regime_filter:
+                recent_candles = candles[:idx + 1][-200:]
+                regime = detect_regime(recent_candles)
+                if not regime.is_tradeable:
+                    continue
 
             entry = float(candle.close)
             open_pos = {
@@ -163,13 +161,13 @@ async def main():
     s_yes = run_backtest(markets_data, model, use_regime_filter=True)
 
     print(f"{'='*70}")
-    print(f"📊 مقایسه:")
+    print("📊 مقایسه:")
     print(f"{'='*70}")
     print_stats(s_no)
     print_stats(s_yes)
 
     print(f"\n{'='*70}")
-    print(f"🎯 نتیجه:")
+    print("🎯 نتیجه:")
     print(f"{'='*70}")
     if s_no.total > 0 and s_yes.total > 0:
         diff = s_yes.total_return - s_no.total_return
@@ -177,11 +175,11 @@ async def main():
         print(f"  تفاوت بازده:      {diff:+.2f}%")
         print(f"  تفاوت Win Rate:   {wr_diff:+.1f}%")
         if diff > 0:
-            print(f"  ✅ فیلتر Regime کمک کرد!")
+            print("  ✅ فیلتر Regime کمک کرد!")
         elif diff < 0:
-            print(f"  ⚠️ فیلتر Regime ضرر زد")
+            print("  ⚠️ فیلتر Regime ضرر زد")
         else:
-            print(f"  ⚪ تفاوت نداشت")
+            print("  ⚪ تفاوت نداشت")
 
 
 if __name__ == "__main__":
