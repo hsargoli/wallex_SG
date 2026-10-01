@@ -5,6 +5,7 @@ from app.services.bots.grid_bot import GridBot
 from app.services.bots.mean_revert import MeanRevertBot
 from app.services.bots.registry import bot_registry
 from app.services.bots.trend_follow import TrendFollowBot
+from app.services.bots.volatility_hunter import VolatilityHunterBot
 
 
 def _register_all():
@@ -15,6 +16,8 @@ def _register_all():
         bot_registry.register(TrendFollowBot())
     if "grid_bot" not in bot_registry:
         bot_registry.register(GridBot())
+    if "volatility_hunter" not in bot_registry:
+        bot_registry.register(VolatilityHunterBot())
 
 
 _register_all()
