@@ -1,0 +1,482 @@
+{
+  "DOGETMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.02,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          0.06,
+          0.0
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.26,
+        "stability": 0.33,
+        "periods": [
+          -1.61,
+          -0.31,
+          1.14
+        ]
+      },
+      "grid": {
+        "avg_return": -0.6,
+        "stability": 0.0,
+        "periods": [
+          -1.4,
+          -0.38,
+          0.0
+        ]
+      }
+    }
+  },
+  "DASHTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.2,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          0.59,
+          0.0
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.34,
+        "stability": 0.33,
+        "periods": [
+          -0.38,
+          1.7,
+          -2.34
+        ]
+      },
+      "grid": {
+        "avg_return": -1.16,
+        "stability": 0.0,
+        "periods": [
+          -1.84,
+          -1.66,
+          0.0
+        ]
+      }
+    }
+  },
+  "XRPTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": -0.07,
+        "stability": 0.0,
+        "periods": [
+          0.0,
+          -0.21,
+          0.0
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.47,
+        "stability": 0.67,
+        "periods": [
+          -3.74,
+          0.64,
+          1.69
+        ]
+      },
+      "grid": {
+        "avg_return": -0.48,
+        "stability": 0.0,
+        "periods": [
+          -0.89,
+          -0.56,
+          0.0
+        ]
+      }
+    }
+  },
+  "SOLTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": 0.12,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          -0.25,
+          0.59
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.21,
+        "stability": 0.33,
+        "periods": [
+          -1.7,
+          -0.54,
+          2.89
+        ]
+      },
+      "grid": {
+        "avg_return": -0.67,
+        "stability": 0.0,
+        "periods": [
+          -1.49,
+          -0.51,
+          0.0
+        ]
+      }
+    }
+  },
+  "LINKTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.44,
+        "stability": 1.0,
+        "periods": [
+          0.53,
+          0.24,
+          0.55
+        ]
+      },
+      "bounce": {
+        "avg_return": 1.97,
+        "stability": 0.67,
+        "periods": [
+          -0.5,
+          1.89,
+          4.53
+        ]
+      },
+      "grid": {
+        "avg_return": -0.89,
+        "stability": 0.0,
+        "periods": [
+          -2.34,
+          -0.33,
+          0.0
+        ]
+      }
+    }
+  },
+  "UNITMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": -0.13,
+        "stability": 0.67,
+        "periods": [
+          0.01,
+          0.59,
+          -0.99
+        ]
+      },
+      "bounce": {
+        "avg_return": 1.99,
+        "stability": 0.67,
+        "periods": [
+          6.34,
+          -2.37,
+          2.01
+        ]
+      },
+      "grid": {
+        "avg_return": -0.71,
+        "stability": 0.0,
+        "periods": [
+          -0.92,
+          0.0,
+          -1.22
+        ]
+      }
+    }
+  },
+  "GRAMTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": -0.48,
+        "stability": 0.0,
+        "periods": [
+          -0.56,
+          -0.87,
+          0.0
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.05,
+        "stability": 0.33,
+        "periods": [
+          -1.88,
+          -1.06,
+          3.09
+        ]
+      },
+      "grid": {
+        "avg_return": -0.59,
+        "stability": 0.0,
+        "periods": [
+          -1.44,
+          -0.32,
+          0.0
+        ]
+      }
+    }
+  },
+  "BNBTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.4,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          -0.04,
+          1.24
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.02,
+        "stability": 0.33,
+        "periods": [
+          -0.21,
+          -0.49,
+          0.65
+        ]
+      },
+      "grid": {
+        "avg_return": -0.37,
+        "stability": 0.0,
+        "periods": [
+          -0.73,
+          -0.39,
+          0.0
+        ]
+      }
+    }
+  },
+  "TRXTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.34,
+        "stability": 0.67,
+        "periods": [
+          0.0,
+          0.41,
+          0.61
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.28,
+        "stability": 0.67,
+        "periods": [
+          -0.31,
+          0.12,
+          1.04
+        ]
+      },
+      "grid": {
+        "avg_return": -0.33,
+        "stability": 0.0,
+        "periods": [
+          -0.98,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "LTCTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": -0.02,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          0.49,
+          -0.56
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.77,
+        "stability": 0.33,
+        "periods": [
+          -1.0,
+          3.35,
+          -0.05
+        ]
+      },
+      "grid": {
+        "avg_return": -0.55,
+        "stability": 0.0,
+        "periods": [
+          -0.94,
+          0.0,
+          -0.71
+        ]
+      }
+    }
+  },
+  "BTCTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": 0.22,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          0.67,
+          -0.01
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.78,
+        "stability": 0.67,
+        "periods": [
+          -0.21,
+          0.42,
+          2.13
+        ]
+      },
+      "grid": {
+        "avg_return": -0.21,
+        "stability": 0.0,
+        "periods": [
+          -0.63,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "ETHTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": -0.08,
+        "stability": 0.33,
+        "periods": [
+          0.0,
+          -0.38,
+          0.14
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.14,
+        "stability": 0.33,
+        "periods": [
+          -1.03,
+          -0.32,
+          0.92
+        ]
+      },
+      "grid": {
+        "avg_return": -0.35,
+        "stability": 0.0,
+        "periods": [
+          -1.04,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "ZECTMN": {
+    "best_strategy": "bounce",
+    "summary": {
+      "simple": {
+        "avg_return": -0.32,
+        "stability": 0.33,
+        "periods": [
+          -1.12,
+          -0.01,
+          0.16
+        ]
+      },
+      "bounce": {
+        "avg_return": 2.61,
+        "stability": 1.0,
+        "periods": [
+          6.41,
+          0.9,
+          0.53
+        ]
+      },
+      "grid": {
+        "avg_return": -0.88,
+        "stability": 0.0,
+        "periods": [
+          -1.12,
+          -0.87,
+          -0.66
+        ]
+      }
+    }
+  },
+  "ADATMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.09,
+        "stability": 0.33,
+        "periods": [
+          0.26,
+          0.0,
+          0.0
+        ]
+      },
+      "bounce": {
+        "avg_return": -0.66,
+        "stability": 0.33,
+        "periods": [
+          -2.88,
+          -0.6,
+          1.51
+        ]
+      },
+      "grid": {
+        "avg_return": -0.49,
+        "stability": 0.0,
+        "periods": [
+          -1.48,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "HBARTMN": {
+    "best_strategy": "simple",
+    "summary": {
+      "simple": {
+        "avg_return": 0.78,
+        "stability": 1.0,
+        "periods": [
+          1.15,
+          0.43,
+          0.76
+        ]
+      },
+      "bounce": {
+        "avg_return": 0.37,
+        "stability": 0.33,
+        "periods": [
+          -0.09,
+          2.58,
+          -1.37
+        ]
+      },
+      "grid": {
+        "avg_return": -0.32,
+        "stability": 0.0,
+        "periods": [
+          -0.48,
+          -0.17,
+          -0.31
+        ]
+      }
+    }
+  }
+}
