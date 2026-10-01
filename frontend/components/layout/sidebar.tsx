@@ -13,6 +13,7 @@ import {
   Zap,
   Radar,
   Bot,
+  Play,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
@@ -25,7 +26,8 @@ const nav = [
   { href: "/markets", label: "بازارها", icon: TrendingUp },
   { href: "/signals", label: "سیگنال‌ها", icon: Zap },
   { href: "/scanner", label: "اسکنر بازار", icon: Radar },
-  { href: "/paper-trading", label: "Paper Trading", icon: Bot },
+  { href: "/bots", label: "ربات‌ها", icon: Bot },
+  { href: "/paper-trading", label: "Paper Trading", icon: Play },
   { href: "/profitability", label: "محاسبه سود", icon: Calculator },
 ];
 
@@ -41,7 +43,7 @@ export function Sidebar() {
           <Activity className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-tight">Wallex Bot</h1>
+          <h1 className="text-sm font-bold tracking-tight">ROSHD_SARV Bot</h1>
           <p className="text-[11px] text-muted-foreground">
             Micro-Scalping v0.1
           </p>

@@ -404,6 +404,57 @@ export interface PaperV2Status {
   config: Record<string, unknown>;
 }
 
+// ---------- Bot Types ----------
+
+export interface BotInfo {
+  slug: string;
+  name: string;
+  name_en: string;
+  version: string;
+  description: string;
+  tags: string[];
+  capabilities: string[];
+  author: string;
+  status?: "idle" | "running" | "stopped" | "error";
+}
+
+export interface BotsListResponse {
+  count: number;
+  bots: BotInfo[];
+}
+
+export interface BotStatusResponse {
+  is_running: boolean;
+  started_at?: number;
+  runtime_minutes?: number;
+  initial_capital?: number;
+  current_capital?: number;
+  total_return_pct?: number;
+  profit_tmn?: number;
+  max_drawdown_pct?: number;
+  total_trades?: number;
+  wins?: number;
+  losses?: number;
+  win_rate?: number;
+  open_positions?: Array<{
+    symbol: string;
+    strategy: string;
+    entry_price: number;
+    tp: number;
+    sl: number;
+    reason: string;
+  }>;
+  recent_trades?: Array<{
+    symbol: string;
+    strategy: string;
+    pnl_pct: number;
+    pnl_tmn: number;
+    exit_reason: string;
+  }>;
+  active_symbols?: string[];
+  [key: string]: unknown;
+}
+
 // ---------- API methods ----------
 
 export const api = {
@@ -492,4 +543,18 @@ export const api = {
     client.post("/v1/paper-v2/stop").then((r) => r.data),
   resetPaperV2: () =>
     client.post("/v1/paper-v2/reset").then((r) => r.data),
+
+  // Bots
+  listBots: () =>
+    client.get<BotsListResponse>("/v1/bots").then((r) => r.data),
+  getBot: (slug: string) =>
+    client.get<BotInfo>(`/v1/bots/${slug}`).then((r) => r.data),
+  getBotStatus: (slug: string) =>
+    client.get<BotStatusResponse>(`/v1/bots/${slug}/status`).then((r) => r.data),
+  startBot: (slug: string) =>
+    client.post(`/v1/bots/${slug}/start`).then((r) => r.data),
+  stopBot: (slug: string) =>
+    client.post(`/v1/bots/${slug}/stop`).then((r) => r.data),
+  resetBot: (slug: string) =>
+    client.post(`/v1/bots/${slug}/reset`).then((r) => r.data),
 };

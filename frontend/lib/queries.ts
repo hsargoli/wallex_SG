@@ -192,3 +192,69 @@ export function useResetPaperV2() {
     },
   });
 }
+
+// ==================== Bots ====================
+
+export function useBots() {
+  return useQuery({
+    queryKey: ["bots"],
+    queryFn: () => api.listBots(),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useBot(slug: string) {
+  return useQuery({
+    queryKey: ["bot", slug],
+    queryFn: () => api.getBot(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useBotStatus(slug: string) {
+  return useQuery({
+    queryKey: ["bot-status", slug],
+    queryFn: () => api.getBotStatus(slug),
+    enabled: !!slug,
+    refetchInterval: 15_000,
+  });
+}
+
+export function useStartBot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slug: string) => api.startBot(slug),
+    onSuccess: (_, slug) => {
+      qc.invalidateQueries({ queryKey: ["bot-status", slug] });
+      qc.invalidateQueries({ queryKey: ["bots"] });
+      toast.success("ربات شروع شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useStopBot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slug: string) => api.stopBot(slug),
+    onSuccess: (_, slug) => {
+      qc.invalidateQueries({ queryKey: ["bot-status", slug] });
+      qc.invalidateQueries({ queryKey: ["bots"] });
+      toast.success("ربات متوقف شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useResetBot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slug: string) => api.resetBot(slug),
+    onSuccess: (_, slug) => {
+      qc.invalidateQueries({ queryKey: ["bot-status", slug] });
+      qc.invalidateQueries({ queryKey: ["bots"] });
+      toast.success("ربات ریست شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
