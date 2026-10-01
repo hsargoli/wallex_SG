@@ -7,6 +7,7 @@ from app.domain.entities.candle import Candle
 from app.services.bounce_scalper import make_bounce_decision
 from app.services.simple_bot import make_simple_decision
 
+# مسیر دقیق برای اجرا از داخل پوشه backend
 CONFIG_PATH = Path("data/strategy_config.json")
 
 # حداقل آستانه‌ها
@@ -22,6 +23,7 @@ class SmartDispatcher:
 
     def _load_config(self, path: Path):
         if not path.exists():
+            print(f"⚠️ Config file not found at: {path.absolute()}")
             return
         try:
             data = json.loads(path.read_text())
@@ -39,18 +41,15 @@ class SmartDispatcher:
             print(f"⚠️ Config load error: {e}")
 
     def get_strategy(self, symbol: str) -> str | None:
-        """برگرداندن استراتژی مناسب برای یک نماد."""
         return self.config.get(symbol)
 
     def list_active(self) -> dict:
-        """لیست نمادهای فعال با استراتژی‌ها."""
         return dict(self.config)
 
     def get_stats(self) -> dict:
         return dict(self.stats)
 
     def make_decision(self, symbol: str, candles: list[Candle]):
-        """تصمیم‌گیری بر اساس استراتژی اختصاصی نماد."""
         strategy = self.config.get(symbol)
         if strategy is None:
             return None
