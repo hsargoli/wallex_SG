@@ -560,21 +560,109 @@ export const api = {
 };
 
 // --- Simulation API ---
+
+export interface DateItem {
+  gregorian: string;       // 2026-10-02
+  jalali: string;          // 1405/07/10
+  jalali_pretty: string;   // 10 مهر 1405
+}
+
+export interface BotOption {
+  slug: string;
+  name: string;
+  name_en: string;
+  description: string;
+  tags: string[];
+  capabilities: string[];
+  experimental?: boolean;
+  warning?: string;
+}
+
+export interface BotsResponse {
+  count: number;
+  bots: BotOption[];
+}
+
+export interface SymbolOption {
+  symbol: string;
+  base: string;
+  name_fa: string;
+  name_en: string;
+}
+
+export interface CompareResultItem {
+  bot_slug: string;
+  bot_name: string;
+  name_en: string;
+  experimental: boolean;
+  warning: string;
+  status: string;
+  total_trades: number;
+  win_rate: number;
+  pnl_pct: number;
+  final_balance: number;
+  total_pnl: number;
+  error: string;
+}
+
+export interface CompareResponse {
+  symbol: string;
+  dates: {
+    start: DateItem;
+    end: DateItem;
+  };
+  results: CompareResultItem[];
+}
+
+export interface SymbolsResponse {
+  count: number;
+  symbols: SymbolOption[];
+}
+
+export interface SimulationTrade {
+  i: number;
+  side: "BUY" | "SELL";
+  price: number;
+  forced?: boolean;   // true یعنی در پایان شبیه‌سازی به‌اجبار بسته شده
+}
+
 export interface SimulationResult {
   status: string;
+  symbol?: string;
+  bot_slug?: string;
+  prices_count?: number;
+  trades?: SimulationTrade[];
   pnl_report: {
+    initial_balance?: number;
     final_balance: number;
     total_pnl: number;
   };
+  dates?: {
+    start: DateItem;
+    end: DateItem;
+  };
 }
 
-export const runSimulation = async (startDate: string, endDate: string): Promise<SimulationResult> => {
+export const runSimulation = async (
+  startDate: string,
+  endDate: string,
+  symbol: string = "BTCUSDT",
+  botSlug: string = "",
+  initialBalance: number = 1000,
+): Promise<SimulationResult> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-  const response = await fetch(`${baseUrl}/v1/simulation/run?start_date=${startDate}&end_date=${endDate}`, {
+  const url = new URL(`${baseUrl}/v1/simulation/run`);
+  url.searchParams.set("start_date", startDate);
+  url.searchParams.set("end_date", endDate);
+  url.searchParams.set("symbol", symbol);
+  url.searchParams.set("initial_balance", String(initialBalance));
+  if (botSlug) {
+    url.searchParams.set("bot_slug", botSlug);
+  }
+
+  const response = await fetch(url.toString(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
     throw new Error(`Simulation failed: ${response.statusText}`);
@@ -582,10 +670,57 @@ export const runSimulation = async (startDate: string, endDate: string): Promise
   return response.json();
 };
 
-export const getSimulationAvailableDates = async (): Promise<string[]> => {
+export const getSimulationBots = async (): Promise<BotsResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-  const response = await fetch(`${baseUrl}/v1/simulation/available-dates`);
-  if (!response.ok) return ["2026-09-01", "2026-09-02", "2026-09-03"];
+  const response = await fetch(`${baseUrl}/v1/simulation/bots`);
+  if (!response.ok) {
+    return { count: 0, bots: [] };
+  }
+  return response.json();
+};
+
+export const getSimulationSymbols = async (): Promise<SymbolsResponse> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const response = await fetch(`${baseUrl}/v1/simulation/symbols`);
+  if (!response.ok) {
+    return { count: 0, symbols: [] };
+  }
+  return response.json();
+};
+
+export const compareAllBots = async (
+  startDate: string,
+  endDate: string,
+  symbol: string = "BTCUSDT",
+  initialBalance: number = 1000,
+): Promise<CompareResponse> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const url = new URL(`${baseUrl}/v1/simulation/compare`);
+  url.searchParams.set("start_date", startDate);
+  url.searchParams.set("end_date", endDate);
+  url.searchParams.set("symbol", symbol);
+  url.searchParams.set("initial_balance", String(initialBalance));
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Compare failed: ${response.statusText}`);
+  }
+  return response.json();
+};
+
+export const getSimulationAvailableDates = async (days: number = 90): Promise<DateItem[]> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const response = await fetch(`${baseUrl}/v1/simulation/available-dates?days=${days}`);
+  if (!response.ok) {
+    return [
+      { gregorian: "2026-09-01", jalali: "1405/06/10", jalali_pretty: "10 شهریور 1405" },
+      { gregorian: "2026-09-02", jalali: "1405/06/11", jalali_pretty: "11 شهریور 1405" },
+      { gregorian: "2026-09-03", jalali: "1405/06/12", jalali_pretty: "12 شهریور 1405" },
+    ];
+  }
   const data = await response.json();
   return data.dates || [];
 };

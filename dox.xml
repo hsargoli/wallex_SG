@@ -4,12 +4,14 @@ tree -L 4 -I 'venv|__pycache__'
 
 
 پروژه ترید والکس
+
+
 8.4745 	3       367,510,000    354,000
+1405/07/10	
+TMN /TRX
+      TMN85,900    TMN87,000             5         5.054
 
-
-
-cd ~/wallex/backend
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+cd ~/wallex/backend && uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 
 
