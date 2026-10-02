@@ -558,3 +558,34 @@ export const api = {
   resetBot: (slug: string) =>
     client.post(`/v1/bots/${slug}/reset`).then((r) => r.data),
 };
+
+// --- Simulation API ---
+export interface SimulationResult {
+  status: string;
+  pnl_report: {
+    final_balance: number;
+    total_pnl: number;
+  };
+}
+
+export const runSimulation = async (startDate: string, endDate: string): Promise<SimulationResult> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const response = await fetch(`${baseUrl}/v1/simulation/run?start_date=${startDate}&end_date=${endDate}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Simulation failed: ${response.statusText}`);
+  }
+  return response.json();
+};
+
+export const getSimulationAvailableDates = async (): Promise<string[]> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const response = await fetch(`${baseUrl}/v1/simulation/available-dates`);
+  if (!response.ok) return ["2026-09-01", "2026-09-02", "2026-09-03"];
+  const data = await response.json();
+  return data.dates || [];
+};

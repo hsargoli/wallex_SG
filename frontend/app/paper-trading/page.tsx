@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Play,
   Square,
@@ -11,6 +12,7 @@ import {
   Target,
   Zap,
   Wallet,
+  Sparkles,
 } from "lucide-react";
 import {
   usePaperV2Status,
@@ -18,6 +20,7 @@ import {
   useStopPaperV2,
   useResetPaperV2,
 } from "@/lib/queries";
+import { runSimulation, SimulationResult } from "@/lib/api";
 import { formatNumber, formatPrice, formatPct } from "@/lib/format";
 import {
   Card,
@@ -36,6 +39,22 @@ export default function PaperTradingPage() {
   const stopBot = useStopPaperV2();
   const resetBot = useResetPaperV2();
 
+  // Simulation State
+  const [simLoading, setSimLoading] = useState(false);
+  const [simResult, setSimResult] = useState<SimulationResult | null>(null);
+
+  const handleRunSimulation = async () => {
+    try {
+      setSimLoading(true);
+      const res = await runSimulation("2026-09-01", "2026-09-03");
+      setSimResult(res);
+    } catch (err) {
+      console.error("Simulation error:", err);
+    } finally {
+      setSimLoading(false);
+    }
+  };
+
   const data = status.data;
   const isRunning = data?.is_running ?? false;
   const profit = data?.profit_tmn ?? 0;
@@ -49,10 +68,10 @@ export default function PaperTradingPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Zap className="h-6 w-6 text-emerald-400" />
-            Paper Trading
+            Paper Trading & Simulator
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            تست زنده استراتژی با سرمایه‌ی مجازی
+            تست زنده استراتژی و شبیه‌سازی گذشته بازار
           </p>
         </div>
 
@@ -88,6 +107,60 @@ export default function PaperTradingPage() {
           </Button>
         </div>
       </div>
+
+      {/* Simulator Section */}
+      <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-5 w-5 text-amber-400" />
+            موتور شبیه‌سازی (ماشین زمان)
+          </CardTitle>
+          <Button
+            onClick={handleRunSimulation}
+            disabled={simLoading}
+            size="sm"
+            className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {simLoading ? "در حال محاسبه..." : "اجرای تست دیتای گذشته"}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {simResult ? (
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 p-4">
+              <div>
+                <p className="text-xs text-muted-foreground">وضعیت اجرای شبیه‌ساز</p>
+                <p className="font-mono text-sm font-bold text-emerald-400">
+                  {simResult.status.toUpperCase()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">موجودی نهایی</p>
+                <p className="font-mono text-sm font-bold">
+                  {formatNumber(simResult.pnl_report.final_balance)} USDT
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">سود / زیان کل (PnL)</p>
+                <p
+                  className={cn(
+                    "font-mono text-sm font-bold",
+                    simResult.pnl_report.total_pnl >= 0
+                      ? "text-emerald-400"
+                      : "text-red-400"
+                  )}
+                >
+                  {simResult.pnl_report.total_pnl >= 0 ? "+" : ""}
+                  {formatNumber(simResult.pnl_report.total_pnl)} USDT
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              برای تست الگوریتم روی داده‌های شبیه‌سازی شده، روی دکمه اجرای تست کلیک کنید.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Status banner */}
       <Card
