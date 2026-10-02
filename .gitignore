@@ -34,3 +34,29 @@ htmlcov/
 # backup files
 *.bak
 *.bak[0-9]*
+
+# --- Personal notes / scratchpad ---
+dox.xml
+dox.xml.*
+*.personal-backup
+
+# --- Security: prevent secret leaks ---
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+.env.*
+!.env.example
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- Logs / temp ---
+*.log
+*.tmp
