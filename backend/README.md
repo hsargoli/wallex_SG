@@ -37,7 +37,10 @@ text
 │   │           ├── volatility_hunter/
 │   │           └── smart_portfolio/
 │   │
-│   ├── scripts/ml/            ← اسکریپت‌های تحلیل
+│   ├── scripts/
+│   │   ├── tools/             ← ابزارهای روزمره (check_wallex, ...)
+│   │   ├── ml/                ← ML فعال (train, selector, pipeline)
+│   │   └── archive/           ← آرشیو کامل (۵۹ نسخه قبلی)
 │   ├── tests/                 ← ۷۶ تست
 │   ├── data/                  ← SQLite, models, state
 │   └── .venv/
@@ -69,10 +72,13 @@ text
 │
 └── docs/
     ├── README.md
+    ├── ML_JOURNEY.md
     └── reports/
         ├── 2026-09-30.md
         ├── 2026-09-30_ML_Experiments.md
-        └── ML_JOURNEY.md
+        ├── 2026-10-02_Simulator_Development.md
+        ├── 2026-10-02_Project_Audit.md
+        └── 2026-10-02_Scripts_Reorganization.md
 
 🚀 مسیر طی‌شده (Timeline)
 📌 Milestone 1-4: زیرساخت (قبلاً)

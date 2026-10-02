@@ -12,7 +12,7 @@ from app.services.bots import bot_registry
 from app.domain.strategy import SimpleTrendStrategy
 from app.infrastructure.wallex_repo import WallexMarketData
 
-router = APIRouter()
+router = APIRouter(prefix="/simulation", tags=["Simulation"])
 
 
 # ------------------------------------------------------------

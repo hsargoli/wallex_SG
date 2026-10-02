@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.presentation.api.v1.markets import router as markets_router
-from app.presentation.api.v1.paper_v2 import router as paper_router
-from app.presentation.api.v1.simulation import router as sim_router
+
+from app.presentation.api.v1.router import router as v1_router
 
 app = FastAPI(title="ROSHD_SARV API")
 
@@ -15,9 +14,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(markets_router, prefix="/v1/markets", tags=["Markets"])
-app.include_router(paper_router, prefix="/v1/paper-trading", tags=["Paper Trading V2"])
-app.include_router(sim_router, prefix="/v1/simulation", tags=["Simulation"])
+# All v1 routes (markets, bots, profitability, simulation, ...)
+app.include_router(v1_router)
+
 
 @app.get("/")
 async def root():
