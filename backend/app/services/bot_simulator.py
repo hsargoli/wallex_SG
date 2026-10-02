@@ -16,7 +16,7 @@ BotSimulator — شبیه‌ساز واقع‌بینانه ربات‌ها.
      - اجرا با قیمت دقیق SL/TP (با احتساب fee)
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 from app.domain.entities.candle import Candle
 
 
@@ -346,7 +346,6 @@ class BotSimulator:
             o = float(candle.open)
             h = float(candle.high)
             l = float(candle.low)
-            c = float(candle.close)
 
             # ------------------------------------------------------------
             # ۱) اجرای pending orders با OPEN این کندل
