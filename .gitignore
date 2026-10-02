@@ -60,3 +60,20 @@ Thumbs.db
 # --- Logs / temp ---
 *.log
 *.tmp
+
+# --- Runtime data (نه برای گیت) ---
+backend/data/paper_trading/
+backend/data/paper_v2/
+backend/data/replay/
+*.jsonl
+
+# --- Build artifacts ---
+*.tsbuildinfo
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- ML models (اگه می‌خوای جدا نگه داری) ---
+# backend/data/models/*.joblib
