@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
 import { useCandles, useOrderBook } from "@/lib/queries";
 import { type Timeframe } from "@/lib/api";
-import { formatPrice, formatNumber } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { CandlestickChart } from "@/components/charts/candlestick-chart";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

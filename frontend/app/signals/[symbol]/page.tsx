@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -20,10 +19,9 @@ import {
   type SignalResponse,
   type SignalRule,
   type SignalStrength,
-  type SignalType,
   type MultiTfSignal,
 } from "@/lib/api";
-import { formatPrice, formatNumber } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +38,6 @@ export default function SignalDetailPage({
 }: {
   params: Promise<{ symbol: string }>;
 }) {
-  const router = useRouter();
   const { symbol: symbolParam } = use(params);
   const symbol = symbolParam.toUpperCase();
   const [timeframe, setTimeframe] = useState("1h");

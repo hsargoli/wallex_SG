@@ -3,11 +3,9 @@
 import Link from "next/link";
 import {
   Bot,
-  Play,
   ArrowLeft,
   Zap,
   Activity,
-  Target,
   Database,
   Cpu,
 } from "lucide-react";

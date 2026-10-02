@@ -17,7 +17,7 @@ import {
   useStopPaperV2,
   useResetPaperV2,
 } from "@/lib/queries";
-import { runSimulation, getSimulationAvailableDates, getSimulationBots, getSimulationSymbols, compareAllBots, SimulationResult, DateItem, BotOption, SymbolOption, CompareResponse, CompareResultItem } from "@/lib/api";
+import { runSimulation, getSimulationAvailableDates, getSimulationBots, getSimulationSymbols, compareAllBots, SimulationResult, DateItem, BotOption, SymbolOption, CompareResponse } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

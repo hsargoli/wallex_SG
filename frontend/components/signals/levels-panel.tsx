@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Target, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
 import { useLevels } from "@/lib/queries";
-import { formatPrice, formatNumber } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +111,7 @@ export function LevelsPanel({
             <CardContent>
               <div className="space-y-1.5">
                 {swings.map((swing, i) => (
-                  <SwingRow key={i} swing={swing} current={currentPrice} />
+                  <SwingRow key={i} swing={swing} />
                 ))}
               </div>
             </CardContent>
@@ -168,7 +168,6 @@ function PivotRow({
 
 function SwingRow({
   swing,
-  current,
 }: {
   swing: {
     price: string;
@@ -177,7 +176,6 @@ function SwingRow({
     strength: "weak" | "medium" | "strong";
     distance_pct: string;
   };
-  current: number;
 }) {
   const isSupport = swing.type === "support";
   const Icon = isSupport ? TrendingUp : TrendingDown;

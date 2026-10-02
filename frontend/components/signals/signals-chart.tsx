@@ -53,7 +53,6 @@ export function SignalsChart({ indicators, levels }: SignalsChartProps) {
 
   const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
 
-  const isEnabled = (key: string) => layers.find((l) => l.key === key)?.enabled;
 
   const toggle = (key: string) => {
     setLayers((prev) =>
@@ -209,7 +208,8 @@ export function SignalsChart({ indicators, levels }: SignalsChartProps) {
     });
     priceLinesRef.current = [];
 
-    if (!isEnabled("levels") || !levels) return;
+    const levelsEnabled = layers.find((l) => l.key === "levels")?.enabled;
+    if (!levelsEnabled || !levels) return;
 
     const addLine = (
       price: number,

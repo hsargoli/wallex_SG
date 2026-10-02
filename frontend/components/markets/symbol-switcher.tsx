@@ -4,7 +4,6 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronsUpDown, X } from "lucide-react";
 import { useMarkets } from "@/lib/queries";
-import { cn } from "@/lib/utils";
 
 interface SymbolSwitcherProps {
   current: string;
