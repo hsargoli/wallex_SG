@@ -1,347 +1,273 @@
-تیم: ROSHD_SARV
-سرمایه هدف: ۳۰۰٬۰۰۰ تومان (اولیه)
-وضعیت: ۵ ربات ساخته شده، آماده برای Paper Trading
-🏗️ ساختار کلی پروژه
-text
+# 🐍 Backend — Wallex Trading Platform
 
-~/wallex/
-├── backend/                    ← FastAPI + Python 3.12
-│   ├── app/
-│   │   ├── main.py            ← Application Factory
-│   │   ├── core/              ← config, logging, exceptions
-│   │   ├── domain/            ← Entities, Ports, Value Objects
-│   │   ├── application/       ← Use Cases
-│   │   ├── infrastructure/    ← Wallex adapter
-│   │   ├── presentation/      ← API routers
-│   │   └── services/          ← Business logic
-│   │       ├── indicators.py
-│   │       ├── bottom_detector.py
-│   │       ├── regime_detector.py
-│   │       ├── signal_engine.py
-│   │       ├── levels.py
-│   │       ├── trend.py
-│   │       ├── ml_bottom_model.py
-│   │       ├── anomaly_detector.py
-│   │       ├── volatility_predictor.py
-│   │       ├── paper_trader.py
-│   │       ├── paper_trader_v2.py
-│   │       ├── historical_replay.py
-│   │       ├── budget_service.py
-│   │       ├── smart_dispatcher.py
-│   │       └── bots/          ← 🆕 معماری ربات‌ها
-│   │           ├── base.py
-│   │           ├── registry.py
-│   │           ├── mean_revert/
-│   │           ├── trend_follow/
-│   │           ├── grid_bot/
-│   │           ├── volatility_hunter/
-│   │           └── smart_portfolio/
-│   │
-│   ├── scripts/
-│   │   ├── tools/             ← ابزارهای روزمره (check_wallex, ...)
-│   │   ├── ml/                ← ML فعال (train, selector, pipeline)
-│   │   └── archive/           ← آرشیو کامل (۵۹ نسخه قبلی)
-│   ├── tests/                 ← ۷۶ تست
-│   ├── data/                  ← SQLite, models, state
-│   └── .venv/
-│
-├── frontend/                  ← Next.js 16 + Tailwind v4
-│   ├── app/
-│   │   ├── layout.tsx         ← RTL + Vazirmatn
-│   │   ├── page.tsx           ← Dashboard
-│   │   ├── bots/              ← 🆕 لیست و جزئیات ربات‌ها
-│   │   ├── portfolio/         ← سبد دارایی
-│   │   ├── wallet/            ← کیف پول
-│   │   ├── markets/           ← بازارها + چارت
-│   │   ├── signals/           ← سیگنال‌ها
-│   │   ├── scanner/           ← اسکنر بازار
-│   │   └── paper-trading/     ← Paper Trading
-│   ├── components/
-│   │   ├── layout/sidebar.tsx
-│   │   ├── ui/                ← shadcn components
-│   │   ├── portfolio/
-│   │   ├── signals/
-│   │   ├── markets/
-│   │   └── charts/
-│   ├── lib/
-│   │   ├── api.ts             ← API client
-│   │   ├── queries.ts         ← React Query hooks
-│   │   ├── format.ts
-│   │   └── utils.ts
-│   └── package.json
-│
-└── docs/
-    ├── README.md
-    ├── ML_JOURNEY.md
-    └── reports/
-        ├── 2026-09-30.md
-        ├── 2026-09-30_ML_Experiments.md
-        ├── 2026-10-02_Simulator_Development.md
-        ├── 2026-10-02_Project_Audit.md
-        └── 2026-10-02_Scripts_Reorganization.md
+> Backend پلتفرم معاملات الگوریتمی والکس — FastAPI + Python 3.12 + DDD
 
-🚀 مسیر طی‌شده (Timeline)
-📌 Milestone 1-4: زیرساخت (قبلاً)
-text
+**نسخه:** 0.1.0
+**تیم:** ROSHD_SARV
 
-✅ راه‌اندازی FastAPI
-✅ اتصال به والکس (API client)
-✅ مپ کردن داده‌ها (mapper)
-✅ endpoint موجودی (key-assets)
-✅ Budget Manager (مدیریت بودجه)
+---
 
-📌 Milestone 5: Market Data Layer
-text
+## 📖 فهرست
 
-✅ دریافت Order Book
-✅ محاسبه best_bid, best_ask, spread
-✅ Candlestick data (15m, 1h, 4h, 1D)
-✅ Candle aggregator (ادغام 1m → 15m)
-✅ Depth chart در فرانت
+1. [نگاه کلی](#نگاه-کلی)
+2. [تکنولوژی‌ها](#تکنولوژیها)
+3. [ساختار پروژه](#ساختار-پروژه)
+4. [نصب و راه‌اندازی](#نصب-و-راهاندازی)
+5. [اجرا](#اجرا)
+6. [معماری](#معماری)
+7. [تست‌ها](#تستها)
+8. [ابزارها](#ابزارها)
+9. [لینک‌های مرتبط](#لینکهای-مرتبط)
 
-📌 Milestone 6: Profitability Checker
-text
+---
 
-✅ محاسبه سود با کارمزد
-✅ پشتیبانی Maker/Taker
-✅ Slippage calculation
-✅ min_profitable_spread
-✅ is_profitable flag
+## نگاه کلی
 
-📌 Indicator & Signal Engine
-text
+Backend این پروژه یک **API مبتنی بر FastAPI** است که با معماری **DDD (Domain-Driven Design)** طراحی شده.
 
-✅ RSI, EMA, MACD, Bollinger, ATR
-✅ ۶ قانون سیگنال (rules-based)
-✅ Pivot Points + S/R Levels
-✅ Signal history
-✅ Multi-timeframe analysis
+### ویژگی‌ها
 
-📌 ML Experiments (پروژه موقت)
-text
+- **۴۴ endpoint** در ۱۵ گروه
+- **۵ ربات معاملاتی** با Adapter Pattern
+- **DDD + Hexagonal Architecture**
+- **Decimal** برای دقت مالی
+- **structlog** برای لاگ JSON
+- **RFC-7807** error handling
+- **۷۶ تست** با pytest
 
-❌ RandomForest, LightGBM, XGBoost
-❌ AUC بین 0.31-0.72 (overfitting شدید)
-❌ در-sample 0.96 / out-sample 0.52
-📝 نتیجه: داده کافی نیست (فقط 20 روز)
+### آمار
 
-درس مهم: ML در ترید بدون داده کافی شکست می‌خوره
+| متریک | مقدار |
+|-------|-------|
+| فایل‌های Python | ۱۰۵ |
+| Endpointها | ۴۴ |
+| تست‌ها | ۷۶ (۱۰۰٪ پاس) |
+| Ruff | ✅ 0 errors |
+| Python | 3.12+ |
 
-📌 Paper Trading
-text
+---
 
-✅ PaperTrader (نسخه ۱)
-✅ PaperTraderV2 (با Smart Dispatcher)
-✅ HistoricalReplayBot (تست روی گذشته)
-✅ ذخیره‌سازی state
-✅ Equity curve tracking
+## تکنولوژی‌ها
 
-📌 Scanner & Per-Asset Analysis
-text
+| کتابخانه | نسخه | کاربرد |
+|----------|------|--------|
+| **FastAPI** | 0.115+ | وب فریمورک |
+| **Pydantic** | 2.x | اعتبارسنجی |
+| **httpx** | 0.27+ | HTTP client (async) |
+| **structlog** | 24.x | لاگ ساخت‌یافته |
+| **pydantic-settings** | 2.x | تنظیمات از env |
+| **jdatetime** | 5.x | تاریخ شمسی |
+| **pytest** | 9.x | تست |
+| **ruff** | 0.16+ | linting |
 
-✅ اسکن ۱۸۷ مارکت با صفحه‌بندی
-✅ مرتب‌سازی بر اساس حجم
-✅ Trend score هر نماد
-✅ تشخیص استراتژی مناسب هر نماد
+مدیریت پکیج: **uv** (به جای pip/poetry)
 
-📌 ۵ ربات معاملاتی 🆕
-🥇 کف‌زن (Mean Revert Bot)
-text
+---
 
-slug: mean_revert | v0.1.0
-استراتژی: کف می‌خره، سود کوچک
-R/DD: 2.38
-بازده: +8.1%  |  DD: 3.4%
+## ساختار پروژه
 
-🥈 روندرو (Trend Follow Bot)
-text
+```
+backend/
+├── app/
+│   ├── main.py               ← Application Factory
+│   ├── core/                 ← config, logging, exceptions
+│   ├── domain/               ← ❤️ قلب سیستم (بدون وابستگی)
+│   │   ├── entities/         ← Candle, Market, Balance
+│   │   ├── models/           ← Budget, Profitability
+│   │   ├── ports/            ← ExchangePort
+│   │   └── value_objects/    ← Symbol
+│   ├── application/
+│   │   └── use_cases/        ← ۶ use case
+│   ├── infrastructure/
+│   │   ├── exchange/wallex/  ← client, mapper
+│   │   └── wallex_repo.py    ← MarketDataRepository
+│   ├── presentation/
+│   │   └── api/
+│   │       ├── deps.py
+│   │       └── v1/           ← ۱۴ router
+│   │           └── router.py ← master router
+│   └── services/             ← ۴۹ فایل منطق
+│       ├── indicators.py
+│       ├── bot_simulator.py
+│       ├── bots/             ← ۵ ربات
+│       └── ...
+├── scripts/
+│   ├── tools/                ← ابزارهای روزمره
+│   ├── ml/                   ← ML فعال
+│   └── archive/              ← آرشیو کامل
+├── tests/
+│   ├── unit/
+│   └── integration/
+├── data/                     ← runtime (models, state)
+├── pyproject.toml
+└── README.md                 ← همین فایل
+```
 
-slug: trend_follow | v0.1.0
-استراتژی: EMA Cross + ADX + Trailing Stop
-R/DD: 2.41
-بازده: +6.8%  |  DD: 2.8%
+📚 **ساختار کامل:** [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
-🥉 نوسان‌گیر (Volatility Hunter Bot) 🏆
-text
+---
 
-slug: volatility_hunter | v0.1.0
-استراتژی: تشخیص range + خرید کف + فروش سقف
-R/DD: 6.25 (بهترین!)
-بازده: +31.85%  |  DD: 5.1%
+## نصب و راه‌اندازی
 
-📊 شبکه‌ای (Grid Bot)
-text
+### پیش‌نیازها
 
-slug: grid_bot | v0.1.0
-استراتژی: پله‌ای خرید/فروش در محدوده
-R/DD: 1.00
-بازده: +8.9%  |  DD: 8.9%
+- Python 3.12+
+- uv ([نصب](https://docs.astral.sh/uv/))
 
-🧠 پورتفوی هوشمند (Smart Portfolio)
-text
+### نصب
 
-slug: smart_portfolio | v0.1.0
-نقش: مسیریابی بین ۴ ربات بر اساس رژیم
-نقشه: trending_up → روندرو
-      ranging → کف‌زن + شبکه‌ای
-      choppy → نوسان‌گیر
-      trending_down → هیچکس
+```bash
+cd ~/wallex/backend
+uv sync
+```
 
-🔬 ابزارهای تحلیلی ساخته‌شده
-۱. Indicator Engine
-text
+### تنظیمات
 
-SMA, EMA, RSI, MACD, Bollinger Bands, ATR
+فایل `.env` در ریشه پروژه (`~/wallex/.env`) باید `WALLEX_API_KEY` رو داشته باشه:
 
-۲. Regime Detector
-text
+```env
+WALLEX_API_KEY="your-key-here"
+WALLEX_BASE_URL="https://api.wallex.ir"
+```
 
-معیارها:
-  • ADX (قدرت روند)
-  • ATR% (نوسان)
-  • EMA Alignment (جهت)
+---
 
-رژیم‌ها:
-  • trending_up
-  • trending_down
-  • ranging
-  • choppy
+## اجرا
 
-۳. Bottom Detector
-text
+### حالت توسعه
 
-۵ نشانه‌ی کف:
-  • RSI oversold
-  • RSI divergence
-  • Volume spike
-  • Rejection wick
-  • Support touch
+```bash
+cd ~/wallex/backend
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-۴. Smart Dispatcher
-text
+### دسترسی‌ها
 
-انتخاب استراتژی مناسب هر نماد
-(از پیکربندی JSON)
+| سرویس | URL |
+|-------|-----|
+| **API** | http://127.0.0.1:8000 |
+| **Swagger UI** | http://127.0.0.1:8000/docs |
+| **ReDoc** | http://127.0.0.1:8000/redoc |
+| **OpenAPI JSON** | http://127.0.0.1:8000/openapi.json |
 
-۵. Anomaly Detector
-text
+---
 
-Isolation Forest
-تشخیص وضعیت غیرعادی بازار
+## معماری
 
-۶. Volatility Predictor
-text
+### لایه‌ها
 
-Gradient Boosting
-پیش‌بینی نوسان آینده
+```
+Presentation (FastAPI)  →  Application (Use Cases)
+                              ↓
+                       Domain (Entities)  ←  Infrastructure (Wallex)
+```
 
-🎨 فرانت‌اند (Next.js 16)
-صفحات ساخته‌شده
-text
+**قاعده:** جهت وابستگی همیشه به سمت Domain است.
 
-/dashboard        ← نمای کلی
-/wallet           ← کیف پول والکس (۹.۳M تومان)
-/portfolio        ← سبد دارایی با toggle bid/last
-/markets          ← لیست ۳۷۳ بازار
-/markets/[symbol] ← Order Book + Depth Chart
-/markets/[symbol]/chart ← چارت کندل استیک
-/signals/[symbol] ← تحلیل کامل نماد
-/scanner          ← اسکنر با صفحه‌بندی
-/paper-trading    ← Paper Trading live
-/bots             ← 🆕 لیست ۵ ربات
-/bots/[slug]      ← جزئیات ربات با کنترل
-/budget           ← مدیریت بودجه
-/profitability    ← محاسبه سود
+### Routers
 
-ویژگی‌های UI
-text
+۱۴ router که توسط master router مدیریت می‌شن:
 
-✅ RTL کامل + فونت Vazirmatn
-✅ Dark theme تریدینگ
-✅ React Query با auto-refetch
-✅ Sidebar با وضعیت live API
-✅ Equity charts
-✅ Order Book table
-✅ Candlestick chart (TradingView style)
+```
+/v1/markets       /v1/account       /v1/bot
+/v1/bots          /v1/profitability /v1/signals
+/v1/scanner       /v1/backtest      /v1/scalping
+/v1/ml/bottom     /v1/paper         /v1/paper-v2
+/v1/replay        /v1/simulation
+```
 
-📊 آمار نهایی
-متریک	مقدار
-فایل‌های Python	~۸۰
-تست‌ها	۷۶ (۱۰۰٪ پاس)
-Ruff	✅ All checks passed
-فایل‌های TypeScript	~۵۰
-صفحات Next.js	۱۲
-کامپوننت‌های React	۱۵
-TypeScript errors	۰
-ربات‌ها	۵
-اسکریپت‌های ML	۲۵+
-خطوط کد کل	~۱۵,۰۰۰
-💡 درس‌های کلیدی
-۱. ML در ترید
-text
+📚 **جزئیات:** [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
-❌ ML بدون داده کافی = شکست
-❌ Overfitting شدید حتی با ۸ مدل مختلف
-✅ ML به عنوان کمک‌کننده، نه تصمیم‌گیرنده
+---
 
-۲. Backtest و Reality
-text
+## تست‌ها
 
-⚠️ نتایج "too good to be true" = باگ
-⚠️ حتماً حساب‌داری رو چک کن
-⚠️ per-symbol analysis ضروریه
+```bash
+cd ~/wallex/backend
 
-۳. Architecture
-text
+# همه تست‌ها
+uv run pytest tests/ -v
 
-✅ BaseBot + Registry
-✅ Per-asset strategy
-✅ Regime-based routing
-✅ Paper-first approach
+# فقط unit
+uv run pytest tests/unit/ -v
 
-۴. Perception تیم
-text
+# فقط integration
+uv run pytest tests/integration/ -v
 
-این پروژه ۳ روزه ساخته شد:
-  • روز ۱: زیرساخت + ML experiments
-  • روز ۲: Candles + Charts + Signals
-  • روز ۳: ۵ ربات + Smart Portfolio
+# با coverage
+uv run pytest --cov=app --cov-report=html
+```
 
-🎯 مسیر ادامه
-کوتاه‌مدت
-text
+**نتیجه:** 76 passed ✅
 
-🔄 تست کامل Smart Portfolio
-🔄 Paper Trading با ۵ ربات
-🔄 Live Execution Engine (dry-run)
+---
 
-میان‌مدت
-text
+## ابزارها
 
-🔜 Live با ۱۰۰K تومان
-🔜 جمع‌آوری داده (۶ ماه)
-🔜 ML با داده کافی
+### Linting با ruff
 
-بلندمدت
-text
+```bash
+# چک
+uv run ruff check app/
 
-🔮 ربات‌های بیشتر
-🔮 Pairs Trading
-🔮 Volume Profile
-🔮 مقیاس‌بندی سرمایه
+# fix خودکار
+uv run ruff check app/ --fix
+```
 
-🏆 دستاوردهای اصلی
-text
+### Type checking
 
-✅ معماری حرفه‌ای (DDD + Clean)
-✅ ۵ ربات متنوع
-✅ Smart Portfolio (رویکرد کوانت واقعی)
-✅ بهترین ربات: نوسان‌گیر (R/DD 6.25)
-✅ فرانت کامل با ۱۲ صفحه
-✅ ۷۶ تست پاس
-✅ مستندات کامل
+پروژه از **type hints** کامل استفاده می‌کنه. برای چک:
 
-آخرین Commit:
-text
+```bash
+uv run python -c "from app.main import app; print('OK')"
+```
 
-feat(volatility-hunter): wide test + reality check (R/DD 6.25)
+### Development tools
+
+| ابزار | دستور |
+|-------|-------|
+| `ruff` | `uv run ruff check app/` |
+| `pytest` | `uv run pytest tests/` |
+| `coverage` | `uv run pytest --cov=app` |
+
+---
+
+## ورودی‌های API والکس
+
+**نکات مهم:**
+
+| مورد | محدودیت |
+|------|---------|
+| تایم‌فریم `1h` | فقط ~۷۲۰ کندل آخر (≈۳۰ روز) |
+| تایم‌فریم `1D` | نامحدود |
+| `15m`, `5m`, `30m`, `4h` | پشتیبانی نمی‌شن |
+
+**API Key:**
+- فقط `Read` دسترسی
+- **هرگز** `Withdraw` رو فعال نکن
+- اگه کلید لو رفت → فوراً revoke
+
+---
+
+## لینک‌های مرتبط
+
+### مستندات اصلی
+
+- [ARCHITECTURE.md](../docs/ARCHITECTURE.md) — معماری کامل
+- [SETUP.md](../docs/SETUP.md) — راه‌اندازی گام‌به‌گام
+- [API.md](../docs/API.md) — مستندات endpointها
+- [BOTS.md](../docs/BOTS.md) — راهنمای ربات‌ها
+
+### گزارش‌ها
+
+- [docs/reports/](../docs/reports/) — گزارش‌های روزانه
+
+### منابع خارجی
+
+- [FastAPI Docs](https://fastapi.tiangolo.com)
+- [uv Docs](https://docs.astral.sh/uv/)
+- [Wallex API](https://wallex.ir)
+
+---
+
+**پایان — نسخه ۰.۱.۰**
