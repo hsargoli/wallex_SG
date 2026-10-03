@@ -39,9 +39,17 @@ class Settings(BaseSettings):
     # --- Cache ---
     CACHE_TTL_SECONDS: int = Field(default=5, ge=1, le=3600)
 
+    # --- Trading Safety ---
+    LIVE_TRADING_ENABLED: bool = False
+
     @property
     def is_production(self) -> bool:
         return self.ENV == "production"
+
+    @property
+    def can_trade(self) -> bool:
+        """آیا اجازه معامله واقعی داده میشه؟"""
+        return self.LIVE_TRADING_ENABLED
 
 
 @lru_cache(maxsize=1)

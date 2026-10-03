@@ -1,6 +1,7 @@
 from decimal import Decimal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # --- Market Schemas ---
@@ -96,3 +97,76 @@ class PortfolioResponse(BaseModel):
     total_value_usdt_last: Decimal
     usdt_tmn_rate: Decimal | None = None
     items: list[PortfolioItemOut]
+
+
+# ---------- Order Schemas ----------
+
+
+class PlaceOrderRequest(BaseModel):
+    """درخواست ثبت سفارش."""
+
+    symbol: str = Field(..., min_length=3, max_length=20, description="نماد (مثل BTCTMN)")
+    side: Literal["BUY", "SELL"] = Field(..., description="سمت سفارش")
+    type: Literal["LIMIT", "MARKET", "STOP_LIMIT", "STOP_MARKET"] = Field(
+        ..., description="نوع سفارش"
+    )
+    quantity: Decimal = Field(..., gt=0, description="مقدار در واحد ارز پایه")
+    price: Decimal | None = Field(
+        None, gt=0, description="قیمت (برای LIMIT و STOP_LIMIT الزامی)"
+    )
+    stop_price: Decimal | None = Field(
+        None, gt=0, description="قیمت تریگر (برای STOP_* الزامی)"
+    )
+    client_id: str | None = Field(
+        None,
+        max_length=40,
+        pattern=r"^[A-Za-z0-9_]+$",
+        description="شناسه یکتا (اختیاری — اگه ندید، خودکار ساخته میشه)",
+    )
+
+
+class OrderResponse(BaseModel):
+    """پاسخ سفارش."""
+
+    client_id: str
+    symbol: str
+    side: str
+    type: str
+    status: str
+    price: Decimal
+    orig_qty: Decimal
+    executed_qty: Decimal
+    executed_price: Decimal
+    executed_sum: Decimal
+    fee: Decimal
+    active: bool
+    executed_percent: Decimal
+    created_at: int
+    updated_at: int
+
+    @classmethod
+    def from_entity(cls, order) -> "OrderResponse":
+        return cls(
+            client_id=order.client_id,
+            symbol=order.symbol,
+            side=order.side.value,
+            type=order.type.value,
+            status=order.status.value,
+            price=order.price,
+            orig_qty=order.orig_qty,
+            executed_qty=order.executed_qty,
+            executed_price=order.executed_price,
+            executed_sum=order.executed_sum,
+            fee=order.fee,
+            active=order.active,
+            executed_percent=order.executed_percent,
+            created_at=order.created_at,
+            updated_at=order.updated_at,
+        )
+
+
+class OrderListResponse(BaseModel):
+    """لیست سفارش‌ها."""
+
+    count: int
+    orders: list[OrderResponse]

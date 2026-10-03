@@ -9,6 +9,7 @@ from app.presentation.api.v1 import (
     bots,
     markets,
     ml_bottom,
+    orders,
     paper_trading,
     paper_v2,
     profitability,
@@ -33,4 +34,5 @@ router.include_router(ml_bottom.router)
 router.include_router(paper_trading.router)
 router.include_router(paper_v2.router)
 router.include_router(replay.router)
+router.include_router(orders.router)
 router.include_router(simulation.router)
