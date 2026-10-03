@@ -557,6 +557,26 @@ export const api = {
     client.post(`/v1/bots/${slug}/stop`).then((r) => r.data),
   resetBot: (slug: string) =>
     client.post(`/v1/bots/${slug}/reset`).then((r) => r.data),
+
+  // ---------- Orders ----------
+  listOrders: (symbol?: string) =>
+    client
+      .get<OrdersListResponse>("/v1/orders", {
+        params: symbol ? { symbol } : undefined,
+      })
+      .then((r) => r.data),
+
+  placeOrder: (payload: PlaceOrderRequest) =>
+    client
+      .post<Order>("/v1/orders/place", payload)
+      .then((r) => r.data),
+
+  cancelOrder: (clientId: string, symbol: string) =>
+    client
+      .delete<Order>(`/v1/orders/cancel/${clientId}`, {
+        params: { symbol },
+      })
+      .then((r) => r.data),
 };
 
 // --- Simulation API ---
@@ -724,3 +744,49 @@ export const getSimulationAvailableDates = async (days: number = 90): Promise<Da
   const data = await response.json();
   return data.dates || [];
 };
+
+// ---------- Order Types ----------
+
+export type OrderSide = "BUY" | "SELL";
+export type TradingOrderType = "LIMIT" | "MARKET" | "STOP_LIMIT" | "STOP_MARKET";
+export type OrderStatus =
+  | "NEW"
+  | "PARTIALLY_FILLED"
+  | "FILLED"
+  | "CANCELED"
+  | "REJECTED"
+  | "EXPIRED"
+  | "UNKNOWN";
+
+export interface Order {
+  client_id: string;
+  symbol: string;
+  side: OrderSide;
+  type: TradingOrderType;
+  status: OrderStatus;
+  price: string;
+  orig_qty: string;
+  executed_qty: string;
+  executed_price: string;
+  executed_sum: string;
+  fee: string;
+  active: boolean;
+  executed_percent: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface OrdersListResponse {
+  count: number;
+  orders: Order[];
+}
+
+export interface PlaceOrderRequest {
+  symbol: string;
+  side: OrderSide;
+  type: TradingOrderType;
+  quantity: string;
+  price?: string;
+  stop_price?: string;
+  client_id?: string;
+}

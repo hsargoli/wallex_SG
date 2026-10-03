@@ -8,7 +8,7 @@
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import (
@@ -57,6 +57,7 @@ def _require_live_trading(settings: Settings) -> None:
 async def place_order(
     request: Request,
     payload: PlaceOrderRequest,
+    response: Response,
     exchange: ExchangePort = Depends(get_exchange),
     settings: Settings = Depends(get_settings),
 ) -> OrderResponse:
@@ -101,6 +102,7 @@ async def place_order(
 @limiter.limit(CANCEL_ORDER_LIMIT)
 async def cancel_order(
     request: Request,
+    response: Response,
     client_id: str,
     symbol: str = Query(..., description="نماد (مثل BTCTMN)"),
     exchange: ExchangePort = Depends(get_exchange),
@@ -130,6 +132,7 @@ async def cancel_order(
 @limiter.limit(LIST_ORDERS_LIMIT)
 async def list_orders(
     request: Request,
+    response: Response,
     symbol: str | None = Query(None, description="فیلتر بر اساس نماد"),
     exchange: ExchangePort = Depends(get_exchange),
 ) -> OrderListResponse:

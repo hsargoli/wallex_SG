@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ProfitabilityRequest } from "./api";
+import { api, type ProfitabilityRequest, type PlaceOrderRequest } from "./api";
 import { toast } from "sonner";
 
 export function useBudget() {
@@ -256,5 +256,56 @@ export function useResetBot() {
       toast.success("ربات ریست شد");
     },
     onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+// ---------- Orders Hooks ----------
+
+export function useOrders(symbol?: string) {
+  return useQuery({
+    queryKey: ["orders", symbol ?? "all"],
+    queryFn: () => api.listOrders(symbol),
+    refetchInterval: 10_000,
+  });
+}
+
+export function usePlaceOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: PlaceOrderRequest) => api.placeOrder(payload),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(
+        `سفارش ثبت شد: ${data.side} ${data.symbol} (${data.client_id})`,
+      );
+    },
+    onError: (err: Error) => {
+      const msg = err.message || "خطای نامشخص";
+      // تشخیص خطاهای رایج
+      if (msg.includes("403") || msg.includes("غیرفعال")) {
+        toast.error("معامله واقعی غیرفعال است. با ادمین تماس بگیرید.");
+      } else if (msg.includes("429") || msg.includes("محدودیت")) {
+        toast.error("تعداد درخواست‌ها زیاد است. کمی صبر کنید.");
+      } else if (msg.includes("موجودی")) {
+        toast.error("موجودی کافی نیست.");
+      } else {
+        toast.error(`خطا در ثبت سفارش: ${msg}`);
+      }
+    },
+  });
+}
+
+export function useCancelOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, symbol }: { clientId: string; symbol: string }) =>
+      api.cancelOrder(clientId, symbol),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(`سفارش لغو شد: ${data.client_id}`);
+    },
+    onError: (err: Error) => {
+      toast.error(`خطا در لغو: ${err.message}`);
+    },
   });
 }
