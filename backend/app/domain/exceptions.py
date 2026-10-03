@@ -28,3 +28,18 @@ class ExchangeUnavailableError(ExchangeError):
 
 class InvalidSymbolError(DomainError):
     """نماد معاملاتی نامعتبر یا ناشناخته."""
+
+
+# ---------- Order-specific errors ----------
+
+
+class OrderRejectedError(DomainError):
+    """صرافی سفارش را رد کرد (کمبود موجودی، پارامتر نامعتبر، ...)."""
+
+
+class InsufficientBalanceError(DomainError):
+    """موجودی کافی برای ثبت سفارش نیست."""
+
+
+class OrderNotFoundError(DomainError):
+    """سفارش مورد نظر پیدا نشد."""

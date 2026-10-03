@@ -12,14 +12,22 @@ from app.core.config import Settings
 from app.domain.entities.balance import Balance
 from app.domain.entities.candle import Candle
 from app.domain.entities.market import Market
+from app.domain.entities.order import Order, OrderRequest
 from app.domain.exceptions import (
     ExchangeAuthError,
     ExchangeError,
     ExchangeRateLimitError,
     ExchangeUnavailableError,
     InvalidSymbolError,
+    OrderNotFoundError,
+    OrderRejectedError,
 )
-from app.infrastructure.exchange.wallex.mapper import map_balance, map_candles, map_market
+from app.infrastructure.exchange.wallex.mapper import (
+    map_balance,
+    map_candles,
+    map_market,
+    map_order,
+)
 
 
 class WallexExchange:
@@ -152,3 +160,149 @@ class WallexExchange:
             **{"from": from_ts, "to": to_ts},
         )
         return map_candles(raw)
+
+    # ---------- Order operations ----------
+
+    async def _post(self, path: str, json_body: dict[str, Any]) -> dict[str, Any]:
+        """ارسال POST به والکس با مدیریت خطا."""
+        try:
+            r = await self._client.post(path, json=json_body)
+        except httpx.TimeoutException as e:
+            raise ExchangeUnavailableError(f"Timeout: POST {path}") from e
+        except httpx.HTTPError as e:
+            raise ExchangeUnavailableError(f"Network error: {e}") from e
+
+        if r.status_code == 401:
+            raise ExchangeAuthError("کلید API نامعتبر است")
+        if r.status_code == 429:
+            raise ExchangeRateLimitError("Rate Limit والکس")
+        if r.status_code >= 500:
+            raise ExchangeUnavailableError(f"Wallex {r.status_code}")
+        if r.status_code >= 400:
+            try:
+                err_payload = r.json()
+                msg = err_payload.get("message") or err_payload.get("error") or r.text[:200]
+            except ValueError:
+                msg = r.text[:200]
+            raise OrderRejectedError(msg, code="order_rejected")
+
+        try:
+            payload = r.json()
+        except ValueError as e:
+            raise ExchangeError("پاسخ والکس JSON معتبر نیست") from e
+
+        if not payload.get("success", True):
+            msg = payload.get("message") or "Unknown error from Wallex"
+            raise ExchangeError(msg, code="exchange_error")
+
+        return payload
+
+    async def place_order(self, request: OrderRequest) -> Order:
+        """ثبت سفارش جدید در والکس.
+
+        طبق مستندات: POST /v1/account/orders
+        """
+        body: dict[str, Any] = {
+            "symbol": request.symbol,
+            "side": request.side.value,
+            "type": request.type.value,
+            "quantity": str(request.quantity),
+            "client_id": request.client_id,
+        }
+        if request.price is not None:
+            body["price"] = str(request.price)
+        if request.stop_price is not None:
+            body["stopPrice"] = str(request.stop_price)
+
+        self._log.info(
+            "placing_order",
+            symbol=request.symbol,
+            side=request.side.value,
+            type=request.type.value,
+            quantity=str(request.quantity),
+            price=str(request.price) if request.price else None,
+            client_id=request.client_id,
+        )
+
+        payload = await self._post("/v1/account/orders", body)
+        result = payload.get("result", {})
+        order = map_order(result)
+
+        self._log.info(
+            "order_placed",
+            client_id=order.client_id,
+            status=order.status.value,
+            active=order.active,
+        )
+        return order
+
+    async def cancel_order(self, client_id: str, symbol: str) -> Order:
+        """لغو سفارش با client_id.
+
+        طبق مستندات: DELETE /v1/account/orders/{client_id}
+        """
+        self._log.info("canceling_order", client_id=client_id, symbol=symbol)
+
+        try:
+            r = await self._client.delete(
+                f"/v1/account/orders/{client_id}",
+                params={"symbol": symbol},
+            )
+        except httpx.TimeoutException as e:
+            raise ExchangeUnavailableError(f"Timeout: cancel {client_id}") from e
+        except httpx.HTTPError as e:
+            raise ExchangeUnavailableError(f"Network error: {e}") from e
+
+        if r.status_code == 401:
+            raise ExchangeAuthError("کلید API نامعتبر است")
+        if r.status_code == 404:
+            raise OrderNotFoundError(f"سفارش {client_id} پیدا نشد")
+        if r.status_code >= 500:
+            raise ExchangeUnavailableError(f"Wallex {r.status_code}")
+        if r.status_code >= 400:
+            try:
+                err_payload = r.json()
+                msg = err_payload.get("message") or r.text[:200]
+            except ValueError:
+                msg = r.text[:200]
+            raise ExchangeError(msg, code="cancel_failed")
+
+        try:
+            payload = r.json()
+        except ValueError as e:
+            raise ExchangeError("پاسخ والکس JSON معتبر نیست") from e
+
+        if not payload.get("success", True):
+            msg = payload.get("message") or "خطا در لغو سفارش"
+            raise ExchangeError(msg, code="cancel_failed")
+
+        result = payload.get("result", {})
+        order = map_order(result)
+
+        self._log.info(
+            "order_canceled",
+            client_id=order.client_id,
+            status=order.status.value,
+        )
+        return order
+
+    async def get_orders(self, symbol: str | None = None) -> list[Order]:
+        """لیست سفارش‌های کاربر (read-only، برای تست)."""
+        params: dict[str, Any] = {}
+        if symbol:
+            params["symbol"] = symbol
+
+        payload = await self._get("/v1/account/orders", **params)
+        result = payload.get("result", {})
+
+        # والکس ممکنه لیست یا dict برگردونه
+        if isinstance(result, dict):
+            orders_raw = result.get("orders") or result.get("items") or []
+            if isinstance(orders_raw, dict):
+                orders_raw = list(orders_raw.values())
+        elif isinstance(result, list):
+            orders_raw = result
+        else:
+            orders_raw = []
+
+        return [map_order(o) for o in orders_raw if isinstance(o, dict)]

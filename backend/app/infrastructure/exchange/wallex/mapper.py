@@ -182,3 +182,56 @@ def map_candles(raw_response: dict[str, Any]) -> list[Candle]:
         )
 
     return candles
+
+
+def map_order(raw: dict[str, Any]) -> "Order":
+    """تبدیل پاسخ والکس به Order entity.
+
+    Wallex از camelCase استفاده می‌کنه: clientOrderId, origQty, ...
+    بعضی فیلدها ممکنه با underscore باشن: created_at, updated_at
+    """
+    from app.domain.entities.order import Order
+    from app.domain.value_objects.order_enums import OrderSide, OrderStatus, OrderType
+
+    # client_id: در پاسخ Wallex با "clientOrderId" میاد، در بعضی موارد "client_id"
+    client_id = (
+        raw.get("clientOrderId")
+        or raw.get("client_id")
+        or raw.get("clientId")
+        or ""
+    )
+
+    # side: ممکنه خالی باشه
+    side_raw = (raw.get("side") or "BUY").upper()
+    try:
+        side = OrderSide(side_raw)
+    except ValueError:
+        side = OrderSide.BUY
+
+    # type
+    type_raw = (raw.get("type") or "LIMIT").upper()
+    try:
+        order_type = OrderType(type_raw)
+    except ValueError:
+        order_type = OrderType.LIMIT
+
+    # status
+    status = OrderStatus.from_raw(raw.get("status"))
+
+    return Order(
+        client_id=str(client_id),
+        symbol=raw.get("symbol", ""),
+        side=side,
+        type=order_type,
+        status=status,
+        price=_dec(raw.get("price")) or Decimal(0),
+        orig_qty=_dec(raw.get("origQty")) or Decimal(0),
+        executed_qty=_dec(raw.get("executedQty")) or Decimal(0),
+        executed_price=_dec(raw.get("executedPrice")) or Decimal(0),
+        executed_sum=_dec(raw.get("executedSum")) or Decimal(0),
+        fee=_dec(raw.get("fee")) or Decimal(0),
+        active=bool(raw.get("active", False)),
+        executed_percent=_dec(raw.get("executedPercent")) or Decimal(0),
+        created_at=_int(raw.get("created_at")) or 0,
+        updated_at=_int(raw.get("updated_at")) or 0,
+    )
