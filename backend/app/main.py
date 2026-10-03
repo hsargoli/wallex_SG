@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.rate_limit import limiter
 from app.infrastructure.exchange.wallex.client import WallexExchange
 from app.presentation.api.v1.router import router as v1_router
 
@@ -28,7 +31,29 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ROSHD_SARV API", lifespan=lifespan)
 
-# Configure CORS
+# ---------- Rate Limiting ----------
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """پاسخ 429 با پیام فارسی."""
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": (
+                f"محدودیت نرخ درخواست. "
+                f"لطفاً کمی صبر کن و دوباره تلاش کن. "
+                f"(limit: {exc.detail})"
+            ),
+        },
+    )
+
+
+# ---------- CORS ----------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, replace with your frontend URL
@@ -37,7 +62,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# All v1 routes (markets, bots, profitability, simulation, orders, ...)
+# ---------- Routes ----------
 app.include_router(v1_router)
 
 

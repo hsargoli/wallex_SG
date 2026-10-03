@@ -31,5 +31,10 @@ def reset_global_budget_service():
 
 @pytest.fixture
 def client():
-    """TestClient برای تست اندپوینت‌ها."""
-    return TestClient(app)
+    """TestClient با lifespan فعال.
+
+    با استفاده از `with`، lifespan handler اجرا می‌شه و
+    `app.state.exchange` ساخته میشه.
+    """
+    with TestClient(app) as c:
+        yield c

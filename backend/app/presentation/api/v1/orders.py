@@ -3,13 +3,20 @@
 ⚠️ امنیت:
     - ثبت و لغو سفارش فقط وقتی LIVE_TRADING_ENABLED=true فعاله
     - همه درخواست‌ها log میشن
+    - Rate limiting اختصاصی برای هر endpoint
 """
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import (
+    CANCEL_ORDER_LIMIT,
+    LIST_ORDERS_LIMIT,
+    PLACE_ORDER_LIMIT,
+    limiter,
+)
 from app.domain.entities.order import OrderRequest
 from app.domain.exceptions import (
     ExchangeError,
@@ -46,7 +53,9 @@ def _require_live_trading(settings: Settings) -> None:
     status_code=status.HTTP_201_CREATED,
     summary="ثبت سفارش جدید",
 )
+@limiter.limit(PLACE_ORDER_LIMIT)
 async def place_order(
+    request: Request,
     payload: PlaceOrderRequest,
     exchange: ExchangePort = Depends(get_exchange),
     settings: Settings = Depends(get_settings),
@@ -54,6 +63,7 @@ async def place_order(
     """ثبت سفارش جدید.
 
     فقط وقتی LIVE_TRADING_ENABLED=true کار می‌کنه.
+    محدودیت: ۵ درخواست در دقیقه.
     """
     _require_live_trading(settings)
 
@@ -61,7 +71,7 @@ async def place_order(
     client_id = payload.client_id or f"api-{int(time.time())}-{payload.symbol[:3]}"
 
     try:
-        request = OrderRequest(
+        order_request = OrderRequest(
             symbol=payload.symbol.upper(),
             side=OrderSide(payload.side),
             type=OrderType(payload.type),
@@ -74,7 +84,7 @@ async def place_order(
         raise HTTPException(status_code=400, detail=str(e))
 
     try:
-        order = await exchange.place_order(request)
+        order = await exchange.place_order(order_request)
     except OrderRejectedError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ExchangeError as e:
@@ -88,13 +98,18 @@ async def place_order(
     response_model=OrderResponse,
     summary="لغو سفارش",
 )
+@limiter.limit(CANCEL_ORDER_LIMIT)
 async def cancel_order(
+    request: Request,
     client_id: str,
     symbol: str = Query(..., description="نماد (مثل BTCTMN)"),
     exchange: ExchangePort = Depends(get_exchange),
     settings: Settings = Depends(get_settings),
 ) -> OrderResponse:
-    """لغو سفارش با client_id. فقط وقتی LIVE_TRADING_ENABLED=true."""
+    """لغو سفارش با client_id. فقط وقتی LIVE_TRADING_ENABLED=true.
+
+    محدودیت: ۱۰ درخواست در دقیقه.
+    """
     _require_live_trading(settings)
 
     try:
@@ -112,11 +127,16 @@ async def cancel_order(
     response_model=OrderListResponse,
     summary="لیست سفارش‌ها",
 )
+@limiter.limit(LIST_ORDERS_LIMIT)
 async def list_orders(
+    request: Request,
     symbol: str | None = Query(None, description="فیلتر بر اساس نماد"),
     exchange: ExchangePort = Depends(get_exchange),
 ) -> OrderListResponse:
-    """لیست سفارش‌های کاربر (read-only، safe)."""
+    """لیست سفارش‌های کاربر (read-only، safe).
+
+    محدودیت: ۳۰ درخواست در دقیقه.
+    """
     try:
         orders = await exchange.get_orders(symbol=symbol.upper() if symbol else None)
     except ExchangeError as e:
