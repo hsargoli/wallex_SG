@@ -134,6 +134,9 @@ async def list_orders(
     request: Request,
     response: Response,
     symbol: str | None = Query(None, description="فیلتر بر اساس نماد"),
+    status_filter: str | None = Query(
+        None, alias="status", description="فیلتر وضعیت (NEW, FILLED, ...)"
+    ),
     exchange: ExchangePort = Depends(get_exchange),
 ) -> OrderListResponse:
     """لیست سفارش‌های کاربر (read-only، safe).
@@ -141,7 +144,39 @@ async def list_orders(
     محدودیت: ۳۰ درخواست در دقیقه.
     """
     try:
-        orders = await exchange.get_orders(symbol=symbol.upper() if symbol else None)
+        orders = await exchange.get_orders(
+            symbol=symbol.upper() if symbol else None,
+            status=status_filter,
+        )
+    except ExchangeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    return OrderListResponse(
+        count=len(orders),
+        orders=[OrderResponse.from_entity(o) for o in orders],
+    )
+
+
+@router.get(
+    "/open",
+    response_model=OrderListResponse,
+    summary="سفارش‌های باز فعلی",
+)
+@limiter.limit(LIST_ORDERS_LIMIT)
+async def list_open_orders(
+    request: Request,
+    response: Response,
+    symbol: str | None = Query(None, description="فیلتر بر اساس نماد"),
+    exchange: ExchangePort = Depends(get_exchange),
+) -> OrderListResponse:
+    """سفارش‌های باز فعلی (شامل STOP_LIMIT و LIMIT).
+
+    اینا سرمایه رو درگیر می‌کنن و می‌تونن لغو بشن.
+    """
+    try:
+        orders = await exchange.get_open_orders(
+            symbol=symbol.upper() if symbol else None,
+        )
     except ExchangeError as e:
         raise HTTPException(status_code=502, detail=str(e))
 

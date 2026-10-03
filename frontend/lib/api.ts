@@ -559,9 +559,19 @@ export const api = {
     client.post(`/v1/bots/${slug}/reset`).then((r) => r.data),
 
   // ---------- Orders ----------
-  listOrders: (symbol?: string) =>
+  listOrders: (symbol?: string, status?: string) =>
     client
       .get<OrdersListResponse>("/v1/orders", {
+        params: {
+          ...(symbol ? { symbol } : {}),
+          ...(status ? { status } : {}),
+        },
+      })
+      .then((r) => r.data),
+
+  listOpenOrders: (symbol?: string) =>
+    client
+      .get<OrdersListResponse>("/v1/orders/open", {
         params: symbol ? { symbol } : undefined,
       })
       .then((r) => r.data),
@@ -765,6 +775,8 @@ export interface Order {
   type: TradingOrderType;
   status: OrderStatus;
   price: string;
+  stop_price: string;
+  stop_price_condition: string;
   orig_qty: string;
   executed_qty: string;
   executed_price: string;

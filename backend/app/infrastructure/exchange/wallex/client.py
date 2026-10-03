@@ -286,11 +286,22 @@ class WallexExchange:
         )
         return order
 
-    async def get_orders(self, symbol: str | None = None) -> list[Order]:
-        """لیست سفارش‌های کاربر (read-only، برای تست)."""
+    async def get_orders(
+        self,
+        symbol: str | None = None,
+        status: str | None = None,
+    ) -> list[Order]:
+        """لیست سفارش‌های کاربر (read-only، برای تست).
+
+        Args:
+            symbol: فیلتر بر اساس نماد (مثلاً BTCTMN)
+            status: فیلتر وضعیت (NEW, FILLED, CANCELED, ...)
+        """
         params: dict[str, Any] = {}
         if symbol:
             params["symbol"] = symbol
+        if status:
+            params["status"] = status
 
         payload = await self._get("/v1/account/orders", **params)
         result = payload.get("result", {})
@@ -302,6 +313,39 @@ class WallexExchange:
                 orders_raw = list(orders_raw.values())
         elif isinstance(result, list):
             orders_raw = result
+        else:
+            orders_raw = []
+
+        return [map_order(o) for o in orders_raw if isinstance(o, dict)]
+
+    async def get_open_orders(
+        self,
+        symbol: str | None = None,
+        page: int = 1,
+        per_page: int = 100,
+    ) -> list[Order]:
+        """دریافت سفارش‌های باز فعلی (شامل STOP_LIMIT و LIMIT).
+
+        Args:
+            symbol: فیلتر بر اساس نماد
+            page: شماره صفحه (پیش‌فرض: ۱)
+            per_page: تعداد در هر صفحه (پیش‌فرض: ۱۰۰)
+
+        Returns:
+            لیست سفارش‌های باز
+        """
+        params: dict[str, Any] = {"page": page, "per_page": per_page}
+        if symbol:
+            params["symbol"] = symbol
+
+        payload = await self._get("/v1/account/openOrders", **params)
+        result = payload.get("result", [])
+
+        # result یه آرایه است
+        if isinstance(result, list):
+            orders_raw = result
+        elif isinstance(result, dict):
+            orders_raw = result.get("orders") or result.get("items") or []
         else:
             orders_raw = []
 

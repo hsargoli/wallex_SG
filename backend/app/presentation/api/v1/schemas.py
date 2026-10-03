@@ -134,6 +134,8 @@ class OrderResponse(BaseModel):
     type: str
     status: str
     price: Decimal
+    stop_price: Decimal
+    stop_price_condition: str
     orig_qty: Decimal
     executed_qty: Decimal
     executed_price: Decimal
@@ -153,6 +155,8 @@ class OrderResponse(BaseModel):
             type=order.type.value,
             status=order.status.value,
             price=order.price,
+            stop_price=order.stop_price,
+            stop_price_condition=order.stop_price_condition,
             orig_qty=order.orig_qty,
             executed_qty=order.executed_qty,
             executed_price=order.executed_price,

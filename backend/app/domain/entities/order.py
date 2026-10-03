@@ -75,6 +75,7 @@ class Order:
     status: OrderStatus
     price: Decimal
     stop_price: Decimal
+    stop_price_condition: str
     orig_qty: Decimal
     executed_qty: Decimal
     executed_price: Decimal

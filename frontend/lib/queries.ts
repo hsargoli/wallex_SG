@@ -261,10 +261,10 @@ export function useResetBot() {
 
 // ---------- Orders Hooks ----------
 
-export function useOrders(symbol?: string) {
+export function useOrders(symbol?: string, status?: string) {
   return useQuery({
-    queryKey: ["orders", symbol ?? "all"],
-    queryFn: () => api.listOrders(symbol),
+    queryKey: ["orders", symbol ?? "all", status ?? "all"],
+    queryFn: () => api.listOrders(symbol, status),
     refetchInterval: 10_000,
   });
 }
@@ -307,5 +307,13 @@ export function useCancelOrder() {
     onError: (err: Error) => {
       toast.error(`خطا در لغو: ${err.message}`);
     },
+  });
+}
+
+export function useOpenOrders(symbol?: string) {
+  return useQuery({
+    queryKey: ["open-orders", symbol ?? "all"],
+    queryFn: () => api.listOpenOrders(symbol),
+    refetchInterval: 10_000,
   });
 }

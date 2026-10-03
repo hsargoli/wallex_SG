@@ -244,6 +244,7 @@ def map_order(raw: dict[str, Any]) -> "Order":
         status=status,
         price=_dec(raw.get("price")) or Decimal(0),
         stop_price=_dec(raw.get("stopPrice") or raw.get("stop_price")) or Decimal(0),
+        stop_price_condition=raw.get("stopPriceCondition") or "",
         orig_qty=_dec(raw.get("origQty")) or Decimal(0),
         executed_qty=_dec(raw.get("executedQty")) or Decimal(0),
         executed_price=_dec(raw.get("executedPrice")) or Decimal(0),
