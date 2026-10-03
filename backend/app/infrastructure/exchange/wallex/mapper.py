@@ -184,6 +184,24 @@ def map_candles(raw_response: dict[str, Any]) -> list[Candle]:
     return candles
 
 
+def _iso_to_ts(raw: Any) -> int:
+    """تبدیل ISO 8601 string به Unix timestamp (ثانیه)."""
+    if raw is None:
+        return 0
+    if isinstance(raw, (int, float)):
+        return int(raw)
+    if not isinstance(raw, str):
+        return 0
+    try:
+        from datetime import datetime, timezone
+        # پشتیبانی از فرمت "2026-10-03T20:13:41.000000Z"
+        s = raw.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s)
+        return int(dt.timestamp())
+    except (ValueError, TypeError):
+        return 0
+
+
 def map_order(raw: dict[str, Any]) -> "Order":
     """تبدیل پاسخ والکس به Order entity.
 
@@ -225,6 +243,7 @@ def map_order(raw: dict[str, Any]) -> "Order":
         type=order_type,
         status=status,
         price=_dec(raw.get("price")) or Decimal(0),
+        stop_price=_dec(raw.get("stopPrice") or raw.get("stop_price")) or Decimal(0),
         orig_qty=_dec(raw.get("origQty")) or Decimal(0),
         executed_qty=_dec(raw.get("executedQty")) or Decimal(0),
         executed_price=_dec(raw.get("executedPrice")) or Decimal(0),
@@ -232,6 +251,6 @@ def map_order(raw: dict[str, Any]) -> "Order":
         fee=_dec(raw.get("fee")) or Decimal(0),
         active=bool(raw.get("active", False)),
         executed_percent=_dec(raw.get("executedPercent")) or Decimal(0),
-        created_at=_int(raw.get("created_at")) or 0,
-        updated_at=_int(raw.get("updated_at")) or 0,
+        created_at=_iso_to_ts(raw.get("created_at")),
+        updated_at=_iso_to_ts(raw.get("updated_at")),
     )
