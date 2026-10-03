@@ -25,6 +25,7 @@ class OrderRequest:
         price: قیمت واحد (فقط برای LIMIT/STOP_LIMIT)
         client_id: شناسه یکتای سفارش (خودمان می‌سازیم)
         stop_price: قیمت تریگر (فقط برای STOP_*)
+        stop_price_condition: شرط فعال‌سازی: "<=" یا ">=" (فقط برای STOP_*)
     """
 
     symbol: str
@@ -34,6 +35,7 @@ class OrderRequest:
     price: Decimal | None = None
     client_id: str = ""
     stop_price: Decimal | None = None
+    stop_price_condition: str = "<="  # "<=" یا ">=" 
 
     def __post_init__(self) -> None:
         if self.quantity <= 0:

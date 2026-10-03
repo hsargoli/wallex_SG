@@ -17,6 +17,7 @@ router = APIRouter(prefix="/markets", tags=["markets"])
 
 
 def _to_out(m: Market) -> MarketOut:
+    stats = m.stats
     data = {
         "symbol": str(m.symbol),
         "base_asset": m.base_asset,
@@ -24,6 +25,9 @@ def _to_out(m: Market) -> MarketOut:
         "last_price": m.last_price,
         "fa_name": m.fa_name,
         "en_name": m.en_name,
+        "daily_volume": stats.daily_volume if stats else None,
+        "daily_quote_volume": stats.daily_quote_volume if stats else None,
+        "daily_change_percent": stats.daily_change_percent if stats else None,
     }
     return MarketOut.model_validate(data)
 

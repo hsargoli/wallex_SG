@@ -28,6 +28,7 @@ const nav = [
   { href: "/signals", label: "سیگنال‌ها", icon: Zap },
   { href: "/scanner", label: "اسکنر بازار", icon: Radar },
   { href: "/bots", label: "ربات‌ها", icon: Bot },
+  { href: "/order-bot", label: "ربات ثبت سفارش", icon: Bot },
   { href: "/orders", label: "سفارش‌ها", icon: ClipboardList },
   { href: "/paper-trading", label: "Paper Trading", icon: Play },
   { href: "/profitability", label: "محاسبه سود", icon: Calculator },

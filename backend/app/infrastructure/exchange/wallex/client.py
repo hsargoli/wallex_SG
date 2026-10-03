@@ -213,6 +213,7 @@ class WallexExchange:
             body["price"] = str(request.price)
         if request.stop_price is not None:
             body["stopPrice"] = str(request.stop_price)
+            body["stopPriceCondition"] = request.stop_price_condition
 
         self._log.info(
             "placing_order",
@@ -221,6 +222,8 @@ class WallexExchange:
             type=request.type.value,
             quantity=str(request.quantity),
             price=str(request.price) if request.price else None,
+            stop_price=str(request.stop_price) if request.stop_price else None,
+            stop_condition=request.stop_price_condition if request.stop_price else None,
             client_id=request.client_id,
         )
 

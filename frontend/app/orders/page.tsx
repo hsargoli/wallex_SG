@@ -544,7 +544,7 @@ export default function OrdersPage() {
     const sortedClosed = sortDesc(closed);
 
     // آخرین ۵ سفارش (فقط FILLED یا PARTIALLY_FILLED — بدون لغو/رد شده)
-    const allSorted = sortDesc([...orders.data.orders]);
+    const allSorted = sortDesc([...orders.data?.orders ?? []]);
     const recent = allSorted
       .filter((o) => o.status === "FILLED" || o.status === "PARTIALLY_FILLED")
       .slice(0, 5);

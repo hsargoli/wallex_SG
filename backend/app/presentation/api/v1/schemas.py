@@ -14,6 +14,9 @@ class MarketOut(BaseModel):
     last_price: Decimal | None = None
     fa_name: str | None = None
     en_name: str | None = None
+    daily_volume: Decimal | None = None
+    daily_quote_volume: Decimal | None = None
+    daily_change_percent: Decimal | None = None
 
 
 class MarketsResponse(BaseModel):
@@ -116,6 +119,9 @@ class PlaceOrderRequest(BaseModel):
     )
     stop_price: Decimal | None = Field(
         None, gt=0, description="قیمت تریگر (برای STOP_* الزامی)"
+    )
+    stop_price_condition: Literal["<=", ">="] = Field(
+        "<=", description="شرط فعال‌سازی STOP (فقط برای STOP_*)"
     )
     client_id: str | None = Field(
         None,

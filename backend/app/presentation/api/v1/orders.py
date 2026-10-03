@@ -80,6 +80,7 @@ async def place_order(
             price=payload.price,
             client_id=client_id,
             stop_price=payload.stop_price,
+            stop_price_condition=payload.stop_price_condition,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

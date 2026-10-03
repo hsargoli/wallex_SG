@@ -23,6 +23,9 @@ export interface Market {
   last_price: string | null;
   fa_name: string | null;
   en_name: string | null;
+  daily_volume: string | null;
+  daily_quote_volume: string | null;
+  daily_change_percent: string | null;
 }
 
 export interface MarketsResponse {
@@ -800,5 +803,6 @@ export interface PlaceOrderRequest {
   quantity: string;
   price?: string;
   stop_price?: string;
+  stop_price_condition?: "<=" | ">=";
   client_id?: string;
 }
