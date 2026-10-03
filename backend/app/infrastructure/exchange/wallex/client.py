@@ -212,8 +212,8 @@ class WallexExchange:
         if request.price is not None:
             body["price"] = str(request.price)
         if request.stop_price is not None:
-            body["stopPrice"] = str(request.stop_price)
-            body["stopPriceCondition"] = request.stop_price_condition
+            body["stop_Price"] = str(request.stop_price)
+            body["stop_PriceCondition"] = request.stop_price_condition
 
         self._log.info(
             "placing_order",
