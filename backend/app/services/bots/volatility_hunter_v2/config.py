@@ -11,6 +11,16 @@
   - فیلتر حجم
   - SL/TP بر مبنای ATR
   - تأیید ورود با RSI
+
+نسخه بهینه‌شده (combined_4):
+  - max_rsi = 55 (به جای 45)
+  - min_volume_ratio = 0.5 (به جای 0.7)
+  - buy_zone_pct = 20 (به جای 15)
+  - tp_atr_mult = 4.0 (به جای 3.5)
+
+نتایج بک‌تست 30 روز (5 نماد):
+  - 32 معامله، WR=40.6%، PnL=+2.20%
+  - (قبل از بهینه‌سازی: 23 معامله، WR=34.8%، PnL=+1.37%)
 """
 
 from dataclasses import dataclass
@@ -37,18 +47,18 @@ class VolatilityHunterV2Config:
     max_range_pct: float = 15.0       # حداکثر (بالاتر = روند)
     min_atr_pct: float = 0.4          # حداقل نوسان
     max_adx: float = 25.0             # تأیید رنج (ADX پایین)
-    min_volume_ratio: float = 0.7     # حجم نسبت به میانگین
+    min_volume_ratio: float = 0.5     # حجم نسبت به میانگین
 
     # --- ناحیه ورود ---
-    buy_zone_pct: float = 15.0        # تا 15% بالای کف
+    buy_zone_pct: float = 20.0        # تا 15% بالای کف
 
     # --- تأیید ورود ---
     min_rsi: float = 20.0             # RSI در چه حداقل
-    max_rsi: float = 45.0             # RSI در چه حداکثر (اشباع فروش)
+    max_rsi: float = 55.0             # RSI در چه حداکثر (اشباع فروش)
 
     # --- ریسک ---
     sl_atr_mult: float = 2.0          # SL = entry - 2×ATR
-    tp_atr_mult: float = 3.5          # TP = entry + 3.5×ATR
+    tp_atr_mult: float = 4.0          # TP = entry + 3.5×ATR
     trail_atr_mult: float = 1.5       # trailing stop پس از سود
 
     # --- محدودیت زمان ---
