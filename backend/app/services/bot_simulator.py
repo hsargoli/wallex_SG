@@ -274,11 +274,67 @@ class MeanRevertAdapter(BaseBotAdapter):
 
 
 # ============================================================
+# Volatility Hunter v2 Adapter
+# ============================================================
+class VolatilityHunterV2Adapter(BaseBotAdapter):
+    """آداپتور نوسان‌گیر v2 — با فیلترهای بهبودیافته."""
+
+    slug = "volatility_hunter_v2"
+
+    def __init__(self):
+        from app.services.bots.volatility_hunter_v2.config import (
+            VolatilityHunterV2Config,
+        )
+        self.config = VolatilityHunterV2Config()
+        self.timeframe = self.config.timeframe
+
+    def on_candle(self, candles, position):
+        from app.services.bots.volatility_hunter_v2.strategy import (
+            evaluate_entry_v2,
+            evaluate_exit_v2,
+        )
+
+        if position is None:
+            signal = evaluate_entry_v2(candles, self.config)
+            if signal is None or not signal.should_trade:
+                return {"action": "hold"}
+            return {
+                "action": "enter",
+                "reason": signal.reason,
+                "meta": {
+                    "sl": signal.stop_loss,
+                    "tp": signal.take_profit,
+                },
+            }
+
+        should_exit, exit_price, reason = evaluate_exit_v2(
+            candles=candles,
+            entry_price=position["entry_price"],
+            stop_loss=position["sl"],
+            take_profit=position["tp"],
+            config=self.config,
+            candles_in_position=position["candles_in_position"],
+        )
+
+        if should_exit:
+            if reason in ("stop_loss", "take_profit"):
+                return {
+                    "action": "exit",
+                    "reason": reason,
+                    "exit_price": exit_price,
+                }
+            return {"action": "exit", "reason": reason}
+
+        return {"action": "hold"}
+
+
+# ============================================================
 # Registry
 # ============================================================
 ADAPTERS = {
     "trend_follow": TrendFollowAdapter,
     "volatility_hunter": VolatilityHunterAdapter,
+    "volatility_hunter_v2": VolatilityHunterV2Adapter,
     "mean_revert": MeanRevertAdapter,
 }
 

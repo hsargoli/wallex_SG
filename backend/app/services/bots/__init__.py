@@ -7,6 +7,7 @@ from app.services.bots.registry import bot_registry
 from app.services.bots.smart_portfolio import SmartPortfolioBot
 from app.services.bots.trend_follow import TrendFollowBot
 from app.services.bots.volatility_hunter import VolatilityHunterBot
+from app.services.bots.volatility_hunter_v2 import VolatilityHunterV2Bot
 
 
 def _register_all():
@@ -19,6 +20,8 @@ def _register_all():
         bot_registry.register(GridBot())
     if "volatility_hunter" not in bot_registry:
         bot_registry.register(VolatilityHunterBot())
+    if "volatility_hunter_v2" not in bot_registry:
+        bot_registry.register(VolatilityHunterV2Bot())
     if "smart_portfolio" not in bot_registry:
         bot_registry.register(SmartPortfolioBot())
 
