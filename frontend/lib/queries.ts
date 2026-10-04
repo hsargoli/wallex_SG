@@ -317,3 +317,46 @@ export function useOpenOrders(symbol?: string) {
     refetchInterval: 10_000,
   });
 }
+
+// ---------- Bot Budget Hooks ----------
+
+export function useTotalBudget() {
+  return useQuery({
+    queryKey: ["total-budget"],
+    queryFn: () => api.getTotalBudget(),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useBotBudgets() {
+  return useQuery({
+    queryKey: ["bot-budgets"],
+    queryFn: () => api.listBotBudgets(),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useBotBudget(slug: string) {
+  return useQuery({
+    queryKey: ["bot-budget", slug],
+    queryFn: () => api.getBotBudget(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useSetBotBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, amount }: { slug: string; amount: number }) =>
+      api.setBotBudget(slug, amount),
+    onSuccess: (data, { slug }) => {
+      qc.invalidateQueries({ queryKey: ["bot-budgets"] });
+      qc.invalidateQueries({ queryKey: ["bot-budget", slug] });
+      qc.invalidateQueries({ queryKey: ["total-budget"] });
+      toast.success(`بودجه به ${data.allocated} TMN به‌روز شد`);
+    },
+    onError: (err: Error) => {
+      toast.error(`خطا: ${err.message}`);
+    },
+  });
+}

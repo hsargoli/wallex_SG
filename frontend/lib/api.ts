@@ -590,6 +590,29 @@ export const api = {
         params: { symbol },
       })
       .then((r) => r.data),
+
+  // ---------- Bot Budgets ----------
+  getTotalBudget: () =>
+    client
+      .get<TotalBudget>("/v1/bots/budgets/total")
+      .then((r) => r.data),
+
+  listBotBudgets: () =>
+    client
+      .get<BotBudgetListResponse>("/v1/bots/budgets")
+      .then((r) => r.data),
+
+  getBotBudget: (slug: string) =>
+    client
+      .get<BotBudget>(`/v1/bots/${slug}/budget`)
+      .then((r) => r.data),
+
+  setBotBudget: (slug: string, amount: number | string) =>
+    client
+      .post<BotBudget>(`/v1/bots/${slug}/budget`, {
+        allocated: String(amount),
+      })
+      .then((r) => r.data),
 };
 
 // --- Simulation API ---
@@ -805,4 +828,32 @@ export interface PlaceOrderRequest {
   stop_price?: string;
   stop_price_condition?: "<=" | ">=";
   client_id?: string;
+}
+
+// ---------- Bot Budget Types ----------
+
+export interface BotBudget {
+  slug: string;
+  allocated: string;
+  in_use: string;
+  free: string;
+  usage_pct: number;
+  currency: string;
+}
+
+export interface BotBudgetListResponse {
+  count: number;
+  items: BotBudget[];
+}
+
+export interface TotalBudget {
+  total_budget: string;
+  total_allocated: string;
+  unallocated: string;
+  total_in_use: string;
+  available: string;
+  allocated_budget: string;
+  in_use_capital: string;
+  available_for_trade: string;
+  currency: string;
 }
