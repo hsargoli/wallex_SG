@@ -2,9 +2,95 @@
 
 from fastapi import APIRouter, HTTPException, Request, status
 
+from app.domain.models.budget import (
+    BotBudgetListResponse,
+    BotBudgetResponse,
+    BotBudgetUpdateRequest,
+    TotalBudgetResponse,
+)
 from app.services.bots import bot_registry
+from app.services.budget_service import budget_service
 
 router = APIRouter(prefix="/bots", tags=["Bots"])
+
+# ============================================================
+# Bot Budget Endpoints
+# ============================================================
+
+
+@router.get(
+    "/budgets",
+    response_model=BotBudgetListResponse,
+    summary="لیست بودجه‌ی همه ربات‌ها",
+)
+async def list_bot_budgets():
+    """لیست بودجه‌ی همه‌ی ربات‌های دارای تخصیص."""
+    items = budget_service.list_bot_allocations()
+    return BotBudgetListResponse(
+        count=len(items),
+        items=[BotBudgetResponse(**item) for item in items],
+    )
+
+
+@router.get(
+    "/budgets/total",
+    response_model=TotalBudgetResponse,
+    summary="وضعیت کلی بودجه",
+)
+async def get_total_budget():
+    """وضعیت کلی بودجه — برای صفحه‌ی کیف پول ربات."""
+    s = budget_service.get_status()
+    return TotalBudgetResponse(
+        total_budget=s["total_budget"],
+        total_allocated=s["total_allocated"],
+        unallocated=s["unallocated"],
+        total_in_use=s["total_in_use"],
+        available=s["available"],
+        allocated_budget=s["allocated_budget"],
+        in_use_capital=s["in_use_capital"],
+        available_for_trade=s["available_for_trade"],
+    )
+
+
+@router.get(
+    "/{slug}/budget",
+    response_model=BotBudgetResponse,
+    summary="بودجه‌ی یک ربات",
+)
+async def get_bot_budget(slug: str):
+    """دریافت بودجه‌ی اختصاصی یک ربات."""
+    bot = bot_registry.get(slug)
+    if bot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ربات '{slug}' پیدا نشد",
+        )
+    status_dict = budget_service.get_bot_status(slug)
+    return BotBudgetResponse(**status_dict)
+
+
+@router.post(
+    "/{slug}/budget",
+    response_model=BotBudgetResponse,
+    summary="تخصیص بودجه به یک ربات",
+)
+async def set_bot_budget(slug: str, payload: BotBudgetUpdateRequest):
+    """تعیین/به‌روزرسانی بودجه‌ی اختصاصی یک ربات."""
+    bot = bot_registry.get(slug)
+    if bot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ربات '{slug}' پیدا نشد",
+        )
+    try:
+        budget_service.set_bot_allocation(slug, payload.allocated)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+    status_dict = budget_service.get_bot_status(slug)
+    return BotBudgetResponse(**status_dict)
+
 
 
 @router.get("")
