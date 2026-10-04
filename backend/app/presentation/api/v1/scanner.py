@@ -8,19 +8,20 @@ from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.presentation.api.deps import ExchangeDep
 from app.services.signal_engine import generate_signal
 from app.services.trend import analyze_trend
+from app.services.indicators import atr, rsi
 
 router = APIRouter(prefix="/scanner", tags=["Scanner"])
 
 MAX_CONCURRENT = 10
 
 
-async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore) -> dict | None:
+async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h") -> dict | None:
     async with sem:
         try:
             from decimal import Decimal as D
 
             # از 1h استفاده می‌کنیم تا تغییرات ۳/۱۲/۲۴ ساعته دقیق باشه
-            candles = await use_case.execute(symbol=symbol, timeframe="1h", limit=200)
+            candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=200)
             if not candles or len(candles) < 100:
                 return None
 
@@ -46,6 +47,25 @@ async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore) -> dict | Non
             # ---------- Sparkline: ۲۴ کندل آخر ----------
             sparkline = [float(c.close) for c in candles[-24:]]
 
+            # ---------- اندیکاتورها ----------
+            rsi_vals = rsi(candles, 14)
+            atr_vals = atr(candles, 14)
+            rsi_14 = (
+                str(rsi_vals[-1].quantize(D("0.01")))
+                if rsi_vals and rsi_vals[-1] is not None
+                else None
+            )
+            atr_14 = (
+                str(atr_vals[-1].quantize(D("0.01")))
+                if atr_vals and atr_vals[-1] is not None
+                else None
+            )
+            atr_pct = None
+            if atr_14 is not None and last_close > 0:
+                atr_pct = str(
+                    ((atr_vals[-1] / last_close) * D(100)).quantize(D("0.01"))
+                )
+
             return {
                 "symbol": symbol,
                 "current_price": str(last_close),
@@ -64,6 +84,9 @@ async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore) -> dict | Non
                     str(signal.risk_reward.quantize(D("0.01"))) if signal.risk_reward else None
                 ),
                 "sparkline": sparkline,
+                "rsi_14": rsi_14,
+                "atr_14": atr_14,
+                "atr_pct": atr_pct,
             }
         except Exception:
             return None
@@ -139,6 +162,7 @@ async def list_markets_paginated(
 async def scan_page(
     exchange: ExchangeDep,
     symbols: str = Query(..., description="نمادها با کاما جدا شده"),
+    tf: str = Query("1h", description="تایم‌فریم: 15m, 1h, 4h, 1D"),
 ):
     """اسکن نمادهای داده‌شده (برای صفحه‌ی جاری)."""
     sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()][:30]
@@ -147,10 +171,10 @@ async def scan_page(
 
     use_case = GetCandlesUseCase(exchange=exchange)
     sem = asyncio.Semaphore(MAX_CONCURRENT)
-    tasks = [_scan_one(use_case, sym, sem) for sym in sym_list]
+    tasks = [_scan_one(use_case, sym, sem, tf=tf) for sym in sym_list]
     results = await asyncio.gather(*tasks)
 
     items = [r for r in results if r is not None]
     # ترتیب اصلی (بر اساس حجم از /list) حفظ می‌شود
 
-    return {"count": len(items), "items": items}
+    return {"count": len(items), "timeframe": tf, "items": items}
