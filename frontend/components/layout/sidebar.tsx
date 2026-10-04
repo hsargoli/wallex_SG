@@ -36,8 +36,7 @@ type NavItem = {
 const nav: NavItem[] = [
   { href: "/", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
   { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
-  { href: "/wallet", label: "کیف پول", icon: Coins, desc: "موجودی ارزها" },
-  { href: "/budget", label: "بودجه", icon: Wallet, desc: "مدیریت سرمایه‌ی ربات" },
+  { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
   { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
   { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
   { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
