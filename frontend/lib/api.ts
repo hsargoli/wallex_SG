@@ -278,6 +278,9 @@ export interface TrendResult {
   signal: "buy" | "sell" | "hold";
   risk_reward: string | null;
   sparkline: number[];
+  rsi_14: string | null;
+  atr_14: string | null;
+  atr_pct: string | null;
 }
 
 export interface ScannerListMeta {
@@ -298,6 +301,7 @@ export interface ScannerListResponse {
 
 export interface ScannerScanResponse {
   count: number;
+  timeframe: string;
   items: TrendResult[];
 }
 
@@ -537,10 +541,10 @@ export const api = {
         params: { page, page_size: pageSize, quote },
       })
       .then((r) => r.data),
-  scanSymbols: (symbols: string[]) =>
+  scanSymbols: (symbols: string[], tf: string = "1h") =>
     client
       .get<ScannerScanResponse>("/v1/scanner/scan", {
-        params: { symbols: symbols.join(",") },
+        params: { symbols: symbols.join(","), tf },
       })
       .then((r) => r.data),
   // Paper V2

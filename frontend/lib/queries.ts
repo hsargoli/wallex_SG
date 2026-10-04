@@ -143,10 +143,10 @@ export function useScannerList(page: number, pageSize: number = 15, quote: strin
   });
 }
 
-export function useScanSymbols(symbols: string[]) {
+export function useScanSymbols(symbols: string[], tf: string = "1h") {
   return useQuery({
-    queryKey: ["scanner-scan", symbols.join(",")],
-    queryFn: () => api.scanSymbols(symbols),
+    queryKey: ["scanner-scan", symbols.join(","), tf],
+    queryFn: () => api.scanSymbols(symbols, tf),
     enabled: symbols.length > 0,
     staleTime: 60_000,
   });

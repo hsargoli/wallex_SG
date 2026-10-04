@@ -1,460 +1,191 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Suspense, useCallback, useMemo } from "react";
+import { Zap } from "lucide-react";
+import { useMarkets } from "@/lib/queries";
+import { usePaginatedScanner } from "@/lib/hooks/use-paginated-scanner";
 import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Activity,
-  BarChart3,
-  Zap,
-  ChevronRight,
-  ChevronLeft,
-  Loader2,
-} from "lucide-react";
-import { useScannerList, useScanSymbols } from "@/lib/queries";
-import { type TrendResult } from "@/lib/api";
-import { formatPrice, formatNumber } from "@/lib/format";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+  useScannerUrlState,
+  type ScannerUrlState,
+} from "@/lib/hooks/use-scanner-url-state";
+import { TimeframeTabs, type Timeframe } from "@/components/scanner/timeframe-tabs";
+import { ScannerKPI, type ScannerStats } from "@/components/scanner/scanner-kpi";
+import { ScannerFilters } from "@/components/scanner/scanner-filters";
+import { ScannerTable } from "@/components/scanner/scanner-table";
+import { MarketPagination } from "@/components/markets/market-pagination";
+import { Card, CardContent } from "@/components/ui/card";
+import type { TrendResult } from "@/lib/api";
 
 const PAGE_SIZE = 15;
 
-export default function ScannerPage() {
-  const [page, setPage] = useState(1);
-  const [quote, setQuote] = useState("TMN");
+function ScannerContent() {
+  const { state, update, reset } = useScannerUrlState();
+  const markets = useMarkets();
 
-  const list = useScannerList(page, PAGE_SIZE, quote);
-  const [symbolsToScan, setSymbolsToScan] = useState<string[]>([]);
+  // ---------- Filter markets by quote + search (global, all 187) ----------
+  const filteredMarkets = useMemo(() => {
+    if (!markets.data) return [];
+    const search = state.search.trim().toLowerCase();
+    return markets.data.items
+      .filter((m) => {
+        // حذف نمادهای بی‌حجم
+        if (Number(m.daily_quote_volume || 0) <= 0) return false;
+        // quote filter
+        const isTMN = m.quote_asset === "TMN";
+        if (state.quote === "TMN" && !isTMN) return false;
+        if (state.quote === "USDT" && isTMN) return false;
+        // search
+        if (search) {
+          const haystack = [
+            m.symbol,
+            m.base_asset,
+            m.fa_name,
+            m.en_name,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      })
+      .sort(
+        (a, b) =>
+          Number(b.daily_quote_volume || 0) - Number(a.daily_quote_volume || 0),
+      );
+  }, [markets.data, state.search, state.quote]);
 
-  useEffect(() => {
-    if (list.data?.symbols && list.data.symbols.length > 0) {
-      setSymbolsToScan(list.data.symbols);
+  const symbols = useMemo(
+    () => filteredMarkets.map((m) => m.symbol),
+    [filteredMarkets],
+  );
+
+  // ---------- Filter fn for scanned items (signal, strength, RSI, RR) ----------
+  const filterFn = useCallback(
+    (it: TrendResult) => {
+      if (state.signal !== "all" && it.signal !== state.signal) return false;
+      if (state.strength !== "all" && it.strength !== state.strength) return false;
+      if (state.rsiMin !== null && Number(it.rsi_14 || 0) < state.rsiMin) return false;
+      if (state.rsiMax !== null && Number(it.rsi_14 || 0) > state.rsiMax) return false;
+      if (state.rrMin !== null && Number(it.risk_reward || 0) < state.rrMin) return false;
+      return true;
+    },
+    [state.signal, state.strength, state.rsiMin, state.rsiMax, state.rrMin],
+  );
+
+  const needsFilter =
+    state.signal !== "all" ||
+    state.strength !== "all" ||
+    state.rsiMin !== null ||
+    state.rsiMax !== null ||
+    state.rrMin !== null;
+
+  const filterKey = `${state.signal}-${state.strength}-${state.rsiMin}-${state.rsiMax}-${state.rrMin}-${needsFilter ? "1" : "0"}`;
+
+  const scan = usePaginatedScanner({
+    symbols,
+    tf: state.tf,
+    filterFn,
+    filterKey,
+    pageSize: PAGE_SIZE,
+    currentPage: state.page,
+  });
+
+  // در حال اسکن: بر اساس کل نمادها | اسکن کامل: بر اساس matchها
+  const totalPages = scan.isComplete
+    ? Math.max(1, Math.ceil(scan.totalMatches / PAGE_SIZE))
+    : Math.max(1, Math.ceil(scan.totalSymbols / PAGE_SIZE));
+
+  const stats: ScannerStats = useMemo(() => {
+    let bullish = 0, bearish = 0, neutral = 0;
+    for (const it of scan.items) {
+      if (it.direction === "bullish") bullish++;
+      else if (it.direction === "bearish") bearish++;
+      else neutral++;
     }
-  }, [list.data]);
+    return { bullish, bearish, neutral, total: scan.items.length };
+  }, [scan.items]);
 
-  const scan = useScanSymbols(symbolsToScan);
-
-  const items = scan.data?.items ?? [];
-  const stats = {
-    bullish: items.filter((i) => i.direction === "bullish").length,
-    bearish: items.filter((i) => i.direction === "bearish").length,
-    neutral: items.filter((i) => i.direction === "neutral").length,
-  };
-
-  const goPage = (p: number) => {
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const handleTf = (tf: Timeframe) => update({ tf, page: 1 });
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <Zap className="h-6 w-6 text-emerald-400" />
-            اسکنر بازار
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {list.data
-              ? `${formatNumber(list.data.total)} مارکت — صفحه ${list.data.page} از ${list.data.total_pages}`
-              : "در حال بارگذاری..."}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-card p-1">
-          {["TMN", "USDT"].map((q) => (
-            <button
-              key={q}
-              onClick={() => {
-                setQuote(q);
-                setPage(1);
-              }}
-              className={cn(
-                "rounded px-3 py-1.5 text-xs font-medium transition",
-                quote === q
-                  ? "bg-emerald-500/20 text-emerald-400"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <StatBox label="صعودی" value={stats.bullish} icon={TrendingUp} color="text-emerald-400" loading={scan.isLoading} />
-        <StatBox label="نزولی" value={stats.bearish} icon={TrendingDown} color="text-red-400" loading={scan.isLoading} />
-        <StatBox label="بدون روند" value={stats.neutral} icon={Minus} color="text-zinc-400" loading={scan.isLoading} />
-        <StatBox
-          label="صفحه"
-          value={`${list.data?.page ?? 1} / ${list.data?.total_pages ?? 1}`}
-          icon={BarChart3}
-          color="text-blue-400"
-          loading={list.isLoading}
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="border-b border-white/5 pb-3">
-          <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.6fr_0.8fr_1.2fr_0.7fr_0.6fr_0.7fr] gap-2 text-[10px] font-medium text-muted-foreground">
-            <div>نماد</div>
-            <div className="text-left">قیمت</div>
-            <div className="text-center">3h</div>
-            <div className="text-center">12h</div>
-            <div className="text-center">24h</div>
-            <div className="text-center">R/R</div>
-            <div className="text-center">سیگنال</div>
-            <div className="text-center">Score</div>
-            <div className="text-center">الگو</div>
-            <div className="text-center">نوسان</div>
-            <div className="text-center">روند</div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
+            <Zap className="h-5 w-5 text-emerald-400" />
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {scan.isLoading || list.isLoading ? (
-            <div className="space-y-2 p-4">
-              {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {items.map((item) => (
-                <ScanRow key={item.symbol} item={item} />
-              ))}
-              {items.length === 0 && (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  نتیجه‌ای یافت نشد
-                </div>
+          <div>
+            <h1 className="text-xl font-bold">اسکنر بازار</h1>
+            <p className="text-xs text-muted-foreground">
+              صفحه {state.page} از {totalPages}
+              <span className="mx-1.5">—</span>
+              <span className="font-mono">
+                {scan.totalScanned}/{scan.totalSymbols}
+              </span>{" "}
+              نماد اسکن‌شده
+              {!scan.isComplete && (
+                <span className="mr-2 inline-flex items-center gap-1 text-emerald-400">
+                  <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  در حال اسکن
+                </span>
               )}
-            </div>
-          )}
+            </p>
+          </div>
+        </div>
+
+        <TimeframeTabs value={state.tf} onChange={handleTf} />
+      </div>
+
+      {/* KPI */}
+      <ScannerKPI stats={stats} />
+
+      {/* Filters */}
+      <Card className="border-white/5 bg-card">
+        <CardContent className="pt-6">
+          <ScannerFilters state={state} onUpdate={update} onReset={reset} />
         </CardContent>
       </Card>
 
-      {list.data && list.data.total_pages > 1 && (
-        <Pagination
-          page={page}
-          totalPages={list.data.total_pages}
-          onPageChange={goPage}
-          loading={list.isLoading || scan.isLoading}
+      {/* Results header */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          نتایج — تایم‌فریم: <span className="font-mono text-foreground">{state.tf}</span>
+        </span>
+        <span>
+          {scan.items.length} از {scan.totalMatches} نماد منطبق
+          {scan.hasMoreToLoad && (
+            <span className="ml-2 animate-pulse text-emerald-400">
+              ⏳ در حال اسکن...
+            </span>
+          )}
+        </span>
+      </div>
+
+      {/* Table */}
+      <ScannerTable items={scan.items} loading={scan.isLoading && scan.items.length === 0} />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <MarketPagination
+          page={state.page}
+          totalPages={totalPages}
+          onPageChange={(p) => update({ page: p })}
         />
       )}
     </div>
   );
 }
 
-function Sparkline({
-  data,
-  direction,
-}: {
-  data: number[];
-  direction: "bullish" | "bearish" | "neutral";
-}) {
-  if (!data || data.length < 2) return <div className="h-6 w-12" />;
-
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const w = 48;
-  const h = 20;
-
-  const points = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * w;
-      const y = h - ((v - min) / range) * h;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const color =
-    direction === "bullish"
-      ? "#10b981"
-      : direction === "bearish"
-        ? "#ef4444"
-        : "#a1a1aa";
-
+export default function ScannerPage() {
   return (
-    <svg width={w} height={h} className="flex-shrink-0 opacity-90">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function Pagination({
-  page,
-  totalPages,
-  onPageChange,
-  loading,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (p: number) => void;
-  loading: boolean;
-}) {
-  const pages = buildPageList(page, totalPages);
-
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-1">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1 || loading}
-        className="gap-1"
-      >
-        <ChevronRight className="h-3.5 w-3.5" />
-        قبلی
-      </Button>
-
-      {pages.map((p, i) =>
-        p === "..." ? (
-          <span key={`e-${i}`} className="px-2 text-muted-foreground">
-            ...
-          </span>
-        ) : (
-          <Button
-            key={p}
-            variant={p === page ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPageChange(p as number)}
-            disabled={loading}
-            className={cn(
-              "h-8 w-8 p-0 font-mono text-xs",
-              p === page && "bg-emerald-600 hover:bg-emerald-700",
-            )}
-          >
-            {p}
-          </Button>
-        ),
-      )}
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages || loading}
-        className="gap-1"
-      >
-        بعدی
-        <ChevronLeft className="h-3.5 w-3.5" />
-      </Button>
-
-      {loading && (
-        <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          در حال اسکن...
-        </div>
-      )}
-    </div>
-  );
-}
-
-function buildPageList(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  if (start > 2) pages.push("...");
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (end < total - 1) pages.push("...");
-  pages.push(total);
-  return pages;
-}
-
-function ScanRow({ item }: { item: TrendResult }) {
-  const config = directionConfig(item.direction);
-  const Icon = config.icon;
-
-  return (
-    <Link
-      href={`/signals/${item.symbol}`}
-      className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr_0.6fr_0.8fr_1.2fr_0.7fr_0.6fr_0.7fr] items-center gap-2 px-4 py-3 transition hover:bg-white/[0.02]"
+    <Suspense
+      fallback={
+        <div className="p-8 text-sm text-muted-foreground">در حال بارگذاری...</div>
+      }
     >
-      <div className="flex items-center gap-2">
-        <Icon className={cn("h-4 w-4 flex-shrink-0", config.color)} />
-        <div className="min-w-0">
-          <p className="truncate font-mono text-sm font-semibold">{item.symbol}</p>
-          <p className="truncate font-mono text-[10px] text-muted-foreground">
-            {formatPrice(item.current_price)}
-          </p>
-        </div>
-        <Sparkline data={item.sparkline} direction={item.direction} />
-      </div>
-
-      <ChangeCell value={item.change_3h} />
-      <ChangeCell value={item.change_12h} />
-      <ChangeCell value={item.change_24h} />
-
-      <div className="text-center">
-        {item.risk_reward ? (
-          <span
-            className={cn(
-              "font-mono text-xs font-bold",
-              Number(item.risk_reward) >= 2
-                ? "text-emerald-400"
-                : Number(item.risk_reward) >= 1
-                  ? "text-amber-400"
-                  : "text-red-400",
-            )}
-          >
-            {Number(item.risk_reward).toFixed(1)}
-          </span>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/50">—</span>
-        )}
-      </div>
-
-      <div className="text-center">
-        <SignalBadge signal={item.signal} />
-      </div>
-
-      <div className="flex items-center justify-center gap-1">
-        <div className="h-1.5 w-12 overflow-hidden rounded-full bg-white/5">
-          <div
-            className={cn(
-              "h-full transition-all",
-              item.trend_score > 0 ? "bg-emerald-500" : "bg-red-500",
-            )}
-            style={{ width: `${Math.min(Math.abs(item.trend_score), 100)}%` }}
-          />
-        </div>
-        <span className={cn("font-mono text-xs font-bold", config.color)}>
-          {item.trend_score > 0 ? "+" : ""}
-          {item.trend_score}
-        </span>
-      </div>
-
-      <div className="text-center">
-        <Badge variant="outline" className={cn("text-[9px]", patternColor(item.pattern))}>
-          {patternLabel(item.pattern)}
-        </Badge>
-      </div>
-
-      <div className="text-center font-mono text-[10px] text-muted-foreground">
-        {Number(item.volatility_pct).toFixed(1)}%
-      </div>
-
-      <div className="text-center">
-        <Badge variant="outline" className={cn("text-[9px]", strengthColor(item.strength))}>
-          {strengthLabel(item.strength)}
-        </Badge>
-      </div>
-    </Link>
-  );
-}
-
-function ChangeCell({ value }: { value: string | null }) {
-  if (value === null) {
-    return <div className="text-center text-[10px] text-muted-foreground/50">—</div>;
-  }
-  const n = Number(value);
-  const isUp = n >= 0;
-  return (
-    <div className="text-center">
-      <span
-        className={cn(
-          "font-mono text-[11px] font-medium",
-          isUp ? "text-emerald-400" : "text-red-400",
-        )}
-      >
-        {isUp ? "+" : ""}
-        {n.toFixed(2)}%
-      </span>
-    </div>
-  );
-}
-
-function SignalBadge({ signal }: { signal: "buy" | "sell" | "hold" }) {
-  const config = {
-    buy: { label: "خرید", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
-    sell: { label: "فروش", cls: "border-red-500/40 bg-red-500/10 text-red-400" },
-    hold: { label: "صبر", cls: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
-  }[signal];
-  return (
-    <Badge variant="outline" className={cn("text-[10px] font-semibold", config.cls)}>
-      {config.label}
-    </Badge>
-  );
-}
-
-function StatBox({
-  label,
-  value,
-  icon: Icon,
-  color,
-  loading,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  color: string;
-  loading: boolean;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 py-4">
-        <Icon className={cn("h-8 w-8", color)} />
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-6 w-12" />
-          ) : (
-            <p className={cn("font-mono text-xl font-bold", color)}>{value}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function directionConfig(d: string) {
-  return (
-    {
-      bullish: { icon: TrendingUp, color: "text-emerald-400" },
-      bearish: { icon: TrendingDown, color: "text-red-400" },
-      neutral: { icon: Minus, color: "text-zinc-400" },
-    }[d] ?? { icon: Activity, color: "text-zinc-400" }
-  );
-}
-
-function strengthLabel(s: string): string {
-  return { weak: "ضعیف", medium: "متوسط", strong: "قوی" }[s] ?? s;
-}
-
-function strengthColor(s: string): string {
-  return (
-    {
-      weak: "border-white/10 text-zinc-400",
-      medium: "border-amber-500/30 text-amber-400",
-      strong: "border-emerald-500/30 text-emerald-400",
-    }[s] ?? ""
-  );
-}
-
-function patternLabel(p: string): string {
-  return { trending: "روند", choppy: "نوسانی", ranging: "محدوده" }[p] ?? p;
-}
-
-function patternColor(p: string): string {
-  return (
-    {
-      trending: "border-blue-500/30 text-blue-400",
-      choppy: "border-amber-500/30 text-amber-400",
-      ranging: "border-zinc-500/30 text-zinc-400",
-    }[p] ?? ""
+      <ScannerContent />
+    </Suspense>
   );
 }
