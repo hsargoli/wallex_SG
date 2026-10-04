@@ -475,6 +475,8 @@ export const api = {
   // Markets
   listMarkets: () =>
     client.get<MarketsResponse>("/v1/markets").then((r) => r.data),
+  getMarket: (symbol: string) =>
+    client.get<Market>(`/v1/markets/${symbol}`).then((r) => r.data),
   getOrderBook: (symbol: string) =>
     client
       .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)
@@ -510,6 +512,10 @@ export const api = {
   getMultiTfSignals: (symbol: string) =>
     client
       .get<MultiTfResponse>(`/v1/signals/${symbol}/multi`)
+      .then((r) => r.data),
+  getBatchSignals: (payload: BatchSignalsRequest) =>
+    client
+      .post<BatchSignalsResponse>("/v1/signals/batch", payload)
       .then((r) => r.data),
   getLevels: (symbol: string, timeframe: string = "1h") =>
     client
@@ -856,4 +862,36 @@ export interface TotalBudget {
   in_use_capital: string;
   available_for_trade: string;
   currency: string;
+}
+
+// ---------- Batch Signals Types ----------
+
+export interface BatchSignalItem {
+  symbol: string;
+  signal: "buy" | "sell" | "hold";
+  strength: "weak" | "medium" | "strong";
+  confidence: number;
+  current_price: string;
+  reasons: string[];
+  buy_score: number;
+  sell_score: number;
+  stop_loss: string | null;
+  take_profit: string | null;
+  risk_reward: string | null;
+  sparkline: number[];
+  change_24h: number | null;
+  change_7d: number | null;
+  error?: string | null;
+}
+
+export interface BatchSignalsResponse {
+  timeframe: string;
+  count: number;
+  signals: BatchSignalItem[];
+}
+
+export interface BatchSignalsRequest {
+  symbols: string[];
+  tf?: string;
+  limit?: number;
 }

@@ -1,6 +1,9 @@
 """Signals & Indicators endpoints."""
 
+import asyncio
+
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.presentation.api.deps import ExchangeDep
@@ -79,6 +82,136 @@ async def get_indicators(
         "bb_middle": _ds_list(bb_middle),
         "bb_lower": _ds_list(bb_lower),
         "atr_14": _ds_list(atr(candles, 14)),
+    }
+
+
+# ============================================================
+# Batch Signals
+# ============================================================
+
+
+class BatchSignalsRequest(BaseModel):
+    """درخواست سیگنال چندگانه."""
+
+    symbols: list[str] = Field(..., min_length=1, max_length=20)
+    tf: str = Field("1h", description="تایم‌فریم")
+    limit: int = Field(200, ge=50, le=500)
+
+
+class BatchSignalItem(BaseModel):
+    """یک سیگنال در پاسخ batch."""
+
+    symbol: str
+    signal: str
+    strength: str
+    confidence: int
+    current_price: str
+    reasons: list[str] = []
+    buy_score: int = 0
+    sell_score: int = 0
+    stop_loss: str | None = None
+    take_profit: str | None = None
+    risk_reward: str | None = None
+    # Sparkline (آخرین N قیمت close — برای نمایش نمودار کوچک)
+    sparkline: list[float] = []
+    # تغییرات قیمت
+    change_24h: float | None = None
+    change_7d: float | None = None
+    error: str | None = None
+
+
+class BatchSignalsResponse(BaseModel):
+    """پاسخ batch."""
+
+    timeframe: str
+    count: int
+    signals: list[BatchSignalItem]
+
+
+async def _fetch_signal_for(
+    use_case: GetCandlesUseCase,
+    symbol: str,
+    tf: str,
+    limit: int,
+    semaphore: asyncio.Semaphore,
+) -> dict:
+    """دریافت candles + تولید سیگنال برای یک نماد (با محدودیت هم‌زمانی)."""
+    async with semaphore:
+        try:
+            candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
+            if not candles:
+                return {"symbol": symbol, "error": "no_data"}
+
+            sig = generate_signal(candles)
+
+            # Sparkline: آخرین 30 کندل close
+            recent = candles[-30:] if len(candles) >= 30 else candles
+            sparkline = [float(c.close) for c in recent]
+
+            # تغییر 24h: مقایسه آخرین با کندل 24 ساعت قبل
+            change_24h = None
+            if len(candles) >= 25:
+                old_price = float(candles[-25].close)
+                if old_price > 0:
+                    change_24h = round(
+                        (float(candles[-1].close) - old_price) / old_price * 100, 2
+                    )
+
+            # تغییر 7d: مقایسه آخرین با کندل 168 ساعت قبل (7 روز × 24)
+            change_7d = None
+            if len(candles) >= 169:
+                old_price = float(candles[-169].close)
+                if old_price > 0:
+                    change_7d = round(
+                        (float(candles[-1].close) - old_price) / old_price * 100, 2
+                    )
+
+            return {
+                "symbol": symbol,
+                "signal": sig.type.value,
+                "strength": sig.strength.value,
+                "confidence": sig.confidence,
+                "current_price": str(sig.current_price),
+                "reasons": sig.reasons[:3],
+                "buy_score": sig.buy_score,
+                "sell_score": sig.sell_score,
+                "stop_loss": _ds(sig.stop_loss),
+                "take_profit": _ds(sig.take_profit),
+                "risk_reward": _ds(sig.risk_reward),
+                "sparkline": sparkline,
+                "change_24h": change_24h,
+                "change_7d": change_7d,
+            }
+        except Exception as e:
+            return {"symbol": symbol, "error": str(e)[:120]}
+
+
+@router.post("/batch", response_model=BatchSignalsResponse)
+async def get_batch_signals(
+    payload: BatchSignalsRequest,
+    exchange: ExchangeDep,
+):
+    """تولید سیگنال برای چندین نماد به‌صورت موازی.
+
+    - حداکثر 20 نماد در هر درخواست
+    - حداکثر 5 درخواست هم‌زمان به والکس (برای رعایت rate limit)
+    """
+    use_case = GetCandlesUseCase(exchange=exchange)
+    semaphore = asyncio.Semaphore(5)
+
+    tasks = [
+        _fetch_signal_for(use_case, sym, payload.tf, payload.limit, semaphore)
+        for sym in payload.symbols
+    ]
+    results = await asyncio.gather(*tasks)
+
+    # مرتب‌سازی: موفق‌ها اول، بعد خطاها
+    results.sort(key=lambda x: (x.get("error") is not None,))
+
+    return {
+        "timeframe": payload.tf,
+        "count": len(results),
+        "signals": results,
     }
 
 
