@@ -9,7 +9,7 @@ import {
   Minus,
 } from "lucide-react";
 import { useMarkets } from "@/lib/queries";
-import { usePaginatedSignals } from "@/lib/hooks/use-paginated-signals";
+import { useBatchSignals } from "@/lib/queries";
 import {
   SignalsFilter,
   type SignalsFilterState,
@@ -67,9 +67,16 @@ export default function SignalsPage() {
 
     return markets.data.items
       .filter((m) => {
+        // فقط بازارهایی که داده‌ی معتبر دارن
+        if (!m.last_price || Number(m.last_price) <= 0) return false;
+        if (Number(m.daily_quote_volume || 0) <= 0) return false;
+
+        // فیلتر quote
         if (filters.quote !== "all" && m.quote_asset !== filters.quote) {
           return false;
         }
+
+        // فیلتر جستجو
         if (search) {
           const haystack = [
             m.symbol,
@@ -113,34 +120,42 @@ export default function SignalsPage() {
     filters.signal !== "all" || filters.strength !== "all";
   const filterKey = `${filters.signal}-${filters.strength}-${needsFilter ? "all" : page}`;
 
-  // برای جلوگیری از خالی شدن، 2x نماد fetch کن
+  // ---------- تصمیم: چه چیزی fetch کنیم ----------
+  // بدون فیلتر: فقط 10 نماد صفحه‌ی فعلی (سریع)
+  // با فیلتر: همه‌ی 373 نماد (چون ممکنه نتیجه خارج از صفحه باشه)
   const pageStart = (page - 1) * PAGE_SIZE;
-  const pageSymbols = allSymbols.slice(
-    pageStart,
-    pageStart + PAGE_SIZE * 2,
-  );
+  const symbolsToFetch = needsFilter
+    ? allSymbols
+    : allSymbols.slice(pageStart, pageStart + PAGE_SIZE);
 
-  const { matches, isFetching, isDone, loadedCount, totalCount } =
-    usePaginatedSignals({
-      symbols: needsFilter ? allSymbols : pageSymbols,
-      tf,
-      filterFn,
-      filterKey,
-      pageSize: PAGE_SIZE,
-      currentPage: needsFilter ? page : 1,
-    });
+  const batchQuery = useBatchSignals(symbolsToFetch, tf);
+  const matches = batchQuery.data?.signals ?? [];
 
-  // وقتی فیلتر نیست: pagination روی همه‌ی بازارها
-  // وقتی فیلتر هست: pagination روی matches
+  // ---------- فیلتر سمت کلاینت ----------
+  const filteredMatches = needsFilter
+    ? matches.filter(filterFn)
+    : matches;
+
+  // ---------- Pagination ----------
+  // بدون فیلتر: از کل بازارها (373)
+  // با فیلتر: از نتایج فیلترشده
   const totalPages = needsFilter
-    ? Math.max(1, Math.ceil(matches.length / PAGE_SIZE))
+    ? Math.max(1, Math.ceil(filteredMatches.length / PAGE_SIZE))
     : Math.max(1, Math.ceil(filteredMarkets.length / PAGE_SIZE));
 
   const safePage = Math.min(page, totalPages);
 
+  // ---------- نمایش ----------
   const paginatedSignals = needsFilter
-    ? matches.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-    : matches.slice(0, PAGE_SIZE);
+    ? filteredMatches.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+    : matches;
+
+  // ---------- وضعیت ----------
+  const isFetching = batchQuery.isFetching;
+  const isDone = !needsFilter || !isFetching;
+  const loadedCount = symbolsToFetch.length;
+  const totalCount = needsFilter ? allSymbols.length : symbolsToFetch.length;
+  const isEmptyPage = paginatedSignals.length === 0 && isFetching;
 
   const summary = useMemo(
     () => ({
@@ -209,7 +224,7 @@ export default function SignalsPage() {
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-300"
                 style={{
-                  width: `${totalCount > 0 ? (loadedCount / totalCount) * 100 : 0}%`,
+                  width: '100%',
                 }}
               />
             </div>
@@ -326,7 +341,7 @@ export default function SignalsPage() {
             </>
           )}
 
-          {!markets.isLoading && paginatedSignals.length === 0 && (
+          {!markets.isLoading && paginatedSignals.length === 0 && !isEmptyPage && (
             <div className="py-12 text-center">
               <Bell className="mx-auto h-10 w-10 text-muted-foreground/30" />
               <p className="mt-3 text-sm text-muted-foreground">

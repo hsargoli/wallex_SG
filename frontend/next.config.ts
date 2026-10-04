@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // خاموش کردن indicator شناور Next.js در پایین صفحه
-  // (با sidebar و RTL تداخل داشت)
   devIndicators: false,
+  // خاموش کردن strict mode — رفع مشکل next-themes + React 19
+  reactStrictMode: false,
 
   async rewrites() {
     return [

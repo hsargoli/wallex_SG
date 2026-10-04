@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ProfitabilityRequest, type PlaceOrderRequest } from "./api";
+import { api, type ProfitabilityRequest, type PlaceOrderRequest, type BatchSignalItem } from "./api";
 import { toast } from "sonner";
 
 export function useBudget() {
@@ -359,4 +360,123 @@ export function useSetBotBudget() {
       toast.error(`خطا: ${err.message}`);
     },
   });
+}
+
+export function useMarket(symbol: string | null) {
+  return useQuery({
+    queryKey: ["market", symbol],
+    queryFn: () => api.getMarket(symbol!),
+    enabled: !!symbol,
+    refetchInterval: 15_000,
+  });
+}
+
+export function useBatchSignals(symbols: string[], tf: string = "1h") {
+  return useQuery({
+    queryKey: ["batch-signals", symbols.join(","), tf],
+    queryFn: () =>
+      api.getBatchSignals({ symbols, tf, limit: 200 }),
+    enabled: symbols.length > 0,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}
+
+// ============================================================
+// All Signals — prefetch all, filter client-side
+// ============================================================
+
+const BATCH_SIZE = 20;
+const CONCURRENT_BATCHES = 3;
+
+/**
+ * Fetch all signals for the given list of symbols in chunks.
+ *
+ * Designed for scenarios where you want to filter across ALL symbols
+ * (not just the current page). Uses a single query key per timeframe
+ * so it's cached across the whole app.
+ */
+export function useAllSignals(symbols: string[], tf: string = "1h") {
+  return useQuery({
+    queryKey: ["all-signals", tf, symbols.length],
+    queryFn: async () => {
+      if (symbols.length === 0) return { signals: [] };
+
+      const chunks: string[][] = [];
+      for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+        chunks.push(symbols.slice(i, i + BATCH_SIZE));
+      }
+
+      // Run with concurrency limit
+      const all: BatchSignalItem[] = [];
+      for (let i = 0; i < chunks.length; i += CONCURRENT_BATCHES) {
+        const batch = chunks.slice(i, i + CONCURRENT_BATCHES);
+        const results = await Promise.all(
+          batch.map((chunk) =>
+            api.getBatchSignals({ symbols: chunk, tf, limit: 200 }),
+          ),
+        );
+        for (const r of results) {
+          all.push(...r.signals);
+        }
+      }
+
+      return { signals: all };
+    },
+    enabled: symbols.length > 0,
+    staleTime: 5 * 60_000, // 5 minutes
+    gcTime: 10 * 60_000,
+  });
+}
+
+/**
+ * Progress-aware version: tracks how many batches have completed.
+ * Use this for showing a progress bar during initial load.
+ */
+export function useAllSignalsWithProgress(
+  symbols: string[],
+  tf: string = "1h",
+) {
+  const [progress, setProgress] = useState({ loaded: 0, total: 0 });
+
+  const query = useQuery({
+    queryKey: ["all-signals-progress", tf, symbols.length],
+    queryFn: async () => {
+      if (symbols.length === 0) {
+        setProgress({ loaded: 0, total: 0 });
+        return { signals: [] };
+      }
+
+      const chunks: string[][] = [];
+      for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+        chunks.push(symbols.slice(i, i + BATCH_SIZE));
+      }
+
+      setProgress({ loaded: 0, total: chunks.length });
+
+      const all: BatchSignalItem[] = [];
+      let loaded = 0;
+
+      for (let i = 0; i < chunks.length; i += CONCURRENT_BATCHES) {
+        const batch = chunks.slice(i, i + CONCURRENT_BATCHES);
+        const results = await Promise.all(
+          batch.map((chunk) =>
+            api.getBatchSignals({ symbols: chunk, tf, limit: 200 }),
+          ),
+        );
+        for (const r of results) {
+          all.push(...r.signals);
+        }
+        loaded += batch.length;
+        setProgress({ loaded, total: chunks.length });
+      }
+
+      return { signals: all };
+    },
+    enabled: symbols.length > 0,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+  });
+
+  return { ...query, progress };
 }

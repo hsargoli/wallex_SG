@@ -1,9 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ThemeProvider } from "next-themes";
 import { useState } from "react";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -20,17 +19,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange={false}
-      storageKey="wallex-theme"
-    >
-      <QueryClientProvider client={client}>
-        {children}
-        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
-      </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
     </ThemeProvider>
   );
 }
