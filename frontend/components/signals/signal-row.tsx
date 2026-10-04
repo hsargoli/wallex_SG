@@ -58,7 +58,8 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
       <div className="min-w-[110px] shrink-0">
         <p className="font-mono text-sm font-bold">{signal.symbol}</p>
         <p className="font-mono text-[10px] text-muted-foreground">
-          {formatPrice(signal.current_price)}
+          {formatPrice(signal.current_price)}{" "}
+          <span className="text-[9px] opacity-60">{quote}</span>
         </p>
       </div>
 
