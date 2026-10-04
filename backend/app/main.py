@@ -69,3 +69,9 @@ app.include_router(v1_router)
 @app.get("/")
 async def root():
     return {"message": "Welcome to ROSHD_SARV Backend (DDD Architecture)"}
+
+
+@app.get("/health")
+async def health():
+    """Health check برای monitoring و frontend."""
+    return {"status": "ok", "service": "wallex-backend"}

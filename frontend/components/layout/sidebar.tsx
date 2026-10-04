@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import {
   LayoutDashboard,
   Wallet,
@@ -15,23 +16,36 @@ import {
   Bot,
   Play,
   ClipboardList,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
+import { useSidebar } from "./sidebar-provider";
+import { ThemeSwitcher } from "./theme-switcher";
 
-const nav = [
-  { href: "/", label: "داشبورد", icon: LayoutDashboard },
-  { href: "/portfolio", label: "سبد دارایی", icon: PieChart },
-  { href: "/wallet", label: "کیف پول", icon: Coins },
-  { href: "/budget", label: "بودجه", icon: Wallet },
-  { href: "/markets", label: "بازارها", icon: TrendingUp },
-  { href: "/signals", label: "سیگنال‌ها", icon: Zap },
-  { href: "/scanner", label: "اسکنر بازار", icon: Radar },
-  { href: "/bots", label: "ربات‌ها", icon: Bot },
-  { href: "/order-bot", label: "ربات ثبت سفارش", icon: Bot },
-  { href: "/orders", label: "سفارش‌ها", icon: ClipboardList },
-  { href: "/paper-trading", label: "Paper Trading", icon: Play },
-  { href: "/profitability", label: "محاسبه سود", icon: Calculator },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  desc: string;
+};
+
+const nav: NavItem[] = [
+  { href: "/", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
+  { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
+  { href: "/wallet", label: "کیف پول", icon: Coins, desc: "موجودی ارزها" },
+  { href: "/budget", label: "بودجه", icon: Wallet, desc: "مدیریت سرمایه‌ی ربات" },
+  { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
+  { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
+  { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
+  { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
+  { href: "/order-bot", label: "ربات ثبت سفارش", icon: Bot, desc: "ثبت دستی سفارش روی والکس" },
+  { href: "/orders", label: "سفارش‌ها", icon: ClipboardList, desc: "تاریخچه و سفارش‌های باز" },
+  { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
+  { href: "/profitability", label: "محاسبه سود", icon: Calculator, desc: "بررسی سوددهی قبل از معامله" },
 ];
 
 export function Sidebar() {
@@ -39,66 +53,156 @@ export function Sidebar() {
   const health = useHealth();
   const isOnline = health.isSuccess && health.data?.status === "ok";
 
+  const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
+
+  // Auto-close mobile on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+
   return (
-    <aside className="sticky top-0 flex h-screen w-64 flex-col border-l border-border bg-sidebar">
-      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-500/20">
-          <Activity className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-sm font-bold tracking-tight">ROSHD_SARV Bot</h1>
-          <p className="text-[11px] text-muted-foreground">
-            Micro-Scalping v0.1
-          </p>
-        </div>
-      </div>
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className={cn(
+          "fixed top-4 z-30 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background/80 backdrop-blur transition-all lg:hidden",
+          "right-4",
+        )}
+        aria-label="باز کردن منو"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {nav.map((item) => {
-          const Icon = item.icon;
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-border bg-sidebar transition-all duration-300",
+          // Mobile width always full; Desktop toggles
+          collapsed ? "w-64 lg:w-16" : "w-64",
+          // Mobile slide in/out
+          mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
+        )}
+      >
+        {/* Header */}
+        <div className="flex h-16 items-center gap-2.5 border-b border-border px-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-sidebar-primary/60 shadow-lg shadow-sidebar-primary/30">
+            <Activity className="h-4 w-4 text-white" />
+          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-sm font-bold tracking-tight">
+                ROSHD_SARV Bot
+              </h1>
+              <p className="truncate text-[10px] text-sidebar-foreground/60">
+                Micro-Scalping v0.1
+              </p>
+            </div>
+          )}
+          {/* Collapse toggle (desktop only) */}
+          <button
+            onClick={toggle}
+            className="sidebar-toggle hidden shrink-0 lg:flex"
+            aria-label={collapsed ? "باز کردن سایدبار" : "جمع کردن سایدبار"}
+            title={collapsed ? "باز کردن" : "جمع کردن"}
+          >
+            {collapsed ? (
+              <ChevronLeft className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
+          </button>
+
+          {/* Close button (mobile only) */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="rounded-md p-1.5 hover:bg-white/5 lg:hidden"
+            aria-label="بستن منو"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+          {nav.map((item) => {
+            const Icon = item.icon;
+            const active =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={collapsed ? item.label : undefined}
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                  collapsed && "lg:justify-center lg:px-0",
+                  active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-sm"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && (
+                  <span className="truncate font-medium">{item.label}</span>
+                )}
+                {active && !collapsed && (
+                  <span className="mr-auto h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-primary-foreground/70" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="relative z-10 space-y-2 border-t border-sidebar-border p-2 pb-16 lg:pb-2">
+          {/* Status */}
+          <div
+            title={collapsed ? (isOnline ? "اتصال برقرار" : "قطع اتصال") : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-lg bg-sidebar-accent/40 px-3 py-2",
+              collapsed && "lg:justify-center lg:px-0",
+            )}
+          >
+            <div
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all",
-                active
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                "h-2 w-2 shrink-0 rounded-full",
+                isOnline ? "animate-pulse bg-sidebar-primary" : "bg-red-500",
               )}
-            >
-              <Icon className="h-4 w-4" />
-              <span className="font-medium">{item.label}</span>
-              {active && (
-                <div className="mr-auto h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+            />
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-medium text-sidebar-foreground">
+                  {isOnline ? "اتصال برقرار" : "قطع اتصال"}
+                </p>
+                <p className="truncate text-[10px] text-sidebar-foreground/60">
+                  {health.isLoading ? "در حال بررسی..." : "Wallex API"}
+                </p>
+              </div>
+            )}
+          </div>
 
-      <div className="border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-lg bg-white/[0.02] px-3 py-2.5">
+          {/* Theme */}
           <div
             className={cn(
-              "h-2 w-2 rounded-full",
-              isOnline ? "bg-emerald-400 animate-pulse" : "bg-red-500",
+              "flex items-center",
+              collapsed ? "lg:justify-center" : "justify-end",
             )}
-          />
-          <div className="flex-1">
-            <p className="text-[11px] font-medium">
-              {isOnline ? "اتصال برقرار" : "قطع اتصال"}
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              {health.isLoading ? "در حال بررسی..." : "Wallex API"}
-            </p>
+          >
+            <ThemeSwitcher />
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

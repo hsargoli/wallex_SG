@@ -128,3 +128,217 @@
     @apply font-sans;
   }
 }
+
+/* ============================================
+   Colored Sidebars (data-color)
+   ============================================ */
+
+/* ---------- Dark Mode ---------- */
+
+/* Blue */
+:root.dark[data-color="blue"] {
+  --primary: oklch(0.72 0.18 240);
+  --primary-foreground: oklch(0.15 0.03 240);
+  --ring: oklch(0.72 0.18 240);
+  --sidebar: oklch(0.22 0.09 240);
+  --sidebar-foreground: oklch(0.96 0.02 240);
+  --sidebar-primary: oklch(0.75 0.20 240);
+  --sidebar-primary-foreground: oklch(0.15 0.03 240);
+  --sidebar-accent: oklch(0.32 0.14 240);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.72 0.18 240 / 20%);
+  --sidebar-ring: oklch(0.72 0.18 240);
+  --chart-1: oklch(0.72 0.18 240);
+}
+
+/* Purple */
+:root.dark[data-color="purple"] {
+  --primary: oklch(0.68 0.22 300);
+  --primary-foreground: oklch(0.15 0.03 300);
+  --ring: oklch(0.68 0.22 300);
+  --sidebar: oklch(0.22 0.10 300);
+  --sidebar-foreground: oklch(0.96 0.02 300);
+  --sidebar-primary: oklch(0.72 0.22 300);
+  --sidebar-primary-foreground: oklch(0.15 0.03 300);
+  --sidebar-accent: oklch(0.32 0.15 300);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.68 0.22 300 / 20%);
+  --sidebar-ring: oklch(0.68 0.22 300);
+  --chart-1: oklch(0.68 0.22 300);
+}
+
+/* Orange */
+:root.dark[data-color="orange"] {
+  --primary: oklch(0.75 0.18 60);
+  --primary-foreground: oklch(0.15 0.03 60);
+  --ring: oklch(0.75 0.18 60);
+  --sidebar: oklch(0.25 0.10 60);
+  --sidebar-foreground: oklch(0.96 0.03 60);
+  --sidebar-primary: oklch(0.78 0.20 60);
+  --sidebar-primary-foreground: oklch(0.15 0.03 60);
+  --sidebar-accent: oklch(0.35 0.15 60);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.75 0.18 60 / 20%);
+  --sidebar-ring: oklch(0.75 0.18 60);
+  --chart-1: oklch(0.75 0.18 60);
+}
+
+/* Rose */
+:root.dark[data-color="rose"] {
+  --primary: oklch(0.68 0.22 15);
+  --primary-foreground: oklch(0.15 0.03 15);
+  --ring: oklch(0.68 0.22 15);
+  --sidebar: oklch(0.22 0.10 15);
+  --sidebar-foreground: oklch(0.96 0.02 15);
+  --sidebar-primary: oklch(0.72 0.22 15);
+  --sidebar-primary-foreground: oklch(0.15 0.03 15);
+  --sidebar-accent: oklch(0.32 0.15 15);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.68 0.22 15 / 20%);
+  --sidebar-ring: oklch(0.68 0.22 15);
+  --chart-1: oklch(0.68 0.22 15);
+}
+
+/* Default (Green) — میخوایم کمی رنگی‌تر */
+:root.dark[data-color="default"] {
+  --sidebar: oklch(0.20 0.06 162);
+  --sidebar-foreground: oklch(0.96 0.02 162);
+  --sidebar-primary: oklch(0.75 0.18 162);
+  --sidebar-primary-foreground: oklch(0.15 0.03 162);
+  --sidebar-accent: oklch(0.30 0.12 162);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.72 0.17 162 / 20%);
+  --sidebar-ring: oklch(0.72 0.17 162);
+}
+
+/* ---------- Light Mode ---------- */
+
+:root:not(.dark)[data-color="blue"] {
+  --primary: oklch(0.55 0.20 240);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.55 0.20 240);
+  --sidebar: oklch(0.94 0.04 240);
+  --sidebar-foreground: oklch(0.20 0.08 240);
+  --sidebar-primary: oklch(0.55 0.20 240);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.87 0.08 240);
+  --sidebar-accent-foreground: oklch(0.20 0.08 240);
+  --sidebar-border: oklch(0.55 0.20 240 / 15%);
+  --sidebar-ring: oklch(0.55 0.20 240);
+}
+
+:root:not(.dark)[data-color="purple"] {
+  --primary: oklch(0.50 0.22 300);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.50 0.22 300);
+  --sidebar: oklch(0.94 0.05 300);
+  --sidebar-foreground: oklch(0.20 0.10 300);
+  --sidebar-primary: oklch(0.50 0.22 300);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.87 0.10 300);
+  --sidebar-accent-foreground: oklch(0.20 0.10 300);
+  --sidebar-border: oklch(0.50 0.22 300 / 15%);
+  --sidebar-ring: oklch(0.50 0.22 300);
+}
+
+:root:not(.dark)[data-color="orange"] {
+  --primary: oklch(0.65 0.20 60);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.65 0.20 60);
+  --sidebar: oklch(0.95 0.05 60);
+  --sidebar-foreground: oklch(0.22 0.10 60);
+  --sidebar-primary: oklch(0.65 0.20 60);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.88 0.10 60);
+  --sidebar-accent-foreground: oklch(0.22 0.10 60);
+  --sidebar-border: oklch(0.65 0.20 60 / 15%);
+  --sidebar-ring: oklch(0.65 0.20 60);
+}
+
+:root:not(.dark)[data-color="rose"] {
+  --primary: oklch(0.55 0.22 15);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.55 0.22 15);
+  --sidebar: oklch(0.94 0.05 15);
+  --sidebar-foreground: oklch(0.20 0.10 15);
+  --sidebar-primary: oklch(0.55 0.22 15);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.87 0.10 15);
+  --sidebar-accent-foreground: oklch(0.20 0.10 15);
+  --sidebar-border: oklch(0.55 0.22 15 / 15%);
+  --sidebar-ring: oklch(0.55 0.22 15);
+}
+
+:root:not(.dark)[data-color="default"] {
+  --sidebar: oklch(0.95 0.04 162);
+  --sidebar-foreground: oklch(0.20 0.08 162);
+  --sidebar-primary: oklch(0.55 0.18 162);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.88 0.08 162);
+  --sidebar-accent-foreground: oklch(0.20 0.08 162);
+  --sidebar-border: oklch(0.55 0.18 162 / 15%);
+  --sidebar-ring: oklch(0.55 0.18 162);
+}
+
+/* ============================================
+   Sidebar Toggle — Subtle & Inviting
+   ============================================ */
+.sidebar-toggle {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sidebar-foreground);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-toggle:hover {
+  opacity: 1;
+  background: var(--sidebar-accent);
+  border-color: oklch(from var(--sidebar-primary) l c h / 30%);
+  transform: scale(1.05);
+}
+
+.sidebar-toggle:active {
+  transform: scale(0.95);
+}
+
+/* نرم‌سازی آیکون با حرکت کوچک */
+.sidebar-toggle svg {
+  transition: transform 0.25s ease;
+}
+
+.sidebar-toggle:hover svg {
+  transform: translateX(-1.5px);
+}
+
+/* چرخش جهت حرکت هنگام حالت collapsed */
+.sidebar-toggle[aria-label*="باز کردن"]:hover svg {
+  transform: translateX(1.5px);
+}
+
+/* هاله‌ی خیلی نرم برای جلب توجه در حالت idle */
+.sidebar-toggle::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle,
+    oklch(from var(--sidebar-primary) l c h / 25%) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-toggle:hover::before {
+  opacity: 1;
+}
