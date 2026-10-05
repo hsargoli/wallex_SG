@@ -218,20 +218,30 @@ export default function SymbolPage({
         <div className="space-y-5">
           {/* چارت پیشرفته + لینک چارت کامل */}
           {indicators.data && (
-            <div className="relative">
-              <SignalsChart
-                indicators={indicators.data}
-                levels={levels.data}
-                height={420}
-              />
-              <Link
-                href={`/markets/${symbol}/chart`}
-                className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-lg border border-white/10 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition hover:border-emerald-500/30 hover:text-emerald-400"
-              >
-                چارت کامل
-                <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </div>
+            <Card className="border-white/5 bg-[#0f0f17]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-white/5 pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <LineChart className="h-4 w-4 text-emerald-400" />
+                  نمودار با اندیکاتورها
+                </CardTitle>
+                <Link href={`/markets/${symbol}/chart`}>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-500"
+                  >
+                    مشاهده‌ی چارت کامل
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <SignalsChart
+                  indicators={indicators.data}
+                  levels={levels.data}
+                  height={420}
+                />
+              </CardContent>
+            </Card>
           )}
 
           {/* CTA */}

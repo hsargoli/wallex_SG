@@ -183,16 +183,31 @@ class GetCandlesWithFallbackUseCase:
             # اگه روز، از earliest_real جدیدتره، رد کن
             if earliest_real is not None and day.time >= earliest_real:
                 continue
-            synthetic.extend(
-                self._interpolate_day(day=day, factor=factor)
-            )
+            # آخرین کندل شبیه‌سازی این روز هم نباید از earliest_real رد بشه
+            interpolated = self._interpolate_day(day=day, factor=factor)
+            if earliest_real is not None:
+                interpolated = [
+                    c for c in interpolated if c.time < earliest_real
+                ]
+            synthetic.extend(interpolated)
 
         # آخرین missing کندل شبیه‌سازی
         synthetic = synthetic[-missing:] if missing > 0 else []
 
-        # ─── ۵) ترکیب ───
+        # ─── ۵) ترکیب با dedup و sort ───
         combined = synthetic + real_candles
-        combined = combined[-limit:]
+        # dedup بر اساس time (اولی که دیدیم رو نگه دار — یعنی synthetic)
+        seen = set()
+        deduped: list[Candle] = []
+        for c in combined:
+            if c.time in seen:
+                continue
+            seen.add(c.time)
+            deduped.append(c)
+        # sort asc
+        deduped.sort(key=lambda c: c.time)
+        # آخرین limit
+        combined = deduped[-limit:]
 
         # ─── ۶) synthetic_ranges ───
         ranges: list[SyntheticRange] = []
