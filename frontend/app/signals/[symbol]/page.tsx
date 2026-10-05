@@ -16,12 +16,7 @@ import {
   XCircle,
   ArrowUpRight,
 } from "lucide-react";
-import {
-  useIndicators,
-  useMultiTfSignals,
-  useSignal,
-  useLevels,
-} from "@/lib/queries";
+import { useIndicators, useSignal } from "@/lib/queries";
 import {
   type SignalResponse,
   type SignalRule,
@@ -34,11 +29,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
-import { LevelsPanel } from "@/components/signals/levels-panel";
-import { LevelsGuide, TradingPlan } from "@/components/signals/trading-plan";
-import { SignalsChart } from "@/components/signals/signals-chart";
 import { SignalHero } from "@/components/signals/detail/signal-hero";
 import { SignalCta } from "@/components/signals/detail/signal-cta";
+import { SimpleChart } from "@/components/signals/detail/simple-chart";
+import { BeginnerGuide } from "@/components/signals/detail/beginner-guide";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +48,6 @@ export default function SignalDetailPage({
   const [timeframe, setTimeframe] = useState("1h");
 
   const signal = useSignal(symbol, timeframe);
-  const multi = useMultiTfSignals(symbol);
-  const levels = useLevels(symbol, timeframe);
   const indicators = useIndicators(symbol, timeframe, 300);
 
   return (
@@ -90,13 +82,13 @@ export default function SignalDetailPage({
         loading={signal.isLoading}
       />
 
-      {/* Chart (compact) + link to full chart */}
+      {/* Chart (simple) + link to full chart */}
       {indicators.data && (
-        <div className="relative">
-          <SignalsChart
-            indicators={indicators.data}
-            levels={levels.data}
+        <div className="relative rounded-xl border border-white/5 bg-card p-2">
+          <SimpleChart
+            candles={indicators.data.candles}
             height={320}
+            loading={indicators.isLoading}
           />
           <Link
             href={`/markets/${symbol}/chart`}
@@ -108,46 +100,21 @@ export default function SignalDetailPage({
         </div>
       )}
 
-      {/* Main Signal (Hero Card + SL/TP + Rules) */}
+      {/* Main Signal (Hero Card + SL/TP) */}
       {signal.isLoading && <Skeleton className="h-96 w-full" />}
       {signal.data && <MainSignal signal={signal.data} />}
 
       {/* CTA */}
       <SignalCta symbol={symbol} />
 
-      {/* Confluence Summary */}
-      <ConfluenceCard
-        data={multi.data?.confluence}
-        loading={multi.isLoading}
-      />
+      {/* Beginner Guide — آموزش برای تازه‌کارها */}
+      {signal.data && (
+        <BeginnerGuide
+          reasons={signal.data.reasons}
+          signalType={signal.data.signal as "buy" | "sell" | "hold"}
+        />
+      )}
 
-      {/* Timeframe Grid */}
-      <div className="grid gap-3 md:grid-cols-4">
-        {TIMEFRAMES.map((tf) => (
-          <MultiTfCard
-            key={tf}
-            timeframe={tf}
-            data={multi.data?.timeframes[tf]}
-            loading={multi.isLoading}
-            active={tf === timeframe}
-            onClick={() => setTimeframe(tf)}
-          />
-        ))}
-      </div>
-
-      {/* Trading Plan */}
-      {levels.data && <TradingPlan data={levels.data} />}
-
-      {/* Guide */}
-      <LevelsGuide />
-
-      {/* Key Levels */}
-      <div>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-          📊 سطوح کلیدی
-        </h2>
-        <LevelsPanel symbol={symbol} timeframe={timeframe} />
-      </div>
     </div>
   );
 }
@@ -293,7 +260,6 @@ function MultiTfCard({
 
 function MainSignal({ signal }: { signal: SignalResponse }) {
   const config = signalConfig(signal.signal);
-  const totalScore = signal.buy_score + signal.sell_score;
 
   return (
     <div className="space-y-4">
@@ -415,75 +381,6 @@ function MainSignal({ signal }: { signal: SignalResponse }) {
         </div>
       )}
 
-      {/* Rules Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-5 w-5 text-emerald-400" />
-              تجزیه‌ی قوانین
-            </span>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              >
-                🟢 خرید: {signal.buy_score}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="border-red-500/30 bg-red-500/10 text-red-400"
-              >
-                🔴 فروش: {signal.sell_score}
-              </Badge>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Score bar */}
-          {totalScore > 0 && (
-            <div className="mb-4">
-              <div className="flex h-3 overflow-hidden rounded-full bg-white/5">
-                <div
-                  className="bg-emerald-500 transition-all"
-                  style={{
-                    width: `${(signal.buy_score / totalScore) * 100}%`,
-                  }}
-                />
-                <div
-                  className="bg-red-500 transition-all"
-                  style={{
-                    width: `${(signal.sell_score / totalScore) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {signal.rules.map((rule, i) => (
-              <RuleRow key={i} rule={rule} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Indicators Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-5 w-5 text-emerald-400" />
-            اندیکاتورها
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {Object.entries(signal.indicators).map(([key, value]) => (
-              <IndicatorBox key={key} name={key} value={value} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
