@@ -1,14 +1,19 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
-import { useCandles, useOrderBook } from "@/lib/queries";
+import { useCandles, useIndicators, useOrderBook } from "@/lib/queries";
 import { type Timeframe } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
-import { CandlestickChart } from "@/components/charts/candlestick-chart";
+import { ProChart } from "@/components/charts/pro-chart";
+import {
+  ChartLegend,
+  type LegendData,
+} from "@/components/charts/chart-legend";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const TIMEFRAMES: Timeframe[] = ["15m", "1h", "4h", "1D"];
@@ -20,11 +25,23 @@ export default function ChartPage({
 }) {
   const { symbol } = use(params);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
+  const [showEMA, setShowEMA] = useState(true);
+  const [showBB, setShowBB] = useState(false);
+  const [showRSI, setShowRSI] = useState(true);
+  const [showMACD, setShowMACD] = useState(true);
+  const [legendData, setLegendData] = useState<LegendData | undefined>();
+  const handleCrosshairMove = useCallback((d: LegendData | undefined) => {
+    setLegendData(d);
+  }, []);
 
   const candlesQuery = useCandles(symbol, timeframe, 500);
+  const indicatorsQuery = useIndicators(symbol, timeframe, 500);
   const bookQuery = useOrderBook(symbol);
 
-  const candles = candlesQuery.data?.candles ?? [];
+  const candles = useMemo(
+    () => candlesQuery.data?.candles ?? [],
+    [candlesQuery.data?.candles],
+  );
   const lastCandle = candles[candles.length - 1];
   const firstCandle = candles[0];
 
@@ -38,6 +55,23 @@ export default function ChartPage({
       : 0;
   const isUp = priceChange >= 0;
 
+  // آماده‌سازی indicators برای ProChart
+  const indicators = useMemo(() => {
+    const d = indicatorsQuery.data;
+    if (!d) return undefined;
+    return {
+      ema9: d.ema_9,
+      ema21: d.ema_21,
+      bbUpper: d.bb_upper,
+      bbMiddle: d.bb_middle,
+      bbLower: d.bb_lower,
+      rsi14: d.rsi_14,
+      macd: d.macd,
+      macdSignal: d.macd_signal,
+      macdHist: d.macd_hist,
+    };
+  }, [indicatorsQuery.data]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -49,7 +83,7 @@ export default function ChartPage({
           <ArrowRight className="h-4 w-4" />
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <SymbolSwitcher
               current={symbol}
               basePath="/markets"
@@ -87,27 +121,81 @@ export default function ChartPage({
 
       {/* Chart */}
       <Card className="border-white/5 bg-[#0f0f17]">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-white/5 pb-4">
-          <CardTitle className="text-base">نمودار قیمت</CardTitle>
-          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-background/50 p-1">
-            {TIMEFRAMES.map((tf) => (
-              <button
-                key={tf}
-                onClick={() => setTimeframe(tf)}
-                className={cn(
-                  "rounded px-3 py-1.5 font-mono text-xs font-medium transition",
-                  timeframe === tf
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
-                )}
-              >
-                {tf}
-              </button>
-            ))}
+        <CardHeader className="flex flex-col gap-3 border-b border-white/5 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-base">نمودار قیمت</CardTitle>
+
+            {/* Timeframe buttons */}
+            <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-background/50 p-1">
+              {TIMEFRAMES.map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
+                  className={cn(
+                    "rounded px-3 py-1.5 font-mono text-xs font-medium transition",
+                    timeframe === tf
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                  )}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Layer toggles */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] text-muted-foreground">لایه‌ها:</span>
+            <LayerToggle
+              label="EMA 9/21"
+              active={showEMA}
+              onClick={() => setShowEMA(!showEMA)}
+              color="text-emerald-400"
+            />
+            <LayerToggle
+              label="Bollinger"
+              active={showBB}
+              onClick={() => setShowBB(!showBB)}
+              color="text-purple-400"
+            />
+            <LayerToggle
+              label="RSI (14)"
+              active={showRSI}
+              onClick={() => setShowRSI(!showRSI)}
+              color="text-purple-400"
+            />
+            <LayerToggle
+              label="MACD"
+              active={showMACD}
+              onClick={() => setShowMACD(!showMACD)}
+              color="text-emerald-400"
+            />
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
-          <CandlestickChart candles={candles} loading={candlesQuery.isLoading} />
+        <CardContent className="space-y-3 pt-4">
+          {/* Legend زنده */}
+          <ChartLegend
+            data={legendData}
+            showEMA={showEMA}
+            showBB={showBB}
+            showRSI={showRSI}
+            showMACD={showMACD}
+          />
+
+          {/* چارت */}
+          <ProChart
+            candles={candles}
+            indicators={indicators}
+            height={500}
+            showVolume={true}
+            showEMA={showEMA}
+            showBB={showBB}
+            showRSI={showRSI}
+            showMACD={showMACD}
+            loading={candlesQuery.isLoading || indicatorsQuery.isLoading}
+            onCrosshairMove={handleCrosshairMove}
+          />
         </CardContent>
       </Card>
 
@@ -136,6 +224,32 @@ export default function ChartPage({
         </Link>
       </div>
     </div>
+  );
+}
+
+function LayerToggle({
+  label,
+  active,
+  onClick,
+  color,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  color: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "rounded-md border px-2 py-1 font-mono text-[10px] transition",
+        active
+          ? cn("border-white/20 bg-white/5", color)
+          : "border-white/5 bg-transparent text-muted-foreground/50 hover:border-white/10 hover:text-muted-foreground",
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
