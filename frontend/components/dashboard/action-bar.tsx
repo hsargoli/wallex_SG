@@ -13,15 +13,19 @@ function ActionCard({
   icon: Icon,
   title,
   subtitle,
+  tertiary,
   tone,
   loading,
+  hint,
 }: {
   href: string;
   icon: React.ElementType;
   title: string;
   subtitle: string;
-  tone: "emerald" | "amber" | "blue";
+  tertiary?: string;
+  tone: "emerald" | "amber" | "blue" | "zinc";
   loading?: boolean;
+  hint?: string;
 }) {
   const tones = {
     emerald: {
@@ -39,6 +43,11 @@ function ActionCard({
       bg: "bg-blue-500/[0.05] hover:bg-blue-500/[0.08]",
       icon: "bg-blue-500/15 text-blue-400",
     },
+    zinc: {
+      border: "border-zinc-500/20 hover:border-zinc-500/40",
+      bg: "bg-zinc-500/[0.05] hover:bg-zinc-500/[0.08]",
+      icon: "bg-zinc-500/15 text-zinc-400",
+    },
   } as const;
 
   const t = tones[tone];
@@ -48,7 +57,11 @@ function ActionCard({
   }
 
   return (
-    <Link href={href} className="group block">
+    <Link
+      href={href}
+      title={hint}
+      className="group block cursor-help"
+    >
       <Card
         className={cn(
           "h-full transition-all hover:shadow-lg",
@@ -70,6 +83,11 @@ function ActionCard({
             <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
               {subtitle}
             </p>
+            {tertiary && (
+              <p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground/70">
+                {tertiary}
+              </p>
+            )}
           </div>
           <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         </CardContent>
@@ -96,9 +114,9 @@ export function ActionBar() {
   const signals = usePaginatedSignals({
     symbols,
     tf: "1h",
-    filterFn: (s) => s.signal === "buy" && s.strength === "strong",
-    filterKey: "strong-buy",
-    pageSize: 5,
+    filterFn: (s) => s.signal === "buy" || s.signal === "sell",
+    filterKey: "all-signals",
+    pageSize: 50,
     currentPage: 1,
   });
 
@@ -111,27 +129,38 @@ export function ActionBar() {
       : 0
     : 0;
 
-  const strongBuyCount = signals.matches.length;
+  const buyCount = signals.matches.filter((s) => s.signal === "buy").length;
+  const sellCount = signals.matches.filter((s) => s.signal === "sell").length;
+  const strongCount = signals.matches.filter(
+    (s) => s.strength === "strong",
+  ).length;
+  const mediumCount = signals.matches.filter(
+    (s) => s.strength === "medium",
+  ).length;
+  const weakCount = signals.matches.filter(
+    (s) => s.strength === "weak",
+  ).length;
+  const totalSignals = signals.matches.length;
+
+  // رنگ بر اساس قوی‌ترین موجود
+  const signalTone: "emerald" | "blue" | "zinc" =
+    strongCount > 0 ? "emerald" : totalSignals > 0 ? "blue" : "zinc";
 
   return (
     <div className="grid gap-3 md:grid-cols-3">
       <ActionCard
-        href="/signals?signal=buy&strength=strong"
+        href="/signals"
         icon={Zap}
         title={
-          signals.isFetching && strongBuyCount === 0
+          signals.isFetching && totalSignals === 0
             ? "در حال بررسی..."
-            : strongBuyCount > 0
-              ? `${strongBuyCount} سیگنال خرید قوی`
-              : "سیگنال قوی نداری"
+            : `${totalSignals} سیگنال معاملاتی`
         }
-        subtitle={
-          strongBuyCount > 0
-            ? "برو ببین کدوم نمادها"
-            : "بازار آرومه — صبر کن"
-        }
-        tone="emerald"
-        loading={signals.isFetching && strongBuyCount === 0}
+        subtitle={`خرید ${buyCount} · فروش ${sellCount}`}
+        tertiary={`قوی ${strongCount} · متوسط ${mediumCount} · ضعیف ${weakCount}`}
+        tone={signalTone}
+        loading={signals.isFetching && totalSignals === 0}
+        hint="سیگنال‌های معاملاتی در تایم‌فریم ۱ ساعته. «قوی» یعنی چند اندیکاتور (RSI، EMA، MACD) هم‌جهت تأیید می‌کنن، «متوسط» بعضی تأیید، «ضعیف» تک اندیکاتور."
       />
 
       <ActionCard
@@ -149,6 +178,7 @@ export function ActionBar() {
         }
         tone="amber"
         loading={budget.isLoading}
+        hint="بودجه‌ای که برای ربات‌ها و خودکارسازی ترید در نظر گرفته شده. هر ربات سهم مشخصی از این بودجه رو استفاده می‌کنه. هر وقت خواستی کم یا زیادش کنی، برو به کیف پول ربات."
       />
 
       <ActionCard
@@ -166,6 +196,7 @@ export function ActionBar() {
         }
         tone="blue"
         loading={orders.isLoading}
+        hint="سفارش‌هایی که هنوز کامل پر نشدن یا در انتظار اجرا هستن. اگه باز بمونن، ممکنه نیاز به لغو یا اصلاح داشته باشن."
       />
     </div>
   );
