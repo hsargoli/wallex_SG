@@ -2,8 +2,21 @@
 
 import { use, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
-import { useCandles, useIndicators, useOrderBook, useMarket } from "@/lib/queries";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  TrendingUp,
+  TrendingDown,
+  ExternalLink,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  useIndicators,
+  useOrderBook,
+  useMarket,
+  useLevels,
+  useCandlesV2,
+} from "@/lib/queries";
 import { type Timeframe } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { ProChart } from "@/components/charts/pro-chart";
@@ -12,6 +25,11 @@ import {
   type LegendData,
 } from "@/components/charts/chart-legend";
 import { ChartInfoCards } from "@/components/charts/chart-info-cards";
+import {
+  PaneResize,
+  PANE_HEIGHTS,
+  type PaneSize,
+} from "@/components/charts/pane-resize";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,15 +48,27 @@ export default function ChartPage({
   const [showBB, setShowBB] = useState(false);
   const [showRSI, setShowRSI] = useState(true);
   const [showMACD, setShowMACD] = useState(true);
+  const [showLevels, setShowLevels] = useState(true);
+  const [zoomWarning, setZoomWarning] = useState(false);
+  const [rsiSize, setRsiSize] = useState<PaneSize>("M");
+  const [macdSize, setMacdSize] = useState<PaneSize>("M");
   const [legendData, setLegendData] = useState<LegendData | undefined>();
   const handleCrosshairMove = useCallback((d: LegendData | undefined) => {
     setLegendData(d);
   }, []);
 
-  const candlesQuery = useCandles(symbol, timeframe, 500);
+  const handleZoomOutLimit = useCallback(() => {
+    setZoomWarning(true);
+    // بعد از ۳ ثانیه پاک کن
+    const t = setTimeout(() => setZoomWarning(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const candlesQuery = useCandlesV2(symbol, timeframe, 500);
   const indicatorsQuery = useIndicators(symbol, timeframe, 500);
   const bookQuery = useOrderBook(symbol);
   const marketQuery = useMarket(symbol);
+  const levelsQuery = useLevels(symbol, timeframe);
 
   const candles = useMemo(
     () => candlesQuery.data?.candles ?? [],
@@ -149,9 +179,28 @@ export default function ChartPage({
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {candles.length} کندل {timeframe}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              {candles.length} کندل {timeframe}
+            </p>
+
+            {/* لینک به والکس */}
+            <a
+              href={`https://wallex.ir/app/trade/${symbol}?trade-type=spot&trade-history=spot`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-background/50 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:border-emerald-500/30 hover:bg-emerald-500/5 hover:text-emerald-400"
+              title="نمودار اصلی والکس ممکن است کندل‌های بیشتری نمایش دهد."
+            >
+              <ExternalLink className="h-3 w-3" />
+              مشاهده در والکس
+              <ArrowUpRight className="h-3 w-3 opacity-0 transition group-hover:opacity-100" />
+            </a>
+
+            <span className="text-[10px] text-muted-foreground/50">
+              (والکس ممکن است کندل‌های بیشتری داشته باشد)
+            </span>
+          </div>
         </div>
       </div>
 
@@ -220,6 +269,28 @@ export default function ChartPage({
               onClick={() => setShowMACD(!showMACD)}
               color="text-emerald-400"
             />
+            <LayerToggle
+              label="سطوح (Pivot + S/R)"
+              active={showLevels}
+              onClick={() => setShowLevels(!showLevels)}
+              color="text-amber-400"
+            />
+
+            {/* Pane resizers */}
+            {showRSI && (
+              <PaneResize
+                label="RSI"
+                value={rsiSize}
+                onChange={setRsiSize}
+              />
+            )}
+            {showMACD && (
+              <PaneResize
+                label="MACD"
+                value={macdSize}
+                onChange={setMacdSize}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-3 pt-4">
@@ -232,18 +303,39 @@ export default function ChartPage({
             showMACD={showMACD}
           />
 
+          {/* هشدار zoom out */}
+          {zoomWarning && (
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>
+                دیتای بیشتری برای این تایم‌فریم موجود نیست.
+              </span>
+              {timeframe !== "1D" && (
+                <span className="text-amber-400/80">
+                  برای بازه‌ی قدیمی‌تر، تایم‌فریم بالاتر رو انتخاب کن
+                </span>
+              )}
+            </div>
+          )}
+
           {/* چارت */}
           <ProChart
             candles={candles}
             indicators={indicators}
+            levels={levelsQuery.data}
+            syntheticRanges={candlesQuery.data?.synthetic_ranges}
             height={500}
             showVolume={true}
             showEMA={showEMA}
             showBB={showBB}
             showRSI={showRSI}
             showMACD={showMACD}
+            showLevels={showLevels}
+            rsiHeight={PANE_HEIGHTS[rsiSize]}
+            macdHeight={PANE_HEIGHTS[macdSize]}
             loading={candlesQuery.isLoading || indicatorsQuery.isLoading}
             onCrosshairMove={handleCrosshairMove}
+            onZoomOutLimit={handleZoomOutLimit}
           />
         </CardContent>
       </Card>

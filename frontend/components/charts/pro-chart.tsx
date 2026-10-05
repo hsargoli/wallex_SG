@@ -7,11 +7,17 @@ import {
   createChart,
   HistogramSeries,
   LineSeries,
+  LineStyle,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type UTCTimestamp,
 } from "lightweight-charts";
-import { type Candle } from "@/lib/api";
+import {
+  type Candle,
+  type LevelsResponse,
+  type SyntheticRange,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { type LegendData } from "./chart-legend";
 
@@ -29,27 +35,39 @@ interface ProChartProps {
     macdSignal?: (string | null)[];
     macdHist?: (string | null)[];
   };
+  levels?: LevelsResponse;
+  syntheticRanges?: SyntheticRange[];
   height?: number;
   showVolume?: boolean;
   showEMA?: boolean;
   showBB?: boolean;
   showRSI?: boolean;
   showMACD?: boolean;
+  showLevels?: boolean;
+  rsiHeight?: number;
+  macdHeight?: number;
   loading?: boolean;
   onCrosshairMove?: (data: LegendData | undefined) => void;
+  onZoomOutLimit?: () => void;
 }
 
 export function ProChart({
   candles,
   indicators,
+  levels,
+  syntheticRanges,
   height = 500,
   showVolume = true,
   showEMA = true,
   showBB = false,
   showRSI = false,
   showMACD = false,
+  showLevels = true,
+  rsiHeight = 120,
+  macdHeight = 120,
   loading = false,
   onCrosshairMove,
+  onZoomOutLimit,
 }: ProChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -66,6 +84,9 @@ export function ProChart({
   const macdLineRef = useRef<ISeriesApi<"Line"> | null>(null);
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const macdHistRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const priceLinesRef = useRef<IPriceLine[]>([]);
+  const rsiPaneRef = useRef<{ setHeight: (h: number) => void } | null>(null);
+  const macdPaneRef = useRef<{ setHeight: (h: number) => void } | null>(null);
 
   // داده‌های جاری برای crosshair
   const dataRef = useRef<{
@@ -76,6 +97,12 @@ export function ProChart({
   // callback ref — بدون نیاز به re-mount
   const cbRef = useRef(onCrosshairMove);
   cbRef.current = onCrosshairMove;
+
+  const zoomCbRef = useRef(onZoomOutLimit);
+  zoomCbRef.current = onZoomOutLimit;
+
+  // برای clamp کردن زوم
+  const totalCandlesRef = useRef(0);
 
   // آخرین داده‌ی crosshair — برای جلوگیری از fire تکراری
   const lastLegendRef = useRef<string>("");
@@ -186,7 +213,8 @@ export function ProChart({
     // ─── RSI Pane ───
     if (showRSI) {
       const rsiPane = chart.addPane(false);
-      rsiPane.setHeight(120);
+      rsiPane.setHeight(rsiHeight);
+      rsiPaneRef.current = rsiPane;
 
       rsiRef.current = chart.addSeries(
         LineSeries,
@@ -229,7 +257,8 @@ export function ProChart({
     // ─── MACD Pane ───
     if (showMACD) {
       const macdPane = chart.addPane(false);
-      macdPane.setHeight(120);
+      macdPane.setHeight(macdHeight);
+      macdPaneRef.current = macdPane;
 
       macdHistRef.current = chart.addSeries(
         HistogramSeries,
@@ -338,6 +367,21 @@ export function ProChart({
       cb(payload);
     });
 
+    // ─── Zoom out limit ───
+    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      if (!range) return;
+      // اگه from کمتر از 0 → کاربر داره زوم اوت می‌کنه خارج از دیتا
+      if (range.from < -1) {
+        // clamp
+        chart.timeScale().setVisibleLogicalRange({
+          from: 0,
+          to: Math.max(range.to, 10),
+        });
+        // notify
+        zoomCbRef.current?.();
+      }
+    });
+
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry || !chartRef.current) return;
@@ -363,6 +407,9 @@ export function ProChart({
       macdLineRef.current = null;
       macdSignalRef.current = null;
       macdHistRef.current = null;
+      priceLinesRef.current = [];
+      rsiPaneRef.current = null;
+      macdPaneRef.current = null;
     };
   }, [height, showVolume, showEMA, showBB, showRSI, showMACD]);
 
@@ -371,18 +418,48 @@ export function ProChart({
     if (!candleRef.current || !candles || candles.length === 0) return;
 
     const sorted = [...candles].sort((a, b) => a.time - b.time);
+    totalCandlesRef.current = sorted.length;
 
     // ذخیره برای crosshair
     dataRef.current = { sorted, indicators };
 
+    // ساخت set از synthetic timestamps برای lookup سریع
+    const syntheticSet = new Set<number>();
+    if (syntheticRanges && syntheticRanges.length > 0) {
+      for (const r of syntheticRanges) {
+        for (const c of sorted) {
+          if (c.time >= r.from_ts && c.time <= r.to_ts) {
+            syntheticSet.add(c.time);
+          }
+        }
+      }
+    }
+
     candleRef.current.setData(
-      sorted.map((c) => ({
-        time: c.time as UTCTimestamp,
-        open: Number(c.open),
-        high: Number(c.high),
-        low: Number(c.low),
-        close: Number(c.close),
-      })),
+      sorted.map((c) => {
+        const isSynthetic = syntheticSet.has(c.time);
+        const up = Number(c.close) >= Number(c.open);
+        if (isSynthetic) {
+          // کندل شبیه‌سازی‌شده: آبی کم‌رنگ
+          return {
+            time: c.time as UTCTimestamp,
+            open: Number(c.open),
+            high: Number(c.high),
+            low: Number(c.low),
+            close: Number(c.close),
+            color: up ? "rgba(96, 165, 250, 0.4)" : "rgba(96, 165, 250, 0.25)",
+            borderColor: "rgba(96, 165, 250, 0.6)",
+            wickColor: "rgba(96, 165, 250, 0.5)",
+          };
+        }
+        return {
+          time: c.time as UTCTimestamp,
+          open: Number(c.open),
+          high: Number(c.high),
+          low: Number(c.low),
+          close: Number(c.close),
+        };
+      }),
     );
 
     if (showVolume && volRef.current) {
@@ -459,8 +536,80 @@ export function ProChart({
       }
     }
 
-    chartRef.current?.timeScale().fitContent();
-  }, [candles, indicators, showVolume, showEMA, showBB, showRSI, showMACD]);
+    // فقط ۱۰۰ کندل آخر رو نشون بده (زوم شده)
+    const total = sorted.length;
+    if (total > 0) {
+      const visible = Math.min(100, total);
+      chartRef.current?.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, total - visible),
+        to: total + 3,
+      });
+    }
+  }, [candles, indicators, syntheticRanges, showVolume, showEMA, showBB, showRSI, showMACD]);
+
+  // ─── سطوح Pivot/S/R ───
+  useEffect(() => {
+    // پاک کردن خطوط قبلی
+    priceLinesRef.current.forEach((line) => {
+      try {
+        candleRef.current?.removePriceLine(line);
+      } catch {
+        // ignore
+      }
+    });
+    priceLinesRef.current = [];
+
+    if (!showLevels || !levels || !candleRef.current) return;
+
+    const addLine = (
+      price: number,
+      color: string,
+      title: string,
+      style: LineStyle = LineStyle.Solid,
+    ) => {
+      if (!Number.isFinite(price) || price <= 0) return;
+      const line = candleRef.current!.createPriceLine({
+        price,
+        color,
+        lineWidth: 1,
+        lineStyle: style,
+        axisLabelVisible: true,
+        title,
+      });
+      priceLinesRef.current.push(line);
+    };
+
+    // Pivot points
+    if (levels.pivot) {
+      addLine(Number(levels.pivot.pp), "rgba(251,191,36,0.9)", "PP");
+      addLine(Number(levels.pivot.r1), "rgba(239,68,68,0.7)", "R1", LineStyle.Dashed);
+      addLine(Number(levels.pivot.r2), "rgba(239,68,68,0.5)", "R2", LineStyle.Dashed);
+      addLine(Number(levels.pivot.s1), "rgba(16,185,129,0.7)", "S1", LineStyle.Dashed);
+      addLine(Number(levels.pivot.s2), "rgba(16,185,129,0.5)", "S2", LineStyle.Dashed);
+    }
+
+    // Swing levels (فقط strong و medium)
+    levels.swings
+      .filter((sw) => sw.strength !== "weak")
+      .slice(0, 6)
+      .forEach((sw) => {
+        const color =
+          sw.type === "resistance"
+            ? "rgba(239,68,68,0.4)"
+            : "rgba(16,185,129,0.4)";
+        const label = sw.type === "resistance" ? "R" : "S";
+        addLine(Number(sw.price), color, label, LineStyle.Dotted);
+      });
+  }, [levels, showLevels]);
+
+  // ─── تغییر ارتفاع pane بدون rebuild ───
+  useEffect(() => {
+    rsiPaneRef.current?.setHeight(rsiHeight);
+  }, [rsiHeight]);
+
+  useEffect(() => {
+    macdPaneRef.current?.setHeight(macdHeight);
+  }, [macdHeight]);
 
   return (
     <div className="relative w-full" dir="ltr">

@@ -94,6 +94,20 @@ export function useCandles(
   });
 }
 
+export function useCandlesV2(
+  symbol: string | null,
+  timeframe: string,
+  limit = 500,
+) {
+  return useQuery({
+    queryKey: ["candles-v2", symbol, timeframe, limit],
+    queryFn: () =>
+      api.getCandlesV2(symbol!, timeframe as import("./api").Timeframe, limit),
+    enabled: !!symbol,
+    staleTime: 60_000,
+  });
+}
+
 
 export function useSignal(symbol: string | null, timeframe: string = "1h") {
   return useQuery({

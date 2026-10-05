@@ -148,6 +148,22 @@ export interface CandlesResponse {
   candles: Candle[];
 }
 
+export interface SyntheticRange {
+  from_ts: number;
+  to_ts: number;
+  source_tf: string;
+}
+
+export interface CandlesV2Response {
+  symbol: string;
+  timeframe: string;
+  count: number;
+  real_count: number;
+  synthetic_count: number;
+  candles: Candle[];
+  synthetic_ranges: SyntheticRange[];
+}
+
 // ---------- Signal Types ----------
 
 export type SignalType = "buy" | "sell" | "hold";
@@ -488,6 +504,13 @@ export const api = {
   getCandles: (symbol: string, timeframe: Timeframe, limit = 500) =>
     client
       .get<CandlesResponse>(`/v1/markets/candles/${symbol}`, {
+        params: { tf: timeframe, limit },
+      })
+      .then((r) => r.data),
+
+  getCandlesV2: (symbol: string, timeframe: Timeframe, limit = 500) =>
+    client
+      .get<CandlesV2Response>(`/v1/markets/candles-v2/${symbol}`, {
         params: { tf: timeframe, limit },
       })
       .then((r) => r.data),
