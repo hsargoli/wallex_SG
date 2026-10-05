@@ -4,15 +4,22 @@ import { use, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  ArrowUpRight,
   LineChart,
   TrendingUp,
   TrendingDown,
   Star,
+  Activity,
+  BarChart3,
 } from "lucide-react";
 import {
   useOrderBook,
   useMarket,
   useCandles,
+  useIndicators,
+  useSignal,
+  useMultiTfSignals,
+  useLevels,
 } from "@/lib/queries";
 import { useFavorites } from "@/lib/hooks/use-favorites";
 import { formatNumber, formatPrice } from "@/lib/format";
@@ -20,6 +27,13 @@ import type { Timeframe } from "@/lib/api";
 import { MiniChart } from "@/components/charts/mini-chart";
 import { MarketStats } from "@/components/markets/market-stats";
 import { OrderBookSummary } from "@/components/markets/order-book-summary";
+import { IndicatorsGrid } from "@/components/markets/detail/indicators-grid";
+import { SignalsChart } from "@/components/signals/signals-chart";
+import { SignalCta } from "@/components/signals/detail/signal-cta";
+import { ConfluenceCard } from "@/components/signals/detail/confluence-card";
+import { MultiTfCard } from "@/components/signals/detail/multi-tf-card";
+import { RuleRow } from "@/components/signals/detail/rule-row";
+import { LevelsPanel } from "@/components/signals/levels-panel";
 import {
   Card,
   CardContent,
@@ -45,7 +59,12 @@ export default function SymbolPage({
   const market = useMarket(symbol);
   const book = useOrderBook(symbol);
   const candles = useCandles(symbol, timeframe, 200);
+  const indicators = useIndicators(symbol, timeframe, 300);
+  const signal = useSignal(symbol, timeframe);
+  const multi = useMultiTfSignals(symbol);
+  const levels = useLevels(symbol, timeframe);
   const { isFavorite, toggle, mounted } = useFavorites();
+  const [tab, setTab] = useState<"analysis" | "trade">("analysis");
 
   const change = Number(market.data?.daily_change_percent || 0);
   const isUp = change >= 0;
@@ -141,74 +160,219 @@ export default function SymbolPage({
       <MarketStats market={market.data} loading={market.isLoading} />
 
       {/* ============================================================ */}
-      {/* Mini Chart */}
+      {/* Tabs + TF picker */}
       {/* ============================================================ */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <LineChart className="h-4 w-4 text-emerald-400" />
-              نمودار قیمت
-            </CardTitle>
-            <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTab("analysis")}
+            className={cn(
+              "gap-1.5 rounded-b-none border-b-2 border-transparent",
+              tab === "analysis" &&
+                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+            )}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            تحلیل تکنیکال
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTab("trade")}
+            className={cn(
+              "gap-1.5 rounded-b-none border-b-2 border-transparent",
+              tab === "trade" &&
+                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+            )}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            معامله و دفتر سفارش
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {TIMEFRAMES.map((tf) => (
+            <Button
+              key={tf}
+              variant="ghost"
+              size="sm"
+              onClick={() => setTimeframe(tf)}
+              className={cn(
+                "h-7 px-2.5 font-mono text-xs",
+                timeframe === tf &&
+                  "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
+              )}
+            >
+              {tf}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* Tab: تحلیل تکنیکال */}
+      {/* ============================================================ */}
+      {tab === "analysis" && (
+        <div className="space-y-5">
+          {/* چارت پیشرفته + لینک چارت کامل */}
+          {indicators.data && (
+            <div className="relative">
+              <SignalsChart
+                indicators={indicators.data}
+                levels={levels.data}
+                height={420}
+              />
+              <Link
+                href={`/markets/${symbol}/chart`}
+                className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-lg border border-white/10 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition hover:border-emerald-500/30 hover:text-emerald-400"
+              >
+                چارت کامل
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+
+          {/* CTA */}
+          <SignalCta symbol={symbol} variant="advanced" />
+
+          {/* Confluence */}
+          <ConfluenceCard
+            data={multi.data?.confluence}
+            loading={multi.isLoading}
+          />
+
+          {/* Multi-TF Grid */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+              <Activity className="h-4 w-4 text-emerald-400" />
+              سیگنال در تایم‌فریم‌ها
+            </h3>
+            <div className="grid gap-3 md:grid-cols-4">
               {TIMEFRAMES.map((tf) => (
-                <Button
+                <MultiTfCard
                   key={tf}
-                  variant="ghost"
-                  size="sm"
+                  timeframe={tf}
+                  data={multi.data?.timeframes[tf]}
+                  loading={multi.isLoading}
+                  active={tf === timeframe}
                   onClick={() => setTimeframe(tf)}
-                  className={cn(
-                    "h-7 px-2.5 font-mono text-xs",
-                    timeframe === tf &&
-                      "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
-                  )}
-                >
-                  {tf}
-                </Button>
+                />
               ))}
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {candles.isLoading ? (
-            <Skeleton className="h-[240px] w-full" />
-          ) : candles.data?.candles && candles.data.candles.length > 0 ? (
-            <MiniChart candles={candles.data.candles} height={240} />
-          ) : (
-            <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
-              داده‌ای برای نمایش نیست
-            </div>
+
+          {/* اندیکاتورها */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+              <Activity className="h-4 w-4 text-emerald-400" />
+              اندیکاتورهای کلیدی
+            </h3>
+            <IndicatorsGrid
+              data={indicators.data}
+              loading={indicators.isLoading}
+            />
+          </div>
+
+          {/* Rules Breakdown */}
+          {signal.data && signal.data.rules && signal.data.rules.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-emerald-400" />
+                    تجزیه‌ی قوانین سیگنال
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-400"
+                    >
+                      🟢 خرید: {signal.data.buy_score}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="border-red-500/30 bg-red-500/10 text-[10px] text-red-400"
+                    >
+                      🔴 فروش: {signal.data.sell_score}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {signal.data.rules.map((rule, i) => (
+                    <RuleRow key={i} rule={rule} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Key Levels */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+              📊 سطوح کلیدی
+            </h3>
+            <LevelsPanel symbol={symbol} timeframe={timeframe} />
+          </div>
+        </div>
+      )}
 
       {/* ============================================================ */}
-      {/* Order Book Summary */}
+      {/* Tab: معامله و دفتر سفارش */}
       {/* ============================================================ */}
-      <OrderBookSummary
-        bestBid={book.data?.best_bid}
-        bestAsk={book.data?.best_ask}
-        spread={book.data?.spread}
-        spreadPct={book.data?.spread_pct}
-        quoteAsset={market.data?.quote_asset ?? "—"}
-        loading={book.isLoading}
-      />
+      {tab === "trade" && (
+        <div className="space-y-4">
+          {/* Mini Chart */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <LineChart className="h-4 w-4 text-emerald-400" />
+                نمودار قیمت
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {candles.isLoading ? (
+                <Skeleton className="h-[240px] w-full" />
+              ) : candles.data?.candles && candles.data.candles.length > 0 ? (
+                <MiniChart candles={candles.data.candles} height={240} />
+              ) : (
+                <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
+                  داده‌ای برای نمایش نیست
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Order book tables */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <OrderBookTable
-          title="خریداران (Bids)"
-          levels={book.data?.bids ?? []}
-          side="bid"
-          loading={book.isLoading}
-        />
-        <OrderBookTable
-          title="فروشندگان (Asks)"
-          levels={book.data?.asks ?? []}
-          side="ask"
-          loading={book.isLoading}
-        />
-      </div>
+          {/* Order Book Summary */}
+          <OrderBookSummary
+            bestBid={book.data?.best_bid}
+            bestAsk={book.data?.best_ask}
+            spread={book.data?.spread}
+            spreadPct={book.data?.spread_pct}
+            quoteAsset={market.data?.quote_asset ?? "—"}
+            loading={book.isLoading}
+          />
+
+          {/* Order book tables */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <OrderBookTable
+              title="خریداران (Bids)"
+              levels={book.data?.bids ?? []}
+              side="bid"
+              loading={book.isLoading}
+            />
+            <OrderBookTable
+              title="فروشندگان (Asks)"
+              levels={book.data?.asks ?? []}
+              side="ask"
+              loading={book.isLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
