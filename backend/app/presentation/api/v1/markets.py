@@ -151,3 +151,148 @@ async def get_candles_v2_endpoint(
         ],
     }
 
+
+
+@router.get("/facts/{symbol}")
+async def get_facts_endpoint(
+    symbol: str,
+    exchange: ExchangeDep,
+):
+    """فکت‌های تحلیلی چهار‌دوره‌ای برای یک نماد.
+
+    - بلندمدت (۱ سال): از 1D
+    - میان‌مدت (۲۹ روز): از 1h
+    - نوسان هفتگی (۷ روز): از 1h (زیرمجموعه)
+    - لحظه‌ای (۸ ساعت): از 1m → 15m
+    """
+    from app.application.use_cases.get_candles import GetCandlesUseCase
+    from app.services.candle_aggregator import aggregate_candles
+    from app.services.facts import (
+        compute_period_facts,
+        compute_overall_summary,
+    )
+
+    use_case = GetCandlesUseCase(exchange=exchange)
+
+    # ─── ۱) 1D: ۱ سال ───
+    daily = await _safe_fetch(use_case, symbol, "1D", 365)
+
+    # ─── ۲) 1h: ۲۹ روز ───
+    hourly = await _safe_fetch(use_case, symbol, "1h", 700)
+
+    # ─── ۳) 1m → 15m: ۸ ساعت ───
+    raw_1m = await _fetch_1m_direct(exchange, symbol, limit=500)
+    m15 = aggregate_candles(raw_1m, factor=15) if raw_1m else []
+
+    # ─── محاسبه‌ی فکت‌ها ───
+    # بازه ۳ (۷ روز) = زیرمجموعه 1h (آخرین ۱۶۸ کندل)
+    hourly_7d = hourly[-168:] if len(hourly) > 168 else hourly
+
+    period_configs = [
+        ("1y", "1D", daily),           # بلندمدت
+        ("1mo", "1h", hourly),         # میان‌مدت (۲۹ روز)
+        ("7d", "1h", hourly_7d),       # نوسان هفتگی
+        ("8h", "15m", m15),            # لحظه‌ای
+    ]
+
+    periods_out = []
+    for period, tf, candles in period_configs:
+        facts = compute_period_facts(candles, period=period, timeframe=tf)
+        if facts is None:
+            periods_out.append(
+                {
+                    "period": period,
+                    "timeframe": tf,
+                    "available": False,
+                }
+            )
+            continue
+
+        periods_out.append(
+            {
+                "period": period,
+                "timeframe": tf,
+                "available": True,
+                "candles_count": facts.candles_count,
+                "change_pct": str(facts.change_pct),
+                "first_price": str(facts.first_price),
+                "last_price": str(facts.last_price),
+                "high_price": str(facts.high_price),
+                "high_time": facts.high_time,
+                "low_price": str(facts.low_price),
+                "low_time": facts.low_time,
+                "volatility_pct": str(facts.volatility_pct),
+                "max_drop_pct": str(facts.max_drop_pct),
+                "max_rise_pct": str(facts.max_rise_pct),
+                "avg_range_pct": str(facts.avg_range_pct),
+                "daily_vol_pct": str(facts.daily_vol_pct),
+                "pullback_count": facts.pullback_count,
+                "pullback_avg_pct": str(facts.pullback_avg_pct),
+                "swing_count": facts.swing_count,
+                "biggest_rise_pct": str(facts.biggest_rise_pct),
+                "biggest_rise_time": facts.biggest_rise_time,
+                "biggest_drop_pct_swing": str(facts.biggest_drop_pct_swing),
+                "biggest_drop_time": facts.biggest_drop_time,
+                "interpretation": facts.interpretation,
+                "trend_direction": facts.trend_direction,
+                "trend_strength": facts.trend_strength,
+                "trend_pattern": facts.trend_pattern,
+                "trend_score": facts.trend_score,
+                "avg_volume": str(facts.avg_volume),
+                "volume_vs_avg": str(facts.volume_vs_avg),
+                "facts": facts.facts,
+            }
+        )
+
+    # ─── محاسبه‌ی خلاصه‌ی کلی ───
+    # فقط دوره‌های available
+    valid_periods = []
+    for cfg, out in zip(period_configs, periods_out):
+        if out.get("available"):
+            # پیدا کردن PeriodFacts از دیتای ذخیره‌شده
+            facts = compute_period_facts(cfg[2], period=cfg[0], timeframe=cfg[1])
+            if facts:
+                valid_periods.append(facts)
+
+    summary = compute_overall_summary(valid_periods)
+
+    return {
+        "symbol": symbol,
+        "periods": periods_out,
+        "summary": {
+            "overall_behavior": summary.overall_behavior,
+            "outlook": summary.outlook,
+            "risk_level": summary.risk_level,
+            "advice": summary.advice,
+            "consistency": summary.consistency,
+        },
+    }
+
+
+async def _safe_fetch(use_case, symbol, tf, limit):
+    """دریافت امن کندل از use case — در صورت خطا آرایه خالی."""
+    try:
+        return await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
+    except Exception:
+        return []
+
+
+async def _fetch_1m_direct(exchange, symbol: str, limit: int = 500):
+    """دریافت مستقیم کندل‌های 1m از exchange (چون use case پشتیبانی نمی‌کنه)."""
+    import time
+
+    try:
+        now = int(time.time())
+        # سقف ۵۰۰ کندل، حاشیه ۱۰٪
+        needed = int(limit * 60 * 1.1)
+        from_ts = now - needed
+
+        candles = await exchange.get_candles(
+            symbol=symbol,
+            resolution="15",  # "15" = 1m (طبق کشف قبلی)
+            from_ts=from_ts,
+            to_ts=now,
+        )
+        return candles[-limit:] if candles else []
+    except Exception:
+        return []

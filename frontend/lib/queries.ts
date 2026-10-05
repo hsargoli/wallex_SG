@@ -108,6 +108,15 @@ export function useCandlesV2(
   });
 }
 
+export function useFacts(symbol: string | null) {
+  return useQuery({
+    queryKey: ["facts", symbol],
+    queryFn: () => api.getFacts(symbol!),
+    enabled: !!symbol,
+    staleTime: 5 * 60_000,  // 5 دقیقه cache
+  });
+}
+
 
 export function useSignal(symbol: string | null, timeframe: string = "1h") {
   return useQuery({

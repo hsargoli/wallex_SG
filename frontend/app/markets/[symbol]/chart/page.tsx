@@ -16,6 +16,7 @@ import {
   useMarket,
   useLevels,
   useCandlesV2,
+  useFacts,
 } from "@/lib/queries";
 import { type Timeframe } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
@@ -30,6 +31,7 @@ import {
   PANE_HEIGHTS,
   type PaneSize,
 } from "@/components/charts/pane-resize";
+import { FactsCard } from "@/components/charts/facts-card";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,7 @@ export default function ChartPage({
   const bookQuery = useOrderBook(symbol);
   const marketQuery = useMarket(symbol);
   const levelsQuery = useLevels(symbol, timeframe);
+  const factsQuery = useFacts(symbol);
 
   const candles = useMemo(
     () => candlesQuery.data?.candles ?? [],
@@ -364,6 +367,13 @@ export default function ChartPage({
           مشاهده‌ی دفتر سفارشات ←
         </Link>
       </div>
+
+      {/* فکت‌های تحلیلی */}
+      <FactsCard
+        periods={factsQuery.data?.periods}
+        summary={factsQuery.data?.summary}
+        loading={factsQuery.isLoading}
+      />
     </div>
   );
 }

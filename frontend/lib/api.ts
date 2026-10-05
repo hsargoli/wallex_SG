@@ -164,6 +164,54 @@ export interface CandlesV2Response {
   synthetic_ranges: SyntheticRange[];
 }
 
+export interface PeriodFacts {
+  period: string;
+  timeframe: string;
+  available: boolean;
+  candles_count?: number;
+  change_pct?: string;
+  first_price?: string;
+  last_price?: string;
+  high_price?: string;
+  high_time?: number;
+  low_price?: string;
+  low_time?: number;
+  volatility_pct?: string;
+  max_drop_pct?: string;
+  max_rise_pct?: string;
+  avg_range_pct?: string;
+  daily_vol_pct?: string;
+  pullback_count?: number;
+  pullback_avg_pct?: string;
+  swing_count?: number;
+  biggest_rise_pct?: string;
+  biggest_rise_time?: number;
+  biggest_drop_pct_swing?: string;
+  biggest_drop_time?: number;
+  trend_direction?: string;
+  trend_strength?: string;
+  trend_pattern?: string;
+  trend_score?: number;
+  avg_volume?: string;
+  volume_vs_avg?: string;
+  facts?: string[];
+  interpretation?: string;
+}
+
+export interface FactsSummary {
+  overall_behavior: string;
+  outlook: string;
+  risk_level: string;
+  advice: string;
+  consistency: string;
+}
+
+export interface FactsResponse {
+  symbol: string;
+  periods: PeriodFacts[];
+  summary?: FactsSummary;
+}
+
 // ---------- Signal Types ----------
 
 export type SignalType = "buy" | "sell" | "hold";
@@ -513,6 +561,11 @@ export const api = {
       .get<CandlesV2Response>(`/v1/markets/candles-v2/${symbol}`, {
         params: { tf: timeframe, limit },
       })
+      .then((r) => r.data),
+
+  getFacts: (symbol: string) =>
+    client
+      .get<FactsResponse>(`/v1/markets/facts/${symbol}`)
       .then((r) => r.data),
 
   // Profitability
