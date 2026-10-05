@@ -2,6 +2,7 @@
 
 import { Sparkles, TrendingUp } from "lucide-react";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
+import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
@@ -32,6 +33,9 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Action Bar — کارهای فوری */}
+      <ActionBar />
 
       {/* KPI Cards */}
       <KpiCards />

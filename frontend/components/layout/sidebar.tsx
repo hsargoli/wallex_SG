@@ -33,18 +33,47 @@ type NavItem = {
   desc: string;
 };
 
-const nav: NavItem[] = [
-  { href: "/", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
-  { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
-  { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
-  { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
-  { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
-  { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
-  { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
-  { href: "/order-bot", label: "ربات ثبت سفارش", icon: Bot, desc: "ثبت دستی سفارش روی والکس" },
-  { href: "/orders", label: "سفارش‌ها", icon: ClipboardList, desc: "تاریخچه و سفارش‌های باز" },
-  { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
-  { href: "/profitability", label: "محاسبه سود", icon: Calculator, desc: "بررسی سوددهی قبل از معامله" },
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
+  {
+    label: "نمای کلی",
+    items: [
+      { href: "/", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
+    ],
+  },
+  {
+    label: "دارایی",
+    items: [
+      { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
+      { href: "/orders", label: "سفارش‌ها", icon: ClipboardList, desc: "تاریخچه و سفارش‌های باز" },
+      { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
+    ],
+  },
+  {
+    label: "کشف فرصت",
+    items: [
+      { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
+      { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
+      { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
+    ],
+  },
+  {
+    label: "خودکارسازی",
+    items: [
+      { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
+      { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
+    ],
+  },
+  {
+    label: "ابزار",
+    items: [
+      { href: "/order-bot", label: "ثبت سفارش", icon: ClipboardList, desc: "ثبت دستی سفارش روی والکس" },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -130,37 +159,51 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                  collapsed && "lg:justify-center lg:px-0",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-sm"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && (
-                  <span className="truncate font-medium">{item.label}</span>
-                )}
-                {active && !collapsed && (
-                  <span className="mr-auto h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-primary-foreground/70" />
-                )}
-              </Link>
-            );
-          })}
+        {/* Nav groups */}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
+          {navGroups.map((group, gi) => (
+            <div key={group.label} className="space-y-0.5">
+              {/* Group label */}
+              {!collapsed && (
+                <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40">
+                  {group.label}
+                </p>
+              )}
+              {/* Collapsed: divider */}
+              {collapsed && gi > 0 && (
+                <div className="mx-3 mb-2 border-t border-sidebar-border/50" />
+              )}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                      collapsed && "lg:justify-center lg:px-0",
+                      active
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-sm"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && (
+                      <span className="truncate font-medium">{item.label}</span>
+                    )}
+                    {active && !collapsed && (
+                      <span className="mr-auto h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-primary-foreground/70" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}
