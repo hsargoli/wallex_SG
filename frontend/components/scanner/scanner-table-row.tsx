@@ -75,7 +75,7 @@ export function ScannerTableRow({ item }: ScannerTableRowProps) {
 
   return (
     <Link
-      href={`/markets/${item.symbol}/chart`}
+      href={`/markets/${item.symbol}`}
       className="grid grid-cols-[minmax(140px,1.4fr)_minmax(70px,0.7fr)_minmax(80px,0.7fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(80px,0.8fr)_80px] items-center gap-3 border-b border-white/5 px-4 py-3 text-sm transition hover:bg-emerald-500/[0.03]"
     >
       {/* Symbol + price */}

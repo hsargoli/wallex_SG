@@ -3,7 +3,7 @@
 import { use, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
-import { useCandles, useIndicators, useOrderBook } from "@/lib/queries";
+import { useCandles, useIndicators, useOrderBook, useMarket } from "@/lib/queries";
 import { type Timeframe } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { ProChart } from "@/components/charts/pro-chart";
@@ -11,6 +11,7 @@ import {
   ChartLegend,
   type LegendData,
 } from "@/components/charts/chart-legend";
+import { ChartInfoCards } from "@/components/charts/chart-info-cards";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default function ChartPage({
   const candlesQuery = useCandles(symbol, timeframe, 500);
   const indicatorsQuery = useIndicators(symbol, timeframe, 500);
   const bookQuery = useOrderBook(symbol);
+  const marketQuery = useMarket(symbol);
 
   const candles = useMemo(
     () => candlesQuery.data?.candles ?? [],
@@ -44,6 +46,40 @@ export default function ChartPage({
   );
   const lastCandle = candles[candles.length - 1];
   const firstCandle = candles[0];
+
+  // محاسبات کارت‌ها
+  const change24h = marketQuery.data?.daily_change_percent ?? null;
+  const volume24h = marketQuery.data?.daily_volume ?? null;
+
+  const volumeMa = useMemo(() => {
+    const last20 = candles.slice(-20);
+    if (last20.length === 0) return 0;
+    return last20.reduce((sum, c) => sum + Number(c.volume || 0), 0) / last20.length;
+  }, [candles]);
+  const volumeRatio =
+    volumeMa > 0 && lastCandle ? Number(lastCandle.volume || 0) / volumeMa : null;
+
+  const lastOf = (arr?: (string | null)[]) =>
+    arr && arr.length > 0 ? arr[arr.length - 1] : null;
+
+  const ema9Value = lastOf(indicatorsQuery.data?.ema_9);
+  const ema21Value = lastOf(indicatorsQuery.data?.ema_21);
+  const macdHistValue = lastOf(indicatorsQuery.data?.macd_hist);
+
+  const lastRsi = indicatorsQuery.data?.rsi_14;
+  const rsiValue =
+    lastRsi && lastRsi.length > 0
+      ? (lastRsi[lastRsi.length - 1] as string | null)
+      : null;
+
+  const atrArr = indicatorsQuery.data?.atr_14;
+  const lastAtr =
+    atrArr && atrArr.length > 0 ? Number(atrArr[atrArr.length - 1] || 0) : 0;
+  const lastPrice = lastCandle ? Number(lastCandle.close) : 0;
+  const atrPct =
+    lastPrice > 0 && lastAtr > 0
+      ? ((lastAtr / lastPrice) * 100).toFixed(2)
+      : null;
 
   const priceChange =
     lastCandle && firstCandle
@@ -118,6 +154,19 @@ export default function ChartPage({
           </p>
         </div>
       </div>
+
+      {/* Info Cards */}
+      <ChartInfoCards
+        price={lastCandle?.close}
+        change24h={change24h}
+        volume24h={volume24h}
+        volumeRatio={volumeRatio}
+        atrPct={atrPct}
+        rsi={rsiValue}
+        ema9={ema9Value}
+        ema21={ema21Value}
+        macdHist={macdHistValue}
+      />
 
       {/* Chart */}
       <Card className="border-white/5 bg-[#0f0f17]">
