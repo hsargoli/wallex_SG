@@ -7,6 +7,10 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Zap,
+  Info,
+  Filter,
+  X,
 } from "lucide-react";
 import { useMarkets } from "@/lib/queries";
 import { useBatchSignals } from "@/lib/queries";
@@ -157,15 +161,26 @@ export default function SignalsPage() {
   const totalCount = needsFilter ? allSymbols.length : symbolsToFetch.length;
   const isEmptyPage = paginatedSignals.length === 0 && isFetching;
 
-  const summary = useMemo(
-    () => ({
-      buy: matches.filter((s) => s.signal === "buy").length,
-      sell: matches.filter((s) => s.signal === "sell").length,
+  const summary = useMemo(() => {
+    const buy = matches.filter((s) => s.signal === "buy");
+    const sell = matches.filter((s) => s.signal === "sell");
+    return {
+      buy: buy.length,
+      sell: sell.length,
       hold: matches.filter((s) => s.signal === "hold").length,
       strong: matches.filter((s) => s.strength === "strong").length,
-    }),
-    [matches],
-  );
+      buyBreakdown: {
+        strong: buy.filter((s) => s.strength === "strong").length,
+        medium: buy.filter((s) => s.strength === "medium").length,
+        weak: buy.filter((s) => s.strength === "weak").length,
+      },
+      sellBreakdown: {
+        strong: sell.filter((s) => s.strength === "strong").length,
+        medium: sell.filter((s) => s.strength === "medium").length,
+        weak: sell.filter((s) => s.strength === "weak").length,
+      },
+    };
+  }, [matches]);
 
   return (
     <div className="space-y-6">
@@ -204,6 +219,26 @@ export default function SignalsPage() {
         </div>
       </div>
 
+      {/* راهنمای شفاف برای کاربر جدید */}
+      <Card className="border-blue-500/20 bg-blue-500/[0.03]">
+        <CardContent className="flex items-start gap-3 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/15">
+            <Info className="h-4 w-4 text-blue-400" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="text-xs font-medium text-blue-300">
+              آمار زیر فقط برای همین صفحه و همین تایم‌فریم (
+              <span className="font-mono font-bold">{tf}</span>) است
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              سیگنال‌ها بر اساس تایم‌فریم تغییر می‌کنن — یه نماد ممکنه در ۱۵ دقیقه
+              «خرید» باشه ولی در ۴ ساعت «فروش». برای دیدن تصویر کامل، تایم‌فریم‌های
+              مختلف رو ببین. اعداد پایین با هر تغییر به‌روز می‌شن.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Progress */}
       {isFetching && (
         <Card className="border-emerald-500/20 bg-emerald-500/[0.03]">
@@ -232,52 +267,38 @@ export default function SignalsPage() {
         </Card>
       )}
 
-      {/* Summary */}
+      {/* KPI — Action-Oriented */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card className="border-emerald-500/20 bg-emerald-500/[0.03]">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <p className="text-[10px] text-muted-foreground">سیگنال خرید</p>
-            </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-emerald-400">
-              {summary.buy}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-red-500/20 bg-red-500/[0.03]">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-400" />
-              <p className="text-[10px] text-muted-foreground">سیگنال فروش</p>
-            </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-red-400">
-              {summary.sell}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2">
-              <Minus className="h-4 w-4 text-zinc-400" />
-              <p className="text-[10px] text-muted-foreground">بی‌طرف</p>
-            </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-zinc-400">
-              {summary.hold}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-amber-500/20 bg-amber-500/[0.03]">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-400">⚡</span>
-              <p className="text-[10px] text-muted-foreground">سیگنال قوی</p>
-            </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-amber-400">
-              {summary.strong}
-            </p>
-          </CardContent>
-        </Card>
+        <KpiAction
+          label="سیگنال خرید"
+          count={summary.buy}
+          breakdown={summary.buyBreakdown}
+          tone="emerald"
+          icon={TrendingUp}
+          hint="تعداد نمادهایی که در این تایم‌فریم سیگنال «خرید» دارن. تفکیک: قوی (چند اندیکاتور هم‌جهت)، متوسط (بعضی تأیید)، ضعیف (تک اندیکاتور)."
+        />
+        <KpiAction
+          label="سیگنال فروش"
+          count={summary.sell}
+          breakdown={summary.sellBreakdown}
+          tone="red"
+          icon={TrendingDown}
+          hint="تعداد نمادهایی که در این تایم‌فریم سیگنال «فروش» دارن. یعنی اندیکاتورها احتمال کاهش قیمت رو می‌دن."
+        />
+        <KpiAction
+          label="فرصت‌های قوی"
+          count={summary.strong}
+          tone="amber"
+          icon={Zap}
+          hint="سیگنال‌های «قوی» شامل خرید و فروش. یعنی چند اندیکاتور مستقل (RSI، EMA، MACD) هم‌جهت تأیید می‌کنن — فرصت‌های با اطمینان بالاتر."
+        />
+        <KpiAction
+          label="بی‌طرف"
+          count={summary.hold}
+          tone="zinc"
+          icon={Minus}
+          hint="نمادهایی که شرایط بازار براشون مشخص نیست و اندیکاتورها سیگنال خرید یا فروش نمی‌دن. معمولاً بازار آروم یا در حال انتظار."
+        />
       </div>
 
       {/* Filters */}
@@ -291,6 +312,48 @@ export default function SignalsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Active filter banner */}
+      {(filters.signal !== "all" || filters.strength !== "all") && (
+        <Card className="border-purple-500/20 bg-purple-500/[0.03]">
+          <CardContent className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+            <div className="flex items-center gap-2 text-xs">
+              <Filter className="h-3.5 w-3.5 text-purple-400" />
+              <span className="text-muted-foreground">فیلتر فعال:</span>
+              <Badge
+                variant="outline"
+                className="border-purple-500/30 bg-purple-500/10 text-[10px] text-purple-300"
+              >
+                {filters.signal === "buy" && "خرید"}
+                {filters.signal === "sell" && "فروش"}
+                {filters.signal === "hold" && "بی‌طرف"}
+                {filters.strength !== "all" &&
+                  ` · ${
+                    filters.strength === "strong"
+                      ? "قوی"
+                      : filters.strength === "medium"
+                        ? "متوسط"
+                        : "ضعیف"
+                  }`}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground/70">
+                ({matches.length} نتیجه از {filteredMarkets.length} نماد)
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setFilters({ ...filters, signal: "all", strength: "all" })
+              }
+              className="h-6 gap-1 px-2 text-[10px]"
+            >
+              <X className="h-3 w-3" />
+              پاک کردن
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Signals list */}
       <Card>
@@ -374,6 +437,79 @@ export default function SignalsPage() {
         totalPages={totalPages}
         onPageChange={setPage}
       />
+    </div>
+  );
+}
+
+
+// ---------- KPI Action Card ----------
+
+const KPI_TONES = {
+  emerald: {
+    border: "border-emerald-500/20 hover:border-emerald-500/40",
+    bg: "bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]",
+    ring: "ring-emerald-500/40",
+    text: "text-emerald-400",
+  },
+  red: {
+    border: "border-red-500/20 hover:border-red-500/40",
+    bg: "bg-red-500/[0.03] hover:bg-red-500/[0.06]",
+    ring: "ring-red-500/40",
+    text: "text-red-400",
+  },
+  amber: {
+    border: "border-amber-500/20 hover:border-amber-500/40",
+    bg: "bg-amber-500/[0.03] hover:bg-amber-500/[0.06]",
+    ring: "ring-amber-500/40",
+    text: "text-amber-400",
+  },
+  zinc: {
+    border: "border-zinc-500/20 hover:border-zinc-500/40",
+    bg: "bg-zinc-500/[0.03] hover:bg-zinc-500/[0.06]",
+    ring: "ring-zinc-500/40",
+    text: "text-zinc-400",
+  },
+} as const;
+
+function KpiAction({
+  label,
+  count,
+  breakdown,
+  tone,
+  icon: Icon,
+  hint,
+}: {
+  label: string;
+  count: number;
+  breakdown?: { strong: number; medium: number; weak: number };
+  tone: keyof typeof KPI_TONES;
+  icon: React.ElementType;
+  hint?: string;
+}) {
+  const t = KPI_TONES[tone];
+  return (
+    <div
+      title={hint}
+      className={cn(
+        "cursor-help rounded-xl border p-4 text-right",
+        t.border,
+        t.bg,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Icon className={cn("h-4 w-4", t.text)} />
+        <p className="text-[10px] text-muted-foreground">{label}</p>
+      </div>
+      <p className={cn("mt-1 font-mono text-2xl font-bold", t.text)}>{count}</p>
+      {breakdown && count > 0 && (
+        <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">
+          {breakdown.strong} قوی · {breakdown.medium} متوسط ·{" "}
+          {breakdown.weak} ضعیف
+        </p>
+      )}
+      {count === 0 && (
+        <p className="mt-1 text-[10px] text-muted-foreground/50">—</p>
+      )}
     </div>
   );
 }

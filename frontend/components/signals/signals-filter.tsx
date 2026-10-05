@@ -115,40 +115,6 @@ export function SignalsFilter({
           </SelectContent>
         </Select>
 
-        {/* Signal type */}
-        <Select
-          value={value.signal}
-          onValueChange={(v) => update({ signal: v as SignalTypeFilter })}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(SIGNAL_LABELS) as SignalTypeFilter[]).map((k) => (
-              <SelectItem key={k} value={k}>
-                {SIGNAL_LABELS[k]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Strength */}
-        <Select
-          value={value.strength}
-          onValueChange={(v) => update({ strength: v as StrengthFilter })}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(STRENGTH_LABELS) as StrengthFilter[]).map((k) => (
-              <SelectItem key={k} value={k}>
-                {STRENGTH_LABELS[k]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         {hasFilter && (
           <Button variant="ghost" onClick={clearAll} className="gap-1 text-xs">
             <X className="h-3 w-3" />
@@ -157,10 +123,12 @@ export function SignalsFilter({
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span>
           {filteredCount} از {totalCount} نماد در این صفحه
         </span>
+        <span className="text-muted-foreground/60">·</span>
+        <span>مرتب‌شده بر اساس حجم معاملات ۲۴ ساعته</span>
       </div>
     </div>
   );
