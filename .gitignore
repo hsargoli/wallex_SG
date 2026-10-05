@@ -77,3 +77,6 @@ htmlcov/
 
 # --- ML models (اگه می‌خوای جدا نگه داری) ---
 # backend/data/models/*.joblib
+
+# Archive (بکاپ‌های قدیمی — نه تو git)
+_archive/
