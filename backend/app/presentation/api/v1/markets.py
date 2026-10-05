@@ -96,3 +96,58 @@ async def get_candles_endpoint(
             for c in candles
         ],
     }
+
+
+@router.get("/candles-v2/{symbol}")
+async def get_candles_v2_endpoint(
+    symbol: str,
+    exchange: ExchangeDep,
+    tf: str = "1h",
+    limit: int = 500,
+):
+    """دریافت کندل با شبیه‌سازی بازه‌های خالی از تایم‌فریم بالاتر.
+
+    - 15m: فقط دیتای واقعی (محدود به 500 کندل)
+    - 1h: دیتای واقعی + شبیه‌سازی از 1D
+    - 4h: کاملاً شبیه‌سازی از 1D
+    - 1D: مستقیم
+
+    نواحی شبیه‌سازی‌شده در `synthetic_ranges` برگردانده می‌شوند.
+    """
+    from app.application.use_cases.get_candles_with_fallback import (
+        GetCandlesWithFallbackUseCase,
+    )
+
+    try:
+        use_case = GetCandlesWithFallbackUseCase(exchange=exchange)
+        result = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+    return {
+        "symbol": symbol,
+        "timeframe": result.requested_tf,
+        "count": len(result.candles),
+        "real_count": result.real_candles_count,
+        "synthetic_count": result.synthetic_candles_count,
+        "candles": [
+            {
+                "time": c.time,
+                "open": str(c.open),
+                "high": str(c.high),
+                "low": str(c.low),
+                "close": str(c.close),
+                "volume": str(c.volume),
+            }
+            for c in result.candles
+        ],
+        "synthetic_ranges": [
+            {
+                "from_ts": r.from_ts,
+                "to_ts": r.to_ts,
+                "source_tf": r.source_tf,
+            }
+            for r in result.synthetic_ranges
+        ],
+    }
+
