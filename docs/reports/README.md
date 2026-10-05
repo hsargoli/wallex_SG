@@ -34,3 +34,5 @@
 | ۲۰۲۶-۱۰-۰۴ | Stop_Price Fix — کشف نام‌گذاری `stop_Price` |
 | ۲۰۲۶-۱۰-۰۴ | VolatilityHunterV2 — ربات v2 ثبت شد |
 | ۲۰۲۶-۱۰-۰۵ | Scanner Rebuild — بازسازی کامل اسکنر بازار |
+| ۲۰۲۶-۱۰-۰۵ | Scanner Rebuild — بازسازی کامل اسکنر |
+| ۲۰۲۶-۱۰-۰۵ | Beginner vs Pro Split — تفکیک تریدر تازه‌کار از حرفه‌ای |
