@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import Link from "next/link";
 import {
   TrendingUp,
   TrendingDown,
@@ -13,8 +14,14 @@ import {
   Zap,
   CheckCircle2,
   XCircle,
+  ArrowUpRight,
 } from "lucide-react";
-import { useIndicators, useMultiTfSignals, useSignal, useLevels } from "@/lib/queries";
+import {
+  useIndicators,
+  useMultiTfSignals,
+  useSignal,
+  useLevels,
+} from "@/lib/queries";
 import {
   type SignalResponse,
   type SignalRule,
@@ -25,10 +32,14 @@ import { formatPrice } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { LevelsPanel } from "@/components/signals/levels-panel";
 import { LevelsGuide, TradingPlan } from "@/components/signals/trading-plan";
 import { SignalsChart } from "@/components/signals/signals-chart";
+import { SignalHero } from "@/components/signals/detail/signal-hero";
+import { SignalCta } from "@/components/signals/detail/signal-cta";
+import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 const TIMEFRAMES = ["15m", "1h", "4h", "1D"];
@@ -48,20 +59,61 @@ export default function SignalDetailPage({
   const indicators = useIndicators(symbol, timeframe, 300);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <Zap className="h-6 w-6 text-emerald-400" />
-            مرکز تحلیل و سیگنال
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            تحلیل تکنیکال چندلایه با ۶ قانون و تأیید متقابل تایم‌فریم
-          </p>
-        </div>
+    <div className="space-y-5">
+      {/* Symbol switcher + TF tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <SymbolSwitcher current={symbol} basePath="/signals" suffix="" />
+        <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
+          {TIMEFRAMES.map((tf) => (
+            <Button
+              key={tf}
+              variant="ghost"
+              size="sm"
+              onClick={() => setTimeframe(tf)}
+              className={cn(
+                "h-7 px-2.5 font-mono text-xs",
+                timeframe === tf &&
+                  "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
+              )}
+            >
+              {tf}
+            </Button>
+          ))}
+        </div>
       </div>
+
+      {/* Hero Header */}
+      <SignalHero
+        symbol={symbol}
+        timeframe={timeframe}
+        signal={signal.data}
+        loading={signal.isLoading}
+      />
+
+      {/* Chart (compact) + link to full chart */}
+      {indicators.data && (
+        <div className="relative">
+          <SignalsChart
+            indicators={indicators.data}
+            levels={levels.data}
+            height={320}
+          />
+          <Link
+            href={`/markets/${symbol}/chart`}
+            className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-lg border border-white/10 bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition hover:border-emerald-500/30 hover:text-emerald-400"
+          >
+            چارت کامل
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
+
+      {/* Main Signal (Hero Card + SL/TP + Rules) */}
+      {signal.isLoading && <Skeleton className="h-96 w-full" />}
+      {signal.data && <MainSignal signal={signal.data} />}
+
+      {/* CTA */}
+      <SignalCta symbol={symbol} />
 
       {/* Confluence Summary */}
       <ConfluenceCard
@@ -83,15 +135,6 @@ export default function SignalDetailPage({
         ))}
       </div>
 
-      {/* Main Signal */}
-      {signal.isLoading && <Skeleton className="h-96 w-full" />}
-      {signal.data && <MainSignal signal={signal.data} />}
-
-      {/* Chart */}
-      {indicators.data && (
-        <SignalsChart indicators={indicators.data} levels={levels.data} />
-      )}
-
       {/* Trading Plan */}
       {levels.data && <TradingPlan data={levels.data} />}
 
@@ -108,7 +151,6 @@ export default function SignalDetailPage({
     </div>
   );
 }
-
 // ==================== Confluence ====================
 
 function ConfluenceCard({
@@ -172,7 +214,10 @@ function ConfluenceCard({
         <div className="flex items-center gap-4">
           <Icon className={cn("h-10 w-10", config.color)} />
           <div>
-            <p className="text-xs text-muted-foreground">تأیید متقابل تایم‌فریم</p>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              تأیید متقابل تایم‌فریم
+              <InfoTip text="اگه سیگنال در چند تایم‌فریم (15m، 1h، 4h، 1D) هم‌جهت باشه، اطمینان بالاتر می‌ره. مثلاً ۴ از ۴ خرید = سیگنال خیلی قوی." />
+            </p>
             <p className={cn("text-lg font-bold", config.color)}>
               {data.label}
             </p>
@@ -322,6 +367,7 @@ function MainSignal({ signal }: { signal: SignalResponse }) {
             value={signal.stop_loss}
             icon={Shield}
             color="text-red-400"
+            info="حد ضرر: اگه قیمت به این سطح برسه، پوزیشن به‌طور خودکار بسته می‌شه تا از ضرر بیشتر جلوگیری کنه"
             hint={`فاصله: ${
               signal.stop_loss
                 ? (
@@ -337,6 +383,7 @@ function MainSignal({ signal }: { signal: SignalResponse }) {
             value={signal.take_profit}
             icon={Target}
             color="text-emerald-400"
+            info="حد سود: اگه قیمت به این سطح برسه، پوزیشن بسته می‌شه و سود شما تأمین می‌شه"
             hint={`فاصله: ${
               signal.take_profit
                 ? (
@@ -349,8 +396,9 @@ function MainSignal({ signal }: { signal: SignalResponse }) {
           />
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 نسبت ریسک به ریوارد
+                <InfoTip text="نسبت ریسک به ریوارد (R/R): به ازای هر ۱ واحد ریسک (فاصله تا حد ضرر)، چند واحد سود (فاصله تا حد سود) انتظار می‌ره. بالاتر = بهتر. مثلاً ۳ یعنی به ازای ۱ ریسک، ۳ سود." />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -446,18 +494,21 @@ function TargetCard({
   icon: Icon,
   color,
   hint,
+  info,
 }: {
   label: string;
   value: string | null;
   icon: React.ElementType;
   color: string;
   hint: string;
+  info?: string;
 }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">
+        <CardTitle className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           {label}
+          {info && <InfoTip text={info} />}
         </CardTitle>
         <Icon className={cn("h-4 w-4", color)} />
       </CardHeader>

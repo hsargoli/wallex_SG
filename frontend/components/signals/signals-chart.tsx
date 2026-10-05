@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 interface SignalsChartProps {
   indicators: IndicatorsResponse;
   levels?: LevelsResponse;
+  height?: number;
 }
 
 interface Layer {
@@ -40,7 +41,7 @@ const DEFAULT_LAYERS: Layer[] = [
   { key: "levels", label: "سطوح (Pivot + S/R)", color: "text-amber-400", enabled: true },
 ];
 
-export function SignalsChart({ indicators, levels }: SignalsChartProps) {
+export function SignalsChart({ indicators, levels, height = 520 }: SignalsChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -81,7 +82,7 @@ export function SignalsChart({ indicators, levels }: SignalsChartProps) {
         secondsVisible: false,
       },
       width: containerRef.current.clientWidth,
-      height: 520,
+      height,
     });
 
     // کندل
