@@ -20,6 +20,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
@@ -66,7 +67,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
       { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
-      { href: "/backtest", label: "بک‌تست", icon: Play, desc: "تست ربات روی داده‌ی گذشته" },
+      { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
     ],
   },
   {
