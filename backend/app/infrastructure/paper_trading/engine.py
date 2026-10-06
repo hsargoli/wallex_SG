@@ -210,6 +210,12 @@ class PaperEngine:
             try:
                 uc = GetCandlesUseCase(exchange=self.exchange)
                 candles = await uc.execute(symbol=symbol, timeframe=self.timeframe, limit=200)
+                # فقط کندل‌های بسته؛ کندل جاری ناتمام است (هم‌رفتار با بک‌تست)
+                if candles:
+                    from app.application.use_cases.get_candles import TIMEFRAME_MAP
+                    tf_sec = TIMEFRAME_MAP.get(self.timeframe, ("", 1, 3600))[2]
+                    if candles[-1].time + tf_sec > int(time.time()):
+                        candles = candles[:-1]
                 if not candles:
                     self._log_event("error", "کندلی دریافت نشد", symbol=symbol)
                     continue
