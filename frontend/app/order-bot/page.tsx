@@ -44,6 +44,7 @@ import {
 import { cn } from "@/lib/utils";
 import { OrderBotChart } from "@/components/order-bot/order-bot-chart";
 import { SymbolCombobox } from "@/components/order-bot/symbol-combobox";
+import { formatTime } from "@/lib/format";
 
 // ---------- Constants ----------
 
@@ -75,20 +76,6 @@ const typeLabels: Record<string, string> = {
 };
 
 // ---------- Helpers ----------
-
-function formatTime(ts: number): string {
-  if (!ts || ts <= 0) return "—";
-  try {
-    return new Date(ts * 1000).toLocaleString("fa-IR", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
-}
 
 // ---------- Order Form Component ----------
 

@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { formatTime } from "@/lib/format";
 
 // ---------- Helpers ----------
 
@@ -74,21 +75,6 @@ const typeLabels: Record<string, string> = {
   STOP_LIMIT: "🛑 Stop-Limit",
   STOP_MARKET: "🛑 Stop-Market",
 };
-
-function formatTime(ts: number): string {
-  if (!ts || ts <= 0) return "—";
-  try {
-    return new Date(ts * 1000).toLocaleString("fa-IR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
-}
 
 function computeTotal(order: Order): number {
   const qty = Number(order.orig_qty);
@@ -360,7 +346,7 @@ function OrderCard({ order }: { order: Order }) {
             </Button>
           ) : (
             <span className="text-[10px] text-muted-foreground">
-              {formatTime(order.created_at)}
+              {formatTime(order.created_at, true)}
             </span>
           )}
         </div>
@@ -449,7 +435,7 @@ function OrderCard({ order }: { order: Order }) {
         {order.created_at > 0 && (
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {formatTime(order.created_at)}
+            {formatTime(order.created_at, true)}
           </span>
         )}
         {Number(order.fee) > 0 && (

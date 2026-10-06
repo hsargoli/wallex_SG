@@ -24,3 +24,18 @@ export function formatPct(value: string | number): string {
   const sign = num > 0 ? "+" : "";
   return `${sign}${num.toFixed(4)}%`;
 }
+
+export function formatTime(ts: number, withYear = false): string {
+  if (!ts || ts <= 0) return "—";
+  try {
+    return new Date(ts * 1000).toLocaleString("fa-IR", {
+      ...(withYear ? { year: "numeric" as const } : {}),
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
+}
