@@ -151,10 +151,9 @@ async def _pick_symbols(exchange, n: int) -> tuple[list[str], str]:
     return FALLBACK_SYMBOLS[:n], "fallback_list"
 
 
-@router.get("/bot/{bot_slug}")
-async def run_bot_multi(
+async def _run_scalp_multi(
     bot_slug: str,
-    exchange: ExchangeDep,
+    exchange,
     symbols: str = "",
     top: int = 15,
     tf: str = "1h",
@@ -249,4 +248,140 @@ async def run_bot_multi(
         },
         "per_symbol": per_symbol,
         "trades": all_trades,
+    }
+
+
+SIM_BOTS = ["trend_follow", "volatility_hunter", "volatility_hunter_v2", "mean_revert"]
+ALL_BOTS = ["scalp_master"] + SIM_BOTS
+
+
+def _pair_trades(raw: list[dict], times: list[int]) -> list[dict]:
+    """ردیف‌های تخت BUY/SELL → ترید کامل."""
+    out, open_buy = [], None
+    for r in raw:
+        side = str(r.get("side", "")).upper()
+        if side == "BUY":
+            open_buy = r
+        elif side == "SELL" and open_buy is not None:
+            size = float(open_buy.get("size_usd") or 0)
+            pnl = float(r.get("pnl") or 0)
+            i0, i1 = int(open_buy.get("i", 0)), int(r.get("i", 0))
+            tm = lambda i: times[i] if 0 <= i < len(times) else 0
+            out.append({
+                "entry_time": tm(i0), "exit_time": tm(i1),
+                "entry_price": float(open_buy.get("price") or 0),
+                "exit_price": float(r.get("price") or 0),
+                "pnl": round(pnl, 4),
+                "pnl_pct": round(pnl / size * 100, 2) if size > 0 else 0.0,
+                "exit_reason": str(r.get("reason", "")),
+                "duration_candles": max(0, i1 - i0),
+            })
+            open_buy = None
+    return out
+
+
+@router.get("/bot/{bot_slug}")
+async def run_bot_any(
+    bot_slug: str,
+    exchange: ExchangeDep,
+    symbols: str = "",
+    top: int = 15,
+    tf: str = "1h",
+    limit: int = 3000,
+    initial_capital: float = 1000.0,
+    position_size_pct: float = 50.0,
+    fee_pct: float = 0.2,
+    days: int = 30,
+):
+    """بک‌تست هر ربات (scalp_master: موتور خودمان؛ بقیه: Adapterها)."""
+    if bot_slug not in ALL_BOTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"ربات پشتیبانی نمی‌شود. مجاز: {', '.join(ALL_BOTS)}",
+        )
+    if bot_slug == "scalp_master":
+        return await _run_scalp_multi(
+            bot_slug, exchange, symbols=symbols, top=top, tf=tf, limit=limit,
+            initial_capital=initial_capital, position_size_pct=position_size_pct, fee_pct=fee_pct,
+        )
+
+    import asyncio
+    import datetime as dt
+
+    from app.infrastructure.wallex_repo import WallexMarketData  # noqa: F401
+    from app.services.bot_simulator import BotSimulator
+
+    syms = list(dict.fromkeys(x.strip().upper() for x in symbols.split(",") if x.strip()))
+    if not 1 <= len(syms) <= 5:
+        raise HTTPException(status_code=400, detail="برای این ربات ۱ تا ۵ نماد لازم است")
+
+    end = dt.date.today()
+    start = end - dt.timedelta(days=max(7, min(days, 90)))
+    sem = asyncio.Semaphore(3)
+
+    async def one(sym: str) -> dict:
+        async with sem:
+            try:
+                times = [
+                    int(c.time) for c in await GetCandlesUseCase(exchange=exchange).execute(
+                        symbol=sym, timeframe=tf, limit=limit)
+                ]
+                sim = BotSimulator(WallexMarketData(), bot_slug, initial_balance=initial_capital)
+                res = await sim.run(start.isoformat(), end.isoformat(), sym, tf)
+                if res.get("status") != "success":
+                    return {"symbol": sym, "error": str(res.get("message") or res.get("status"))}
+                # اندیس i به کندل‌های بازه‌ی شبیه‌ساز اشاره دارد؛ زمان‌ها را از انتهای لیست هم‌تراز می‌کنیم
+                n_prices = int(res.get("prices_count") or len(times))
+                aligned = times[-n_prices:] if n_prices <= len(times) else times
+                trades = _pair_trades(res.get("trades", []), aligned)
+                for t in trades:
+                    t["symbol"] = sym
+                return {"symbol": sym, "trades": trades, "candles": n_prices}
+            except Exception as e:
+                return {"symbol": sym, "error": f"{type(e).__name__}: {e}"}
+
+    results = await asyncio.gather(*(one(x) for x in syms))
+    ok = [r for r in results if "error" not in r]
+    failed = [{"symbol": r["symbol"], "error": r["error"]} for r in results if "error" in r]
+
+    def stats(trs):
+        w = [t for t in trs if t["pnl"] > 0]
+        l = [t for t in trs if t["pnl"] <= 0]
+        gw, gl = sum(t["pnl"] for t in w), abs(sum(t["pnl"] for t in l))
+        return w, l, gw, gl
+
+    per_symbol = []
+    for r in ok:
+        trs = r["trades"]
+        w, l, gw, gl = stats(trs)
+        eq, peak, dd = 0.0, 0.0, 0.0
+        for t in trs:
+            eq += t["pnl"]
+            peak = max(peak, eq)
+            dd = max(dd, (peak - eq) / initial_capital * 100)
+        per_symbol.append({
+            "symbol": r["symbol"], "candles": r["candles"], "trades": len(trs),
+            "win_rate": round(len(w) / len(trs) * 100, 1) if trs else 0.0,
+            "pnl_pct": round(sum(t["pnl"] for t in trs) / initial_capital * 100, 2),
+            "profit_factor": round(gw / gl, 2) if gl > 0 else None,
+            "max_drawdown_pct": round(dd, 2),
+        })
+    per_symbol.sort(key=lambda x: x["pnl_pct"], reverse=True)
+
+    all_trades = sorted((t for r in ok for t in r["trades"]), key=lambda t: t["entry_time"])
+    w, l, gw, gl = stats(all_trades)
+    n = len(all_trades)
+    return {
+        "bot_slug": bot_slug, "timeframe": tf, "symbols_source": "manual",
+        "symbols_requested": len(syms), "symbols_ok": len(ok), "failed": failed,
+        "summary": {
+            "total_trades": n, "wins": len(w), "losses": len(l),
+            "win_rate": round(len(w) / n * 100, 1) if n else 0.0,
+            "avg_trade_pct": round(sum(t["pnl_pct"] for t in all_trades) / n, 2) if n else 0.0,
+            "avg_symbol_pnl_pct": round(sum(x["pnl_pct"] for x in per_symbol) / len(per_symbol), 2) if per_symbol else 0.0,
+            "profit_factor": round(gw / gl, 2) if gl > 0 else None,
+            "worst_symbol_dd_pct": max((x["max_drawdown_pct"] for x in per_symbol), default=0.0),
+            "reliable": n >= 30,
+        },
+        "per_symbol": per_symbol, "trades": all_trades,
     }

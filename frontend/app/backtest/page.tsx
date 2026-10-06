@@ -8,10 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getSimulationSymbols, runBotBacktest, type BotBacktestResult } from "@/lib/api";
 
+const BOTS = [
+  { slug: "scalp_master", name: "اسکالپ‌مستر", ok: true },
+  { slug: "trend_follow", name: "روندرو", ok: true },
+  { slug: "mean_revert", name: "کف‌زن", ok: true },
+  { slug: "volatility_hunter", name: "نوسان‌گیر", ok: true },
+  { slug: "volatility_hunter_v2", name: "نوسان‌گیر v2", ok: true },
+  { slug: "grid_bot", name: "شبکه‌ای", ok: false },
+  { slug: "smart_portfolio", name: "پورتفوی هوشمند", ok: false },
+];
+
 const REASONS: Record<string, string> = {
   take_profit: "حد سود",
   stop_loss: "حد ضرر",
   timeout: "پایان زمان",
+  stop_loss_hit: "حد ضرر",
   end_of_data: "پایان داده",
 };
 
@@ -68,6 +79,7 @@ function Histogram({ values }: { values: number[] }) {
 
 export default function BacktestPage() {
   const [tf, setTf] = useState("1h");
+  const [bot, setBot] = useState("scalp_master");
   const [picked, setPicked] = useState<string[]>(["NEARTMN"]);
   const [q, setQ] = useState("");
   const symbolsQ = useQuery({ queryKey: ["sim-symbols"], queryFn: getSimulationSymbols, staleTime: 300_000 });
@@ -88,7 +100,7 @@ export default function BacktestPage() {
 
   const m = useMutation<BotBacktestResult, Error>({
     mutationFn: () =>
-      runBotBacktest("scalp_master", {
+      runBotBacktest(bot, {
         tf,
         top: picked.length,
         symbols: picked.join(","),
@@ -139,6 +151,15 @@ export default function BacktestPage() {
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
+          <Field label="ربات">
+            <select className={inputCls} value={bot} onChange={(e) => setBot(e.target.value)}>
+              {BOTS.map((b) => (
+                <option key={b.slug} value={b.slug} disabled={!b.ok}>
+                  {b.name}{b.ok ? "" : " (به‌زودی)"}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="تایم‌فریم">
             <select className={inputCls} value={tf} onChange={(e) => setTf(e.target.value)}>
               <option value="15m">۱۵ دقیقه</option>
@@ -303,7 +324,7 @@ export default function BacktestPage() {
                       <td className="px-3 py-1.5 font-mono">{t.symbol}</td>
                       <td className="px-3 py-1.5">{fmtDate(t.entry_time)}</td>
                       <td className="px-3 py-1.5 tabular-nums">{t.duration_candles}</td>
-                      <td className="px-3 py-1.5">{REASONS[t.exit_reason] ?? t.exit_reason}</td>
+                      <td className="px-3 py-1.5">{REASONS[t.exit_reason] ?? t.exit_reason.slice(0, 24)}</td>
                       <td className={"px-3 py-1.5 font-semibold tabular-nums " + pnlColor(t.pnl_pct)} dir="ltr">
                         {t.pnl_pct > 0 ? "+" : ""}{t.pnl_pct}
                       </td>
