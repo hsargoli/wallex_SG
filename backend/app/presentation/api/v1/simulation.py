@@ -203,6 +203,7 @@ async def compare_simulations(
     symbol: str = Query("BTCUSDT", description="نماد معاملاتی"),
     initial_balance: float = Query(1000.0, ge=10.0, le=10_000_000.0,
                                    description="سرمایه اولیه (USDT)"),
+    timeframe: str = Query("1h", description="تایم‌فریم: 1h | 4h | 1D"),
 ):
     """
     اجرای همه ربات‌های قابل شبیه‌سازی روی یک رمزارز و بازه‌ی مشخص.
@@ -242,7 +243,7 @@ async def compare_simulations(
 
         try:
             simulator = BotSimulator(repo, slug, initial_balance=initial_balance)
-            r = await simulator.run(start_g, end_g, symbol)
+            r = await simulator.run(start_g, end_g, symbol, timeframe)
             p = r.get("pnl_report", {})
 
             results.append(CompareResultItem(
@@ -294,6 +295,7 @@ async def run_simulation(
     ),
     initial_balance: float = Query(1000.0, ge=10.0, le=10_000_000.0,
                                    description="سرمایه اولیه (USDT)"),
+    timeframe: str = Query("1h", description="تایم‌فریم: 1h | 4h | 1D"),
 ):
     try:
         start_g = parse_any_date(start_date)
@@ -314,12 +316,12 @@ async def run_simulation(
             simulator = BotSimulator(repo, bot_slug, initial_balance=initial_balance)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
-        result = await simulator.run(start_g, end_g, symbol)
+        result = await simulator.run(start_g, end_g, symbol, timeframe)
     else:
         strategy = SimpleTrendStrategy()
         simulator = Simulator(repo, strategy)
         # توجه: Simulator فعلاً initial_balance رو پارامتر نمی‌گیره
-        result = await simulator.run(start_g, end_g, symbol)
+        result = await simulator.run(start_g, end_g, symbol, timeframe)
 
     result["dates"] = {
         "start": {

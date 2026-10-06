@@ -37,9 +37,19 @@ export default function PaperTradingPage() {
   const [rangeDays, setRangeDays] = useState<number>(10);
 
   const rangeOptions = [
+    { value: 7, label: "۷ روز گذشته" },
     { value: 10, label: "۱۰ روز گذشته" },
     { value: 20, label: "۲۰ روز گذشته" },
     { value: 30, label: "۱ ماه گذشته" },
+    { value: 90, label: "۳ ماه گذشته" },
+    { value: 180, label: "۶ ماه گذشته" },
+    { value: 365, label: "۱ سال گذشته" },
+  ];
+
+  const timeframeOptions = [
+    { value: "1h", label: "۱ ساعته" },
+    { value: "4h", label: "۴ ساعته" },
+    { value: "1D", label: "روزانه" },
   ];
   // ربات‌های قابل شبیه‌سازی
   const [bots, setBots] = useState<BotOption[]>([]);
@@ -53,10 +63,12 @@ export default function PaperTradingPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   // سرمایه اولیه
   const [initialBalance, setInitialBalance] = useState<number>(1000);
+  // تایم‌فریم
+  const [timeframe, setTimeframe] = useState<string>("1h");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getSimulationAvailableDates(90)
+    getSimulationAvailableDates(365)
       .then((dates) => {
         if (dates && dates.length > 0) {
           setAvailableDates(dates);
@@ -97,7 +109,12 @@ export default function PaperTradingPage() {
     setSimResult(null);
     setCompareResult(null);
     setError(null);
-  }, [symbol, botSlug, rangeDays, initialBalance]);
+  }, [symbol, botSlug, rangeDays, initialBalance, timeframe]);
+
+  // هشدار محدودیت TF
+  const showTfWarning =
+    (timeframe === "1h" && rangeDays > 29) ||
+    (timeframe === "4h" && rangeDays > 89);
 
   const handleRunSimulation = async () => {
     try {
@@ -113,7 +130,7 @@ export default function PaperTradingPage() {
       const startIdx = Math.min(rangeDays - 1, availableDates.length - 1);
       const startItem = availableDates[startIdx];
 
-      const res = await runSimulation(startItem.gregorian, endItem.gregorian, symbol, botSlug, initialBalance);
+      const res = await runSimulation(startItem.gregorian, endItem.gregorian, symbol, botSlug, initialBalance, timeframe);
       setSimResult(res);
     } catch (err) {
       setError("خطا در اجرای شبیه ساز. لطفا اتصال بک اند را بررسی کنید.");
@@ -137,7 +154,7 @@ export default function PaperTradingPage() {
       const startIdx = Math.min(rangeDays - 1, availableDates.length - 1);
       const startItem = availableDates[startIdx];
 
-      const res = await compareAllBots(startItem.gregorian, endItem.gregorian, symbol, initialBalance);
+      const res = await compareAllBots(startItem.gregorian, endItem.gregorian, symbol, initialBalance, timeframe);
       setCompareResult(res);
     } catch (err) {
       setError("خطا در مقایسه ربات‌ها. لطفا اتصال بک اند را بررسی کنید.");
@@ -259,6 +276,22 @@ export default function PaperTradingPage() {
                 ))}
               </select>
             </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Zap className="h-3 w-3" /> تایم‌فریم
+              </label>
+              <select
+                value={timeframe}
+                onChange={(e) => setTimeframe(e.target.value)}
+                className="bg-black/40 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:border-amber-500 min-w-[140px]"
+              >
+                {timeframeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-slate-900">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Button
               onClick={handleRunSimulation}
               disabled={simLoading || availableDates.length === 0}
@@ -274,6 +307,16 @@ export default function PaperTradingPage() {
               {compareLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "مقایسه همه ربات‌ها"}
             </button>
           </div>
+
+          {showTfWarning && (
+            <Alert className="border-amber-500/30 bg-amber-500/5">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
+              <AlertDescription className="text-amber-200">
+                تایم‌فریم {timeframe} فقط {timeframe === "1h" ? "۲۹" : "۸۹"} روز اخیر رو پشتیبانی می‌کنه.
+                برای بازه‌های بلندتر از ۴ ساعته یا روزانه استفاده کن.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* توضیحات ربات انتخاب‌شده */}
           {(() => {

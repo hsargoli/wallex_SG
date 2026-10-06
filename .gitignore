@@ -80,3 +80,6 @@ htmlcov/
 
 # Archive (بکاپ‌های قدیمی — نه تو git)
 _archive/
+backend/data/full_scan/
+backend/data/backtest_results/
+backend/data/api_limits/

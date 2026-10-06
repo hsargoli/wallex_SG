@@ -791,6 +791,7 @@ export const runSimulation = async (
   symbol: string = "BTCUSDT",
   botSlug: string = "",
   initialBalance: number = 1000,
+  timeframe: string = "1h",
 ): Promise<SimulationResult> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
   const url = new URL(`${baseUrl}/v1/simulation/run`);
@@ -798,6 +799,7 @@ export const runSimulation = async (
   url.searchParams.set("end_date", endDate);
   url.searchParams.set("symbol", symbol);
   url.searchParams.set("initial_balance", String(initialBalance));
+  url.searchParams.set("timeframe", timeframe);
   if (botSlug) {
     url.searchParams.set("bot_slug", botSlug);
   }
@@ -835,6 +837,7 @@ export const compareAllBots = async (
   endDate: string,
   symbol: string = "BTCUSDT",
   initialBalance: number = 1000,
+  timeframe: string = "1h",
 ): Promise<CompareResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
   const url = new URL(`${baseUrl}/v1/simulation/compare`);
@@ -842,6 +845,7 @@ export const compareAllBots = async (
   url.searchParams.set("end_date", endDate);
   url.searchParams.set("symbol", symbol);
   url.searchParams.set("initial_balance", String(initialBalance));
+  url.searchParams.set("timeframe", timeframe);
 
   const response = await fetch(url.toString(), {
     method: 'POST',

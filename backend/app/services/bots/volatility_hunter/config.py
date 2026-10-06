@@ -31,7 +31,7 @@ class VolatilityHunterConfig:
     max_range_pct: float = 12.0
 
     # سطوح ورود/خروج
-    buy_zone_pct: float = 15.0
+    buy_zone_pct: float = 30.0
     sell_zone_pct: float = 15.0
 
     # ریسک

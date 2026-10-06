@@ -104,6 +104,50 @@ class TrendFollowAdapter(BaseBotAdapter):
 
 
 # ============================================================
+# Scalp Master Adapter
+# ============================================================
+class ScalpMasterAdapter(BaseBotAdapter):
+    """آداپتور Scalp Master — اسکالپ نزولی."""
+
+    slug = "scalp_master"
+
+    def __init__(self):
+        from app.services.bots.scalp_master.config import ScalpMasterConfig
+        self.config = ScalpMasterConfig()
+        self.timeframe = self.config.timeframe
+
+    def on_candle(self, candles, position):
+        from app.services.bots.scalp_master.strategy import evaluate_entry, evaluate_exit
+
+        if position is None:
+            signal = evaluate_entry(candles, self.config)
+            if signal is None or not signal.should_trade:
+                return {"action": "hold"}
+            return {
+                "action": "enter",
+                "reason": signal.reason,
+                "meta": {
+                    "sl": signal.stop_loss,
+                    "tp": signal.take_profit,
+                },
+            }
+
+        should_exit, exit_price, reason = evaluate_exit(
+            candles,
+            position["entry_price"],
+            position["sl"],
+            position["tp"],
+            position.get("candles_in_position", 0),
+            self.config,
+        )
+
+        if should_exit:
+            return {"action": "exit", "reason": reason}
+
+        return {"action": "hold"}
+
+
+# ============================================================
 # Volatility Hunter Adapter
 # ============================================================
 class VolatilityHunterAdapter(BaseBotAdapter):
@@ -333,6 +377,7 @@ class VolatilityHunterV2Adapter(BaseBotAdapter):
 # ============================================================
 ADAPTERS = {
     "trend_follow": TrendFollowAdapter,
+    "scalp_master": ScalpMasterAdapter,
     "volatility_hunter": VolatilityHunterAdapter,
     "volatility_hunter_v2": VolatilityHunterV2Adapter,
     "mean_revert": MeanRevertAdapter,
@@ -360,9 +405,10 @@ class BotSimulator:
         self.adapter: BaseBotAdapter = ADAPTERS[bot_slug]()
         self.initial_balance = initial_balance
 
-    async def run(self, start_date: str, end_date: str, symbol: str = "BTCUSDT"):
+    async def run(self, start_date: str, end_date: str, symbol: str = "BTCUSDT", timeframe: str | None = None):
+        tf = timeframe or self.adapter.timeframe
         candles = self.repository.get_candles(
-            symbol, start_date, end_date, timeframe=self.adapter.timeframe,
+            symbol, start_date, end_date, timeframe=tf,
         )
 
         if not candles or len(candles) < 2:
