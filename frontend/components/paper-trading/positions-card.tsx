@@ -16,6 +16,7 @@ interface Position {
   entry_time: number;
   reason: string;
   bot_slug: string;
+  current_price?: number;
 }
 
 interface Props {
