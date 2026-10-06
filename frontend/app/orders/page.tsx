@@ -46,6 +46,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/format";
+import { OrderForm } from "@/components/orders/order-form";
 
 // ---------- Helpers ----------
 
@@ -86,39 +87,6 @@ function computeTotal(order: Order): number {
 
 function PlaceOrderDialog() {
   const [open, setOpen] = useState(false);
-  const [symbol, setSymbol] = useState("BTCTMN");
-  const [side, setSide] = useState<OrderSide>("BUY");
-  const [type, setType] = useState<TradingOrderType>("LIMIT");
-  const [quantity, setQuantity] = useState("");
-  const [price, setPrice] = useState("");
-
-  const placeOrder = usePlaceOrder();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quantity || Number(quantity) <= 0) return;
-    if (type === "LIMIT" && (!price || Number(price) <= 0)) return;
-
-    placeOrder.mutate(
-      {
-        symbol,
-        side,
-        type,
-        quantity,
-        price: type === "LIMIT" ? price : undefined,
-      },
-      {
-        onSuccess: () => {
-          setOpen(false);
-          setQuantity("");
-          setPrice("");
-        },
-      },
-    );
-  };
-
-  const totalValue =
-    quantity && price ? Number(quantity) * Number(price) : 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -138,121 +106,7 @@ function PlaceOrderDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>نماد معاملاتی</Label>
-            <Input
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="BTCTMN"
-              className="font-mono"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant={side === "BUY" ? "default" : "outline"}
-              onClick={() => setSide("BUY")}
-              className={cn(
-                "gap-2",
-                side === "BUY" && "bg-emerald-600 hover:bg-emerald-700",
-              )}
-            >
-              <TrendingUp className="h-4 w-4" />
-              خرید
-            </Button>
-            <Button
-              type="button"
-              variant={side === "SELL" ? "default" : "outline"}
-              onClick={() => setSide("SELL")}
-              className={cn(
-                "gap-2",
-                side === "SELL" && "bg-red-600 hover:bg-red-700",
-              )}
-            >
-              <TrendingDown className="h-4 w-4" />
-              فروش
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            <Label>نوع سفارش</Label>
-            <Select
-              value={type}
-              onValueChange={(v) => setType(v as TradingOrderType)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LIMIT">Limit (قیمت مشخص)</SelectItem>
-                <SelectItem value="MARKET">Market (قیمت بازار)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>مقدار ({symbol.replace("TMN", "") || "coin"})</Label>
-            <Input
-              type="text"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="0.00000884"
-              className="font-mono"
-            />
-          </div>
-
-          {type === "LIMIT" && (
-            <div className="space-y-2">
-              <Label>قیمت واحد (TMN)</Label>
-              <Input
-                type="text"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="11312379642"
-                className="font-mono"
-              />
-            </div>
-          )}
-
-          {totalValue > 0 && (
-            <div className="rounded-lg bg-black/30 border border-white/5 p-3">
-              <p className="text-xs text-muted-foreground">مبلغ کل</p>
-              <p className="text-lg font-mono font-bold text-amber-400">
-                {formatNumber(totalValue)} TMN
-              </p>
-            </div>
-          )}
-
-          <Alert className="bg-amber-500/10 border-amber-500/30">
-            <AlertDescription className="text-amber-300 text-xs leading-relaxed">
-              ⚠️ این سفارش واقعی است. مطمئن شو قیمت و مقدار درسته.
-            </AlertDescription>
-          </Alert>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="flex-1"
-            >
-              لغو
-            </Button>
-            <Button
-              type="submit"
-              disabled={placeOrder.isPending}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-            >
-              {placeOrder.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "تأیید و ثبت"
-              )}
-            </Button>
-          </div>
-        </form>
+        <OrderForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
