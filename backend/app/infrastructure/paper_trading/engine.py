@@ -216,9 +216,10 @@ class PaperEngine:
                 scanned += 1
 
                 checks = bot.diagnose(symbol, candles) if hasattr(bot, "diagnose") else []
-                total = len(checks)
-                passed = sum(1 for c in checks if c["passed"])
-                if passed >= 1:
+                core = [c for c in checks if c["name"] in ("drop", "green", "rsi", "body")]
+                total = len(core)
+                passed = sum(1 for c in core if c["passed"])
+                if passed >= 2:
                     candidates += 1
                 radar.append({
                     "symbol": symbol,
@@ -231,7 +232,7 @@ class PaperEngine:
                 decision = bot.make_decision(symbol, candles)
                 ok = bool(decision and decision.get("should_trade"))
 
-                if checks and (ok or passed >= 1 or len(self.symbols) <= 5):
+                if checks and (ok or passed >= 2 or len(self.symbols) <= 5):
                     self._log_event(
                         "think",
                         "شرایط ورود برقرار شد" if ok else "رد شد",
