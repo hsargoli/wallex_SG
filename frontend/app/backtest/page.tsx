@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, FlaskConical, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { AlertTriangle, FlaskConical, Loader2, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { runBotBacktest, type BotBacktestResult } from "@/lib/api";
+import { getSimulationSymbols, runBotBacktest, type BotBacktestResult } from "@/lib/api";
 
 const REASONS: Record<string, string> = {
   take_profit: "حد سود",
@@ -68,7 +68,18 @@ function Histogram({ values }: { values: number[] }) {
 
 export default function BacktestPage() {
   const [tf, setTf] = useState("1h");
-  const [top, setTop] = useState(15);
+  const [picked, setPicked] = useState<string[]>(["NEARTMN"]);
+  const [q, setQ] = useState("");
+  const symbolsQ = useQuery({ queryKey: ["sim-symbols"], queryFn: getSimulationSymbols, staleTime: 300_000 });
+  const matches = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return [];
+    return (symbolsQ.data?.symbols ?? [])
+      .filter((o) => !picked.includes(o.symbol) &&
+        (o.symbol.toLowerCase().includes(t) || o.base.toLowerCase().includes(t) ||
+         (o.name_fa ?? "").includes(q.trim()) || (o.name_en ?? "").toLowerCase().includes(t)))
+      .slice(0, 8);
+  }, [symbolsQ.data, q, picked]);
   const [capital, setCapital] = useState(1000);
   const [sizePct, setSizePct] = useState(50);
   const [fee, setFee] = useState(0.2);
@@ -79,7 +90,8 @@ export default function BacktestPage() {
     mutationFn: () =>
       runBotBacktest("scalp_master", {
         tf,
-        top,
+        top: picked.length,
+        symbols: picked.join(","),
         initial_capital: capital,
         position_size_pct: sizePct,
         fee_pct: fee,
@@ -134,10 +146,41 @@ export default function BacktestPage() {
               <option value="4h">۴ ساعت</option>
             </select>
           </Field>
-          <Field label="تعداد نماد">
-            <input className={inputCls + " w-24"} type="number" min={1} max={30} value={top}
-              onChange={(e) => setTop(Number(e.target.value))} />
-          </Field>
+          <div className="w-full space-y-2">
+            <div className="text-xs text-muted-foreground">
+              رمزارزها ({picked.length} از ۵) — حداقل ۱ و حداکثر ۵
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {picked.map((s) => (
+                <span key={s} className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs">
+                  {s}
+                  <button type="button" onClick={() => setPicked(picked.filter((x) => x !== s))}
+                    className="text-muted-foreground hover:text-red-500" aria-label="حذف">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="relative">
+              <input className={inputCls + " w-full"} dir="ltr" value={q}
+                disabled={picked.length >= 5}
+                placeholder={picked.length >= 5 ? "به سقف ۵ نماد رسیدی" : "جست‌وجو: BTC، ETH، بیت‌کوین…"}
+                onChange={(e) => setQ(e.target.value)} />
+              {q.trim() && picked.length < 5 && (
+                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                  {matches.length === 0 && <div className="p-3 text-xs text-muted-foreground">نمادی پیدا نشد</div>}
+                  {matches.map((o) => (
+                    <button key={o.symbol} type="button"
+                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent"
+                      onClick={() => { setPicked([...picked, o.symbol]); setQ(""); }}>
+                      <span className="font-mono" dir="ltr">{o.symbol}</span>
+                      <span className="text-xs text-muted-foreground">{o.name_fa}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
           <Field label="سرمایه‌ی هر نماد">
             <input className={inputCls + " w-28"} type="number" min={10} value={capital}
               onChange={(e) => setCapital(Number(e.target.value))} />
@@ -150,7 +193,7 @@ export default function BacktestPage() {
             <input className={inputCls + " w-24"} type="number" step={0.05} min={0} value={fee}
               onChange={(e) => setFee(Number(e.target.value))} />
           </Field>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="h-9">
+          <Button onClick={() => m.mutate()} disabled={m.isPending || picked.length === 0} className="h-9">
             {m.isPending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : null}
             {m.isPending ? "در حال بازپخش…" : "اجرای بک‌تست"}
           </Button>
@@ -160,7 +203,7 @@ export default function BacktestPage() {
       {m.isPending && (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm">
           <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-500" />
-          ربات دارد ماه گذشته را روی {top} نماد دوباره زندگی می‌کند… (حدود ۱۰ تا ۲۰ ثانیه)
+          ربات دارد ماه گذشته را روی {picked.length} نماد دوباره زندگی می‌کند… (حدود ۱۰ تا ۲۰ ثانیه)
         </div>
       )}
 

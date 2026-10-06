@@ -172,8 +172,10 @@ async def run_bot_multi(
     from app.infrastructure.backtest.bot_backtest import run_scalp_backtest
 
     if symbols.strip():
-        syms = [x.strip().upper() for x in symbols.split(",") if x.strip()]
+        syms = list(dict.fromkeys(x.strip().upper() for x in symbols.split(",") if x.strip()))
         source = "manual"
+        if not 1 <= len(syms) <= 5:
+            raise HTTPException(status_code=400, detail="تعداد نمادها باید بین ۱ تا ۵ باشد")
     else:
         syms, source = await _pick_symbols(exchange, max(1, min(top, 30)))
 
