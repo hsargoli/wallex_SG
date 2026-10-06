@@ -2,11 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertTriangle, FlaskConical, Loader2, X } from "lucide-react";
+import { AlertTriangle, FlaskConical, Loader2, Trophy, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getSimulationSymbols, runBotBacktest, type BotBacktestResult } from "@/lib/api";
+import {
+  compareBotsBacktest,
+  getSimulationSymbols,
+  runBotBacktest,
+  type BotBacktestResult,
+  type CompareBotsResult,
+} from "@/lib/api";
 
 const BOTS = [
   { slug: "scalp_master", name: "اسکالپ‌مستر", ok: true },
@@ -109,6 +115,23 @@ export default function BacktestPage() {
         fee_pct: fee,
       }),
   });
+
+  const cmp = useMutation<CompareBotsResult, Error>({
+    mutationFn: () =>
+      compareBotsBacktest({ symbols: picked.join(","), tf, initial_capital: capital, fee_pct: fee }),
+  });
+
+  const ranked = useMemo(() => {
+    const bots = [...(cmp.data?.bots ?? [])];
+    const score = (b: (typeof bots)[number]) => (b.summary ? b.summary.avg_trade_pct : -1e9);
+    bots.sort((a, b) => {
+      const ra = a.summary?.reliable ? 1 : 0;
+      const rb = b.summary?.reliable ? 1 : 0;
+      return rb - ra || score(b) - score(a);
+    });
+    return bots;
+  }, [cmp.data]);
+  const bestSlug = ranked.find((b) => b.summary?.reliable && (b.summary.profit_factor ?? 0) > 1)?.bot_slug;
 
   const d = m.data;
   const rows = useMemo(() => {
@@ -214,6 +237,16 @@ export default function BacktestPage() {
             <input className={inputCls + " w-24"} type="number" step={0.05} min={0} value={fee}
               onChange={(e) => setFee(Number(e.target.value))} />
           </Field>
+          <Button
+            variant="outline"
+            onClick={() => cmp.mutate()}
+            disabled={cmp.isPending || m.isPending || picked.length === 0 || tf === "15m"}
+            title={tf === "15m" ? "مقایسه برای ۱۵ دقیقه پشتیبانی نمی‌شود" : undefined}
+            className="h-9"
+          >
+            {cmp.isPending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Trophy className="ml-2 h-4 w-4" />}
+            مقایسه‌ی همه‌ی ربات‌ها
+          </Button>
           <Button onClick={() => m.mutate()} disabled={m.isPending || picked.length === 0} className="h-9">
             {m.isPending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : null}
             {m.isPending ? "در حال بازپخش…" : "اجرای بک‌تست"}
@@ -226,6 +259,82 @@ export default function BacktestPage() {
           <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-500" />
           ربات دارد ماه گذشته را روی {picked.length} نماد دوباره زندگی می‌کند… (حدود ۱۰ تا ۲۰ ثانیه)
         </div>
+      )}
+
+      {cmp.isPending && (
+        <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-6 text-center text-sm">
+          <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-violet-500" />
+          ۵ ربات روی {picked.length} نماد اجرا می‌شوند… (حدود ۳۰ تا ۶۰ ثانیه)
+        </div>
+      )}
+
+      {cmp.isError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-500">
+          خطا در مقایسه: {cmp.error.message}
+        </div>
+      )}
+
+      {cmp.data && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              مقایسه‌ی ربات‌ها روی {cmp.data.symbols.split(",").join("، ")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-right">ربات</th>
+                  <th className="px-3 py-2 text-right">ترید</th>
+                  <th className="px-3 py-2 text-right">Win Rate</th>
+                  <th className="px-3 py-2 text-right">PF</th>
+                  <th className="px-3 py-2 text-right">میانگین هر ترید</th>
+                  <th className="px-3 py-2 text-right">بدترین افت</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranked.map((b) => {
+                  const sm = b.summary;
+                  const isBest = bestSlug === b.bot_slug;
+                  return (
+                    <tr key={b.bot_slug} className={"border-t border-border/50 " + (isBest ? "bg-amber-500/10" : "")}>
+                      <td className="px-3 py-2 font-semibold">
+                        {isBest && <Trophy className="ml-1 inline h-3.5 w-3.5 text-amber-500" />}
+                        {BOTS.find((x) => x.slug === b.bot_slug)?.name ?? b.bot_slug}
+                        {sm && !sm.reliable && (
+                          <Badge variant="outline" className="mr-2 text-[10px]">نمونه ناکافی</Badge>
+                        )}
+                      </td>
+                      {sm ? (
+                        <>
+                          <td className="px-3 py-2 tabular-nums">{sm.total_trades}</td>
+                          <td className="px-3 py-2 tabular-nums">{sm.total_trades ? sm.win_rate + "٪" : "—"}</td>
+                          <td className={"px-3 py-2 font-semibold tabular-nums " + ((sm.profit_factor ?? 0) >= 1 ? "text-emerald-500" : "text-red-500")} dir="ltr">
+                            {sm.profit_factor == null ? "—" : sm.profit_factor}
+                          </td>
+                          <td className={"px-3 py-2 font-semibold tabular-nums " + pnlColor(sm.avg_trade_pct)} dir="ltr">
+                            {sm.avg_trade_pct > 0 ? "+" : ""}{sm.avg_trade_pct}
+                          </td>
+                          <td className="px-3 py-2 tabular-nums">{sm.worst_symbol_dd_pct}٪</td>
+                        </>
+                      ) : (
+                        <td colSpan={5} className="px-3 py-2 text-xs text-red-500">{b.error ?? "نتیجه‌ای نیست"}</td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="text-[11px] leading-5 text-muted-foreground">
+              ⚠️ ۳۰ روز اخیر فقط یک رژیم بازار است، پس این رتبه‌بندی «نشانه‌ی اولیه» است نه حکم نهایی.
+              اندازه‌ی پوزیشن ربات‌ها یکسان نیست (اسکالپ‌مستر ۵۰٪ و بقیه طبق تنظیم خودشان)، پس به PF و میانگین هر ترید نگاه کن، نه سود کل.
+              افت ربات‌های غیر از اسکالپ‌مستر بر اساس تریدهای بسته حساب شده و کمتر از افت واقعی است.
+              «بهترین» فقط به ربات با نمونه‌ی کافی (۳۰+ ترید) و PF بالای ۱ می‌رسد.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {m.isError && (

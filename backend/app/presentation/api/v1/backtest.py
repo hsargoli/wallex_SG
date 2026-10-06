@@ -388,3 +388,46 @@ async def run_bot_any(
         },
         "per_symbol": per_symbol, "trades": all_trades,
     }
+
+
+@router.get("/compare")
+async def compare_bots(
+    exchange: ExchangeDep,
+    symbols: str,
+    tf: str = "1h",
+    initial_capital: float = 1000.0,
+    fee_pct: float = 0.2,
+    days: int = 30,
+):
+    """مقایسه‌ی همه‌ی ربات‌ها روی همان نمادها (فقط خلاصه‌ی هر ربات)."""
+    import asyncio
+
+    if not symbols.strip():
+        raise HTTPException(status_code=400, detail="حداقل یک نماد لازم است")
+    if tf not in ("1h", "4h", "1D"):
+        raise HTTPException(status_code=400, detail="مقایسه فقط برای 1h و 4h و 1D پشتیبانی می‌شود")
+
+    sem = asyncio.Semaphore(2)
+
+    async def one(slug: str) -> dict:
+        async with sem:
+            try:
+                r = await run_bot_any(
+                    slug, exchange, symbols=symbols, tf=tf,
+                    initial_capital=initial_capital, position_size_pct=50.0,
+                    fee_pct=fee_pct, days=days,
+                )
+                return {
+                    "bot_slug": slug,
+                    "summary": r["summary"],
+                    "symbols_ok": r["symbols_ok"],
+                    "symbols_requested": r["symbols_requested"],
+                    "failed": r["failed"],
+                }
+            except HTTPException as e:
+                return {"bot_slug": slug, "error": str(e.detail)}
+            except Exception as e:
+                return {"bot_slug": slug, "error": f"{type(e).__name__}: {e}"}
+
+    bots = await asyncio.gather(*(one(b) for b in ALL_BOTS))
+    return {"timeframe": tf, "symbols": symbols.upper(), "bots": bots}

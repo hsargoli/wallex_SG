@@ -1057,3 +1057,26 @@ export const runBotBacktest = async (
   });
   return res.data;
 };
+
+
+export interface CompareBotsResult {
+  timeframe: string;
+  symbols: string;
+  bots: {
+    bot_slug: string;
+    error?: string;
+    symbols_ok?: number;
+    symbols_requested?: number;
+    summary?: BotBacktestResult["summary"];
+  }[];
+}
+
+export const compareBotsBacktest = async (params: {
+  symbols: string;
+  tf: string;
+  initial_capital: number;
+  fee_pct: number;
+}): Promise<CompareBotsResult> => {
+  const res = await client.get("/v1/backtest/compare", { params, timeout: 240000 });
+  return res.data;
+};
