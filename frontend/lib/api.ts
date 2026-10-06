@@ -995,3 +995,65 @@ export interface BatchSignalsRequest {
   tf?: string;
   limit?: number;
 }
+
+
+// ─── Backtest (bot) ───
+export interface BotBacktestParams {
+  tf: string;
+  top: number;
+  initial_capital: number;
+  position_size_pct: number;
+  fee_pct: number;
+  symbols?: string;
+}
+
+export interface BotBacktestResult {
+  bot_slug: string;
+  timeframe: string;
+  symbols_source: string;
+  symbols_requested: number;
+  symbols_ok: number;
+  failed: { symbol: string; error: string }[];
+  summary: {
+    total_trades: number;
+    wins: number;
+    losses: number;
+    win_rate: number;
+    avg_trade_pct: number;
+    avg_symbol_pnl_pct: number;
+    profit_factor: number | null;
+    worst_symbol_dd_pct: number;
+    reliable: boolean;
+  };
+  per_symbol: {
+    symbol: string;
+    candles: number;
+    trades: number;
+    win_rate: number;
+    pnl_pct: number;
+    profit_factor: number | null;
+    max_drawdown_pct: number;
+  }[];
+  trades: {
+    symbol: string;
+    entry_time: number;
+    exit_time: number;
+    entry_price: number;
+    exit_price: number;
+    pnl: number;
+    pnl_pct: number;
+    exit_reason: string;
+    duration_candles: number;
+  }[];
+}
+
+export const runBotBacktest = async (
+  botSlug: string,
+  params: BotBacktestParams,
+): Promise<BotBacktestResult> => {
+  const res = await client.get("/v1/backtest/bot/" + botSlug, {
+    params: { ...params, limit: 3000 },
+    timeout: 120000,
+  });
+  return res.data;
+};

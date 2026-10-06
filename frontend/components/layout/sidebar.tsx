@@ -66,6 +66,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
       { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
+      { href: "/backtest", label: "بک‌تست", icon: Play, desc: "تست ربات روی داده‌ی گذشته" },
     ],
   },
   {
