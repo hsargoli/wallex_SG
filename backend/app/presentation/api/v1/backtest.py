@@ -197,6 +197,7 @@ async def _run_scalp_multi(
                 for t in r["trades"]:
                     t["symbol"] = sym
                 r["symbol"] = sym
+                r["flat_pct"] = round(sum(1 for c in candles if c.high == c.low) / len(candles) * 100, 1)
                 return r
             except Exception as e:
                 return {"symbol": sym, "error": f"{type(e).__name__}: {e}"}
@@ -223,6 +224,8 @@ async def _run_scalp_multi(
             "pnl_pct": r["total_pnl_pct"],
             "profit_factor": r["profit_factor"],
             "max_drawdown_pct": r["max_drawdown_pct"],
+            "flat_pct": r["flat_pct"],
+            "weak_data": r["flat_pct"] > 20,
         }
         for r in ok
     ]

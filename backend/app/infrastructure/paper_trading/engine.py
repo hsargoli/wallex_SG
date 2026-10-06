@@ -222,7 +222,7 @@ class PaperEngine:
                 scanned += 1
 
                 checks = bot.diagnose(symbol, candles) if hasattr(bot, "diagnose") else []
-                core = [c for c in checks if c["name"] in ("drop", "green", "rsi", "body")]
+                core = [c for c in checks if c["name"] in ("liquidity", "drop", "green", "rsi", "body")]
                 total = len(core)
                 passed = sum(1 for c in core if c["passed"])
                 if passed >= 2:

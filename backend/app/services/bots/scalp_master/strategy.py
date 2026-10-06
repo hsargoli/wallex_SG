@@ -47,6 +47,10 @@ def evaluate_entry(
     current = candles[-1]
     entry_price = float(current.close)
 
+    # ---------- ۰. نقدشوندگی: کندل بدون معامله/flat معتبر نیست ----------
+    if float(current.volume) <= 0 or current.high == current.low:
+        return None
+
     # ---------- ۱. افت ----------
     lookback = candles[-config.lookback_high:]
     recent_high = max(float(c.high) for c in lookback)
@@ -177,6 +181,9 @@ def diagnose_entry(candles: list[Candle], config: ScalpMasterConfig) -> list[dic
     curr = candles[-1]
     prev = candles[-2]
     price = float(curr.close)
+
+    add("liquidity", "نقدشوندگی", float(curr.volume) > 0 and curr.high != curr.low,
+        float(curr.volume), None)
 
     lookback = candles[-config.lookback_high:]
     high = max(float(c.high) for c in lookback)
