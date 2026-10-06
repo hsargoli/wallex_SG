@@ -134,7 +134,7 @@ async def _pick_symbols(exchange, n: int) -> tuple[list[str], str]:
             if not sym or not str(sym).endswith("TMN"):
                 continue
             vol = 0.0
-            for f in ("volume_24h", "quote_volume", "volume", "quote_volume_24h"):
+            for f in ("daily_quote_volume", "volume_24h", "quote_volume", "volume"):
                 v = getattr(m, f, None)
                 if v is not None:
                     try:
