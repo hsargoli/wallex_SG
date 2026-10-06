@@ -291,10 +291,22 @@ export default function BacktestPage() {
                   <th className="px-3 py-2 text-right">Win Rate</th>
                   <th className="px-3 py-2 text-right">PF</th>
                   <th className="px-3 py-2 text-right">میانگین هر ترید</th>
+                  <th className="px-3 py-2 text-right">سود هر نماد</th>
                   <th className="px-3 py-2 text-right">بدترین افت</th>
                 </tr>
               </thead>
               <tbody>
+                <tr className="border-t border-border/50 bg-muted/30">
+                  <td className="px-3 py-2 font-semibold text-muted-foreground">Buy &amp; Hold (مبنا)</td>
+                  <td className="px-3 py-2 text-muted-foreground">—</td>
+                  <td className="px-3 py-2 text-muted-foreground">—</td>
+                  <td className="px-3 py-2 text-muted-foreground">—</td>
+                  <td className="px-3 py-2 text-muted-foreground">—</td>
+                  <td className={"px-3 py-2 font-semibold tabular-nums " + pnlColor(cmp.data.buy_hold_avg_pct)} dir="ltr">
+                    {cmp.data.buy_hold_avg_pct > 0 ? "+" : ""}{cmp.data.buy_hold_avg_pct}٪
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">—</td>
+                </tr>
                 {ranked.map((b) => {
                   const sm = b.summary;
                   const isBest = bestSlug === b.bot_slug;
@@ -317,10 +329,13 @@ export default function BacktestPage() {
                           <td className={"px-3 py-2 font-semibold tabular-nums " + pnlColor(sm.avg_trade_pct)} dir="ltr">
                             {sm.avg_trade_pct > 0 ? "+" : ""}{sm.avg_trade_pct}
                           </td>
+                          <td className={"px-3 py-2 font-semibold tabular-nums " + pnlColor(sm.avg_symbol_pnl_pct)} dir="ltr">
+                            {sm.avg_symbol_pnl_pct > 0 ? "+" : ""}{sm.avg_symbol_pnl_pct}٪
+                          </td>
                           <td className="px-3 py-2 tabular-nums">{sm.worst_symbol_dd_pct}٪</td>
                         </>
                       ) : (
-                        <td colSpan={5} className="px-3 py-2 text-xs text-red-500">{b.error ?? "نتیجه‌ای نیست"}</td>
+                        <td colSpan={6} className="px-3 py-2 text-xs text-red-500">{b.error ?? "نتیجه‌ای نیست"}</td>
                       )}
                     </tr>
                   );
@@ -329,7 +344,7 @@ export default function BacktestPage() {
             </table>
             <p className="text-[11px] leading-5 text-muted-foreground">
               ⚠️ ۳۰ روز اخیر فقط یک رژیم بازار است، پس این رتبه‌بندی «نشانه‌ی اولیه» است نه حکم نهایی.
-              اندازه‌ی پوزیشن ربات‌ها یکسان نیست (اسکالپ‌مستر ۵۰٪ و بقیه طبق تنظیم خودشان)، پس به PF و میانگین هر ترید نگاه کن، نه سود کل.
+              اندازه‌ی پوزیشن ربات‌ها یکسان نیست (اسکالپ‌مستر ۵۰٪ و بقیه طبق تنظیم خودشان)، پس به PF و میانگین هر ترید نگاه کن. برای مقایسه با Buy &amp; Hold (خرید و نگه‌داشتن حدود ۳۰ روز) فقط ستون «سود هر نماد» را ببین؛ ربات‌ها بخش زیادی از زمان بیرون از بازارند و در بازار صعودی طبیعی است کمتر از B&amp;H سود کنند. قیمت‌ها تومانی‌اند و بخشی از رشد ممکن است از تغییر نرخ دلار باشد.
               افت ربات‌های غیر از اسکالپ‌مستر بر اساس تریدهای بسته حساب شده و کمتر از افت واقعی است.
               «بهترین» فقط به ربات با نمونه‌ی کافی (۳۰+ ترید) و PF بالای ۱ می‌رسد.
             </p>

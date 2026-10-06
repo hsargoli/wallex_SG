@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 """Backtest endpoint."""
 
 from fastapi import APIRouter, HTTPException, status
@@ -434,17 +435,23 @@ async def compare_bots(
     # محاسبه‌ی Buy & Hold برای مقایسه
     syms = [s.strip().upper() for s in symbols.split(",") if s.strip()]
     bh_pnls = []
+    bh_errors = []
+    per_day = {"1h": 24, "4h": 6, "1D": 1}[tf]
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    
     for sym in syms:
         try:
-            candles = await exchange.get_candles(sym, tf, days * 3)
+            candles = await GetCandlesUseCase(exchange=exchange).execute(
+                symbol=sym, timeframe=tf, limit=per_day * days)
             if len(candles) < 2:
                 continue
             first_price = float(candles[0].close)
             last_price = float(candles[-1].close)
             pnl_pct = round((last_price / first_price - 1) * 100, 2)
             bh_pnls.append(pnl_pct)
-        except:
-            pass
+        except Exception as e:
+            bh_errors.append(f"{sym}: {type(e).__name__}: {e}")
     
     bh_avg = round(sum(bh_pnls) / len(bh_pnls), 2) if bh_pnls else 0.0
     
@@ -454,4 +461,5 @@ async def compare_bots(
         "symbols": symbols.upper(),
         "bots": bots,
         "buy_hold_avg_pct": bh_avg,
+        "buy_hold_errors": bh_errors,
     }
