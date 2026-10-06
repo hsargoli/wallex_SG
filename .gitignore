@@ -83,3 +83,4 @@ _archive/
 backend/data/full_scan/
 backend/data/backtest_results/
 backend/data/api_limits/
+backend/data/paper_v3/
