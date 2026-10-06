@@ -91,7 +91,7 @@ class GridBot(BaseBot):
                 "n_buy_levels": self.config.n_buy_levels,
                 "n_sell_levels": self.config.n_sell_levels,
                 "grid_spacing_atr": self.config.grid_spacing_atr,
-                "capital_per_level_pct": self.config.capital_per_level_pct,
+                "cash_per_level_pct": self.config.cash_per_level_pct,
                 "adx_max": self.config.adx_max,
             },
         }
