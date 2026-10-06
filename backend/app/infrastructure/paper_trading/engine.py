@@ -180,13 +180,30 @@ class PaperEngine:
 
         self.state.open_positions = remaining
 
+    def _log_event(self, kind: str, message: str, symbol: str = "", data: dict | None = None, **extra) -> None:
+        """ثبت رویداد (جدیدترین اول، سقف ۲۰۰)."""
+        payload = dict(data or {})
+        payload.update(extra)
+        self.state.events.insert(0, {
+            "time": int(time.time()),
+            "kind": kind,
+            "message": message,
+            "symbol": symbol,
+            "data": payload,
+        })
+        self.state.events = self.state.events[:200]
+
     async def _check_entries(self, bot) -> None:
-        """چک ورود جدید."""
+        """چک ورود جدید + ثبت فکر ربات."""
         if len(self.state.open_positions) >= 3:  # حداکثر ۳ پوزیشن
+            self._log_event("scan", "سقف ۳ پوزیشن باز پر است")
             return
 
+        scanned = 0
+        candidates = 0
+        radar: list[dict] = []
+
         for symbol in self.symbols:
-            # اگه پوزیشن باز داره، skip
             if any(p["symbol"] == symbol for p in self.state.open_positions):
                 continue
 
@@ -194,16 +211,49 @@ class PaperEngine:
                 uc = GetCandlesUseCase(exchange=self.exchange)
                 candles = await uc.execute(symbol=symbol, timeframe=self.timeframe, limit=200)
                 if not candles:
+                    self._log_event("error", "کندلی دریافت نشد", symbol=symbol)
                     continue
+                scanned += 1
+
+                checks = bot.diagnose(symbol, candles) if hasattr(bot, "diagnose") else []
+                total = len(checks)
+                passed = sum(1 for c in checks if c["passed"])
+                if passed >= 1:
+                    candidates += 1
+                radar.append({
+                    "symbol": symbol,
+                    "passed": passed,
+                    "total": total,
+                    "pct": round(passed / total * 100) if total else 0,
+                    "checks": checks,
+                })
 
                 decision = bot.make_decision(symbol, candles)
-                if decision is None or not decision.get("should_trade"):
+                ok = bool(decision and decision.get("should_trade"))
+
+                if checks and (ok or passed >= 1 or len(self.symbols) <= 5):
+                    self._log_event(
+                        "think",
+                        "شرایط ورود برقرار شد" if ok else "رد شد",
+                        symbol=symbol,
+                        data={"checks": checks, "decision": "enter" if ok else "skip"},
+                    )
+
+                if not ok:
                     continue
 
                 self._log_event("signal", f"سیگنال: {decision.get('reason', '')}", symbol=symbol)
                 self._open_position(symbol, decision)
-            except Exception:
+            except Exception as exc:
+                self._log_event("error", f"خطا: {type(exc).__name__}: {exc}", symbol=symbol)
                 continue
+
+        self.state.radar = radar
+        self._log_event(
+            "scan",
+            f"اسکن {scanned} ارز ← {candidates} کاندید",
+            data={"scanned": scanned, "candidates": candidates},
+        )
 
     def _open_position(self, symbol: str, decision: dict) -> None:
         """باز کردن پوزیشن."""

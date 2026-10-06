@@ -139,6 +139,11 @@ class ScalpMasterBot(BaseBot):
             "strategy": "scalp_master",
         }
 
+    def diagnose(self, symbol: str, candles: list[Candle]) -> list[dict]:
+        """نتیجه‌ی هر شرط ورود."""
+        from app.services.bots.scalp_master.strategy import diagnose_entry
+        return diagnose_entry(candles, self.config)
+
     # ─── Internals ───
 
     async def _loop(self, exchange) -> None:

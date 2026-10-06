@@ -25,6 +25,7 @@ class PaperState:
     recent_trades: list[dict[str, Any]] = field(default_factory=list)
     events: list[dict[str, Any]] = field(default_factory=list)
     equity_curve: list[dict[str, Any]] = field(default_factory=list)
+    radar: list[dict[str, Any]] = field(default_factory=list)
     started_at: int = 0
     last_check_at: int = 0
     check_count: int = 0

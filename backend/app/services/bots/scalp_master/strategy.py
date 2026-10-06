@@ -158,3 +158,53 @@ def evaluate_exit(
         return True, close, "timeout"
 
     return False, 0, ""
+
+
+def diagnose_entry(candles: list[Candle], config: ScalpMasterConfig) -> list[dict]:
+    """نتیجه‌ی تک‌تک شرط‌های ورود (برای فید «مغز ربات»). evaluate_entry را تغییر نمی‌دهد."""
+    checks: list[dict] = []
+
+    def add(name, label, passed, value, threshold):
+        checks.append({
+            "name": name, "label": label, "passed": bool(passed),
+            "value": value, "threshold": threshold,
+        })
+
+    if len(candles) < config.warmup_candles:
+        add("warmup", "داده کافی", False, len(candles), config.warmup_candles)
+        return checks
+
+    curr = candles[-1]
+    prev = candles[-2]
+    price = float(curr.close)
+
+    lookback = candles[-config.lookback_high:]
+    high = max(float(c.high) for c in lookback)
+    drop = (high - price) / high * 100 if high > 0 else 0.0
+    add("drop", "افت", drop >= config.drop_threshold_pct, round(drop, 2), config.drop_threshold_pct)
+
+    green = (
+        float(prev.close) > float(prev.open)
+        and float(curr.close) > float(curr.open)
+        and float(curr.close) > float(prev.close)
+    )
+    add("green", "۲ کندل سبز", green, None, None)
+
+    r = _last(rsi(candles, config.rsi_period))
+    r = float(r) if r else 50.0
+    add("rsi", "RSI", config.rsi_min <= r <= config.rsi_max, round(r, 1),
+        f"{config.rsi_min:.0f}-{config.rsi_max:.0f}")
+
+    rng = float(curr.high) - float(curr.low)
+    body = abs(float(curr.close) - float(curr.open)) / rng if rng > 0 else 0.0
+    add("body", "بدنه کندل", body >= config.min_body_ratio, round(body, 2), config.min_body_ratio)
+
+    a = _last(atr(candles, 14))
+    a_pct = float(a) / price * 100 if (a and price > 0) else 0.0
+    add("atr", "ATR", bool(a and a > 0), round(a_pct, 2), None)
+
+    e = _last(ema(candles, 20))
+    dist = (float(e) - price) / float(e) * 100 if e else 0.0
+    add("ema", "فاصله از EMA", dist <= config.max_dist_from_ema, round(dist, 2), config.max_dist_from_ema)
+
+    return checks

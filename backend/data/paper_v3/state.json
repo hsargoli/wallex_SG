@@ -1,0 +1,87 @@
+{
+  "is_running": true,
+  "initial_capital": 1000.0,
+  "capital": 1000.0,
+  "equity": 1000.0,
+  "peak_capital": 1000.0,
+  "peak_equity": 1000.0,
+  "max_drawdown_pct": 0.0,
+  "total_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "total_pnl": 0.0,
+  "total_pnl_pct": 0.0,
+  "win_rate": 0.0,
+  "open_positions": [],
+  "recent_trades": [],
+  "events": [],
+  "equity_curve": [
+    {
+      "time": 1791322486,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322516,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322544,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322604,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322664,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322725,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322785,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322845,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322906,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791322966,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323026,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323086,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323147,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323207,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323267,
+      "capital": 1000.0
+    },
+    {
+      "time": 1791323327,
+      "capital": 1000.0
+    }
+  ],
+  "started_at": 1791322544,
+  "last_check_at": 1791323327,
+  "check_count": 16
+}
