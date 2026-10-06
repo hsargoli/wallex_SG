@@ -646,6 +646,22 @@ export const api = {
     client.post(`/v1/bots/${slug}/stop`).then((r) => r.data),
   resetBot: (slug: string) =>
     client.post(`/v1/bots/${slug}/reset`).then((r) => r.data),
+  setBotTimeframe: (slug: string, timeframe: string) =>
+    client.post(`/v1/bots/${slug}/timeframe`, { timeframe }).then((r) => r.data),
+  setBotSymbols: (slug: string, symbols: string[]) =>
+    client.post(`/v1/bots/${slug}/symbols`, { symbols }).then((r) => r.data),
+
+  // ---------- Paper V3 ----------
+  getPaperV3Status: () =>
+    client.get("/v1/paper-v3/status").then((r) => r.data),
+  getPaperV3Live: () =>
+    client.get("/v1/paper-v3/live").then((r) => r.data),
+  startPaperV3: (payload: any) =>
+    client.post("/v1/paper-v3/start", payload).then((r) => r.data),
+  stopPaperV3: () =>
+    client.post("/v1/paper-v3/stop").then((r) => r.data),
+  resetPaperV3: () =>
+    client.post("/v1/paper-v3/reset").then((r) => r.data),
 
   // ---------- Orders ----------
   listOrders: (symbol?: string, status?: string) =>

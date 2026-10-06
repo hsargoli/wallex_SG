@@ -38,3 +38,14 @@ class ScalpMasterConfig:
 
     # Warmup
     warmup_candles: int = 60
+
+    # نمادها (حداکثر ۲ تا)
+    symbols: list[str] = None
+
+    # چک کردن
+    check_interval_sec: int = 180  # هر ۳ دقیقه
+    max_signals: int = 50
+
+    def __post_init__(self):
+        if self.symbols is None:
+            self.symbols = ["SANDTMN", "ORCATMN"]

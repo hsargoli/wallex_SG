@@ -2,6 +2,7 @@
 
 from app.services.bots.base import BaseBot, BotInfo, BotStatus
 from app.services.bots.grid_bot import GridBot
+from app.services.bots.market_scanner import MarketScannerBot
 from app.services.bots.mean_revert import MeanRevertBot
 from app.services.bots.registry import bot_registry
 from app.services.bots.scalp_master import ScalpMasterBot
@@ -27,6 +28,8 @@ def _register_all():
         bot_registry.register(SmartPortfolioBot())
     if "scalp_master" not in bot_registry:
         bot_registry.register(ScalpMasterBot())
+    if "market_scanner" not in bot_registry:
+        bot_registry.register(MarketScannerBot())
 
 
 _register_all()

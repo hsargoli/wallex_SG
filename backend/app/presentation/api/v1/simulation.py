@@ -1,6 +1,8 @@
 """Simulation endpoints — شبیه‌سازی تاریخی."""
 
 from fastapi import APIRouter, Query, HTTPException
+
+from app.presentation.api.deps import ExchangeDep
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime, date, timedelta
@@ -188,12 +190,28 @@ SIMULATION_SYMBOLS = [
 
 
 @router.get("/symbols", response_model=SymbolsResponse)
-async def get_simulation_symbols():
-    """لیست نمادهای پیشنهادی برای شبیه‌سازی."""
-    return {
-        "count": len(SIMULATION_SYMBOLS),
-        "symbols": SIMULATION_SYMBOLS,
-    }
+async def get_simulation_symbols(exchange: ExchangeDep):
+    """لیست همه نمادهای TMN والکس (داینامیک)."""
+    try:
+        markets = await exchange.get_markets()
+        items = [
+            {
+                "symbol": str(m.symbol),
+                "base": str(m.base_asset),
+                "name_fa": m.fa_name,
+                "name_en": m.en_name,
+            }
+            for m in markets
+            if str(m.symbol).upper().endswith("TMN")
+        ]
+        items.sort(key=lambda x: x["symbol"])
+        return {"count": len(items), "symbols": items}
+    except Exception as e:
+        # fallback به لیست قبلی
+        return {
+            "count": len(SIMULATION_SYMBOLS),
+            "symbols": SIMULATION_SYMBOLS,
+        }
 
 
 @router.post("/compare", response_model=CompareResponse)

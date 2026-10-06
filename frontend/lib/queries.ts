@@ -270,6 +270,84 @@ export function useStopBot() {
   });
 }
 
+export function useSetBotTimeframe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, timeframe }: { slug: string; timeframe: string }) =>
+      api.setBotTimeframe(slug, timeframe),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["bot-status", variables.slug] });
+      qc.invalidateQueries({ queryKey: ["bot", variables.slug] });
+      toast.success("تایم‌فریم تغییر کرد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function usePaperV3Status() {
+  return useQuery({
+    queryKey: ["paper-v3-status"],
+    queryFn: () => api.getPaperV3Status(),
+    refetchInterval: 5_000,
+  });
+}
+
+export function useLivePaperV3() {
+  return useQuery({
+    queryKey: ["paper-v3-live"],
+    queryFn: () => api.getPaperV3Live(),
+    refetchInterval: 5_000,
+  });
+}
+
+export function useStartPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => api.startPaperV3(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v3-status"] });
+      toast.success("Paper Trading v3 شروع شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useStopPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.stopPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v3-status"] });
+      toast.success("متوقف شد");
+    },
+  });
+}
+
+export function useResetPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resetPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-v3-status"] });
+      toast.success("ریست شد");
+    },
+  });
+}
+
+export function useSetBotSymbols() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, symbols }: { slug: string; symbols: string[] }) =>
+      api.setBotSymbols(slug, symbols),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["bot-status", variables.slug] });
+      qc.invalidateQueries({ queryKey: ["bot", variables.slug] });
+      toast.success("نمادها تغییر کرد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
 export function useResetBot() {
   const qc = useQueryClient();
   return useMutation({
