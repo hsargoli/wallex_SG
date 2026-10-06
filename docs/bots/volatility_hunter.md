@@ -1,4 +1,3 @@
-BEGIN_VH_MD
 📊 نوسان‌گیر — Volatility Hunter Bot
 
 slug: `volatility_hunter`
@@ -119,5 +118,3 @@ Win Rate	—
     کد: `backend/app/services/bots/volatility_hunter/`
 
 پایان مستند — نسخه 0.1.0
-
-END_VH_MD
