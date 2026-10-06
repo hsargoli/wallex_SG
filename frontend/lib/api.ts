@@ -1062,6 +1062,7 @@ export const runBotBacktest = async (
 export interface CompareBotsResult {
   timeframe: string;
   symbols: string;
+  buy_hold_avg_pct: number;
   bots: {
     bot_slug: string;
     error?: string;

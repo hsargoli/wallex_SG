@@ -429,5 +429,29 @@ async def compare_bots(
             except Exception as e:
                 return {"bot_slug": slug, "error": f"{type(e).__name__}: {e}"}
 
-    bots = await asyncio.gather(*(one(b) for b in ALL_BOTS))
-    return {"timeframe": tf, "symbols": symbols.upper(), "bots": bots}
+    bots_task = asyncio.gather(*(one(b) for b in ALL_BOTS))
+    
+    # محاسبه‌ی Buy & Hold برای مقایسه
+    syms = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    bh_pnls = []
+    for sym in syms:
+        try:
+            candles = await exchange.get_candles(sym, tf, days * 3)
+            if len(candles) < 2:
+                continue
+            first_price = float(candles[0].close)
+            last_price = float(candles[-1].close)
+            pnl_pct = round((last_price / first_price - 1) * 100, 2)
+            bh_pnls.append(pnl_pct)
+        except:
+            pass
+    
+    bh_avg = round(sum(bh_pnls) / len(bh_pnls), 2) if bh_pnls else 0.0
+    
+    bots = await bots_task
+    return {
+        "timeframe": tf,
+        "symbols": symbols.upper(),
+        "bots": bots,
+        "buy_hold_avg_pct": bh_avg,
+    }
