@@ -286,7 +286,7 @@ export default function PaperTradingPage() {
       </div>
 
       {/* Event Log */}
-      <PaperEventLog events={data?.events ?? []} />
+      <PaperEventLog events={data?.events ?? []} radar={data?.radar ?? []} />
     </div>
   );
 }
