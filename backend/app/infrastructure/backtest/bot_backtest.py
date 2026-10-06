@@ -26,7 +26,7 @@ def run_scalp_backtest(
     for i in range(cfg.warmup_candles, len(candles)):
         window = candles[: i + 1]  # فقط گذشته تا همین کندل
         c = candles[i]
-        t = int(c.timestamp) if hasattr(c, "timestamp") else i
+        t = int(c.time)
 
         # ── خروج (از کندل بعد از ورود) ──
         if pos is not None:
@@ -92,7 +92,7 @@ def run_scalp_backtest(
         trades.append({
             "symbol": pos["symbol"], "side": "BUY",
             "entry_time": pos["time"],
-            "exit_time": int(last.timestamp) if hasattr(last, "timestamp") else len(candles),
+            "exit_time": int(last.time),
             "entry_price": round(pos["entry"], 8), "exit_price": round(exit_net, 8),
             "quantity": pos["qty"], "pnl": round(revenue - cost, 4),
             "pnl_pct": round((revenue - cost) / cost * 100, 2) if cost > 0 else 0,
