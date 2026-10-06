@@ -91,12 +91,12 @@ capabilities: list[str] # paper, live, backtest
 `
 ربات‌های موجود
 #	ربات	slug	نوع	وضعیت	مستند
-۱	روندر	trend_follow	Trend Following	✅ آماده	مشاهده
-۲	نوسان‌گیر	volatility_hunter	Range Trading	✅ آماده	مشاهده
-۳	نوسان‌گیر v2	volatility_hunter_v2	Range Trading	✅ آماده	مشاهده
-۴	کف‌زن	mean_revert	Mean Reversion	⚠️ آزمایشی	مشاهده
-۵	شبکه‌ای	grid_bot	Grid Trading	⚠️ نیمه‌کاره	مشاهده
-۶	پورتفوی هوشمند	smart_portfolio	Meta-bot	⚠️ آزمایشی	مشاهده
+| ۱ | روندر | `trend_follow` | Trend Following | ✅ آماده | [مشاهده](./bots/trend_follow.md) |
+| ۲ | نوسان‌گیر | `volatility_hunter` | Range Trading | ✅ آماده | [مشاهده](./bots/volatility_hunter.md) |
+| ۳ | نوسان‌گیر v2 | `volatility_hunter_v2` | Range Trading | ✅ آماده | [مشاهده](./bots/volatility_hunter_v2.md) |
+| ۴ | کف‌زن | `mean_revert` | Mean Reversion | ⚠️ آزمایشی | [مشاهده](./bots/mean_revert.md) |
+| ۵ | شبکه‌ای | `grid_bot` | Grid Trading | ⚠️ نیمه‌کاره | [مشاهده](./bots/grid_bot.md) |
+| ۶ | پورتفوی هوشمند | `smart_portfolio` | Meta-bot | ⚠️ آزمایشی | [مشاهده](./bots/smart_portfolio.md) |
 
 برای جزئیات هر ربات، روی لینک «مشاهده» کلیک کن.
 Adapter Pattern در شبیه‌ساز
