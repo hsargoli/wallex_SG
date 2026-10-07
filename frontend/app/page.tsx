@@ -7,6 +7,7 @@ import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
+import { PaperSummary } from "@/components/dashboard/paper-summary";
 
 export default function DashboardPage() {
   // سلام فقط سمت کلاینت محاسبه می‌شود تا با رندر سرور ناهماهنگ نشود
@@ -36,6 +37,9 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <KpiCards />
+
+      {/* وضعیت تست زنده */}
+      <PaperSummary />
 
       {/* Timeline + Bots */}
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
