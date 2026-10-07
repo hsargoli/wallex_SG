@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
 import { Wallet, DollarSign, TrendingUp, Percent } from "lucide-react";
@@ -55,6 +56,23 @@ function StatCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ConcentrationAlert({ items, isBid }: { items: any[]; isBid: boolean }) {
+  const vals = items
+    .map((it) => ({ a: String(it.asset ?? it.symbol ?? "?"), v: Number(isBid ? it.value_tmn_bid : it.value_tmn_last) || 0 }))
+    .filter((x) => x.v > 0)
+    .sort((x, y) => y.v - x.v);
+  const total = vals.reduce((a, x) => a + x.v, 0);
+  if (total <= 0 || vals.length < 3) return null;
+  const top = vals.slice(0, 3);
+  const pct = (top.reduce((a, x) => a + x.v, 0) / total) * 100;
+  if (pct < 60) return null;
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+      <b>تمرکز ریسک:</b> سه دارایی بزرگ ({top.map((x) => x.a).join("، ")}) روی هم {pct.toFixed(1)}٪ سبد را می‌سازند.
+    </div>
   );
 }
 
@@ -166,6 +184,8 @@ export default function PortfolioPage() {
           loading={portfolio.isLoading}
         />
       </div>
+
+      <ConcentrationAlert items={visibleItems as any[]} isBid={isBid} />
 
       {/* Table */}
       <div>

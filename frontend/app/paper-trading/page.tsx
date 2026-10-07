@@ -147,7 +147,7 @@ export default function PaperTradingPage() {
               </p>
               <p className="text-xs text-muted-foreground">
                 {isRunning && data
-                  ? `چک: ${data.check_count ?? 0} بار | آخرین: ${data.last_check_at ? new Date(data.last_check_at * 1000).toLocaleTimeString("fa-IR") : "—"}`
+                  ? `چک: ${data.check_count ?? 0} بار | آخرین: ${data.last_check_at ? new Date(data.last_check_at * 1000).toLocaleTimeString("en-GB", { hour12: false }) : "—"}`
                   : "برای شروع، دکمه را بزنید"}
               </p>
             </div>

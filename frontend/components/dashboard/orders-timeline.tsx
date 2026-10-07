@@ -92,7 +92,7 @@ function timeAgo(ts: number): string {
   if (diff < 3600) return `${Math.floor(diff / 60)} دقیقه پیش`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ساعت پیش`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} روز پیش`;
-  return new Date(ts * 1000).toLocaleDateString("fa-IR");
+  return new Date(ts * 1000).toLocaleDateString("en-GB");
 }
 
 // ---------- Row ----------

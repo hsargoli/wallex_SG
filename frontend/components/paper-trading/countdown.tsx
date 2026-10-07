@@ -8,7 +8,7 @@ interface Props {
   isRunning: boolean;
 }
 
-const fa = (n: number) => n.toLocaleString("fa-IR");
+const fa = (n: number) => n.toLocaleString("en-US");
 
 const TONES = {
   normal: {

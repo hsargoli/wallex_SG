@@ -89,7 +89,7 @@ function Radar({ items }: { items: RadarItem[] }) {
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-mono font-semibold">{r.symbol}</span>
               <span className={"tabular-nums " + (ready ? "font-bold text-emerald-500" : "text-muted-foreground")}>
-                {r.passed.toLocaleString("fa-IR")} از {r.total.toLocaleString("fa-IR")} شرط · {r.pct.toLocaleString("fa-IR")}٪
+                {r.passed.toLocaleString("en-US")} از {r.total.toLocaleString("en-US")} شرط · {r.pct.toLocaleString("en-US")}٪
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-300/50 dark:bg-zinc-800/70">
@@ -167,7 +167,7 @@ export function PaperEventLog({ events, radar = [] }: Props) {
             {keyed.map(({ e, key }) => {
               const st = STYLE[e.kind] ?? STYLE.scan;
               const Icon = st.icon;
-              const time = new Date(e.time * 1000).toLocaleTimeString("fa-IR");
+              const time = new Date(e.time * 1000).toLocaleTimeString("en-GB", { hour12: false });
               const checks = e.data?.checks;
               const decision = e.data?.decision;
               return (

@@ -15,8 +15,8 @@ import { cn } from "@/lib/utils";
 function BotRow({ slug, name, nameEn }: { slug: string; name: string; nameEn: string }) {
   const status = useBotStatus(slug);
   const isRunning = status.data?.is_running ?? false;
-  const pnl = status.data?.total_return_pct ?? 0;
-  const isPositive = pnl >= 0;
+  const pnl: number | null = typeof status.data?.total_return_pct === "number" ? status.data.total_return_pct : null;
+  const isPositive = (pnl ?? 0) >= 0;
 
   return (
     <Link
@@ -56,11 +56,10 @@ function BotRow({ slug, name, nameEn }: { slug: string; name: string; nameEn: st
           <p
             className={cn(
               "font-mono text-xs font-bold",
-              isPositive ? "text-emerald-400" : "text-red-400",
+              pnl === null || pnl === 0 ? "text-muted-foreground" : isPositive ? "text-emerald-400" : "text-red-400",
             )}
           >
-            {isPositive ? "+" : ""}
-            {pnl.toFixed(2)}%
+            {pnl === null || pnl === 0 ? "—" : `${isPositive ? "+" : ""}${pnl.toFixed(2)}%`}
           </p>
         )}
         <p className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground">

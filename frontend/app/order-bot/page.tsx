@@ -442,7 +442,7 @@ export default function OrderBotPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Bot className="h-6 w-6 text-emerald-400" />
-            ربات ثبت سفارش
+            ثبت سفارش دستی
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             ثبت دستی سفارش‌های Limit و Stop-Limit روی صرافی والکس

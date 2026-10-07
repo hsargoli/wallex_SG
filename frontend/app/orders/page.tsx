@@ -73,8 +73,8 @@ const statusColors: Record<string, string> = {
 const typeLabels: Record<string, string> = {
   LIMIT: "Limit",
   MARKET: "Market",
-  STOP_LIMIT: "🛑 Stop-Limit",
-  STOP_MARKET: "🛑 Stop-Market",
+  STOP_LIMIT: "Stop-Limit",
+  STOP_MARKET: "Stop-Market",
 };
 
 function computeTotal(order: Order): number {
@@ -252,7 +252,7 @@ function OrderCard({ order }: { order: Order }) {
         <div className="mt-3 rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs text-amber-400 font-bold flex items-center gap-1">
-              🛑 قیمت توقف
+              قیمت توقف
             </span>
             <span className="font-mono text-sm text-amber-300 font-bold">
               {formatNumber(order.stop_price)} TMN
@@ -570,7 +570,7 @@ export default function OrdersPage() {
               {/* STOP_LIMIT ها — همیشه اول (چون حساس‌ترین) */}
               {grouped.stopOrders.length > 0 && (
                 <OrderSection
-                  title="🛑 سفارشات توقف (Stop-Limit)"
+                  title="سفارشات توقف (Stop-Limit)"
                   icon={Ban}
                   iconColor="text-amber-400"
                   orders={grouped.stopOrders}
@@ -581,7 +581,7 @@ export default function OrdersPage() {
               {/* LIMIT باز فعلی */}
               {grouped.limitOpen.length > 0 && (
                 <OrderSection
-                  title="⏱ سفارشات باز (Limit)"
+                  title="سفارشات باز (Limit)"
                   icon={Clock}
                   iconColor="text-emerald-400"
                   orders={grouped.limitOpen}
@@ -592,7 +592,7 @@ export default function OrdersPage() {
               {/* سفارشات فعال از تاریخچه */}
               {grouped.active.length > 0 && (
                 <OrderSection
-                  title="📋 سفارشات فعال (تاریخچه)"
+                  title="سفارشات فعال (تاریخچه)"
                   icon={Clock}
                   iconColor="text-emerald-400"
                   orders={grouped.active}

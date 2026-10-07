@@ -44,7 +44,18 @@ export default function ScalpMasterPage() {
   const resetBot = useResetBot();
   const setSymbols = useSetBotSymbols();
 
-  const data = status.data;
+  type ScalpSignal = { symbol?: string; [k: string]: unknown };
+  type ScalpStatus = {
+    is_running: boolean;
+    started_at: number;
+    last_check_at: number;
+    check_count: number;
+    signals_count: number;
+    signals: ScalpSignal[];
+    symbols: string[];
+    config: { timeframe: string; drop_threshold_pct: number; sl_atr_mult: number; tp_atr_mult: number; check_interval_sec: number };
+  };
+  const data = status.data as unknown as ScalpStatus | undefined;
   const isRunning = data?.is_running ?? false;
   const currentSymbols: string[] = data?.symbols ?? [];
   const [newSymbol, setNewSymbol] = useState("");
@@ -224,7 +235,7 @@ export default function ScalpMasterPage() {
                 <p className="text-xs text-muted-foreground">آخرین چک</p>
                 <p className="font-mono text-sm">
                   {data.last_check_at
-                    ? new Date(data.last_check_at * 1000).toLocaleTimeString("fa-IR")
+                    ? new Date(data.last_check_at * 1000).toLocaleTimeString("en-GB", { hour12: false })
                     : "—"}
                 </p>
               </div>

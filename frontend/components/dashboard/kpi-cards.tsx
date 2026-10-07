@@ -27,7 +27,7 @@ function calcTotalBalance(
   const tmn = Number(tmnBalance);
 
   // ارزش کل سبد به TMN
-  const portfolioValue = portfolio?.total_value_tmn_last || "0";
+  const portfolioValue = portfolio?.total_value_tmn_bid || "0";
   const totalTmn = Number(portfolioValue) || tmn;
 
   // USDT معادل
@@ -72,7 +72,7 @@ export function KpiCards() {
               </div>
               <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
-            <p className="text-[11px] text-muted-foreground">موجودی کل</p>
+            <p className="text-[11px] text-muted-foreground">موجودی کل (ارزش قابل برداشت)</p>
             {isLoading ? (
               <Skeleton className="mt-2 h-7 w-32" />
             ) : (

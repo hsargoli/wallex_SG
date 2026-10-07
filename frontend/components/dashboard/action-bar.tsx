@@ -173,7 +173,7 @@ export function ActionBar() {
         }
         subtitle={
           budget.data
-            ? `آزاد: ${Number(budget.data.available_for_trade || 0).toLocaleString("fa-IR")} TMN`
+            ? `آزاد: ${Number(budget.data.available_for_trade || 0).toLocaleString("en-US")} TMN`
             : "—"
         }
         tone="amber"

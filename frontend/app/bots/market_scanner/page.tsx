@@ -52,7 +52,16 @@ export default function MarketScannerPage() {
   const resetBot = useResetBot();
   const setTimeframe = useSetBotTimeframe();
 
-  const data = status.data;
+  type ScannerStatus = {
+    is_running: boolean;
+    started_at: number;
+    last_scan_at: number;
+    scan_count: number;
+    results_count: number;
+    results: ScanResult[];
+    config: { timeframe: string; available_timeframes: string[]; top_n: number; min_score: number; scan_interval_sec: number };
+  };
+  const data = status.data as unknown as ScannerStatus | undefined;
   const isRunning = data?.is_running ?? false;
   const results: ScanResult[] = data?.results ?? [];
 
@@ -164,7 +173,7 @@ export default function MarketScannerPage() {
               disabled={setTimeframe.isPending}
               className="bg-black/40 border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:border-blue-500 min-w-[100px]"
             >
-              {(data?.config?.available_timeframes ?? ["15m", "1h", "4h", "1D"]).map((tf) => (
+              {(data?.config?.available_timeframes ?? ["15m", "1h", "4h", "1D"]).map((tf: string) => (
                 <option key={tf} value={tf} className="bg-slate-900">
                   {tf === "15m" ? "۱۵ دقیقه" : tf === "1h" ? "۱ ساعته" : tf === "4h" ? "۴ ساعته" : tf === "1D" ? "روزانه" : tf}
                 </option>
@@ -195,10 +204,10 @@ export default function MarketScannerPage() {
             title="آخرین اسکن"
             value={
               data.last_scan_at
-                ? new Date(data.last_scan_at * 1000).toLocaleTimeString("fa-IR")
+                ? new Date(data.last_scan_at * 1000).toLocaleTimeString("en-GB", { hour12: false })
                 : "—"
             }
-            sub={data.started_at ? "شروع: " + new Date(data.started_at * 1000).toLocaleTimeString("fa-IR") : ""}
+            sub={data.started_at ? "شروع: " + new Date(data.started_at * 1000).toLocaleTimeString("en-GB", { hour12: false }) : ""}
             icon={Clock}
             accent="text-emerald-400"
           />

@@ -36,7 +36,7 @@ const pnlColor = (v: number) =>
   v > 0 ? "text-emerald-500" : v < 0 ? "text-red-500" : "text-muted-foreground";
 
 const fmtDate = (t: number) =>
-  new Date(t * 1000).toLocaleDateString("fa-IR", { month: "short", day: "numeric" });
+  new Date(t * 1000).toLocaleDateString("en-GB", { month: "short", day: "numeric" });
 
 type SortKey = "symbol" | "trades" | "win_rate" | "pnl_pct" | "max_drawdown_pct";
 

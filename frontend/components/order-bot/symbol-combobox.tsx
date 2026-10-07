@@ -136,7 +136,7 @@ export function SymbolCombobox({
                       </div>
                       {m.last_price && (
                         <span className="font-mono text-[10px] text-amber-400/70">
-                          {Number(m.last_price).toLocaleString("fa-IR", {
+                          {Number(m.last_price).toLocaleString("en-US", {
                             maximumFractionDigits: 2,
                           })}
                         </span>
