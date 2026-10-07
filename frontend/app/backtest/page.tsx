@@ -168,14 +168,14 @@ export default function BacktestPage() {
           بک‌تست <FlaskConical className="h-5 w-5 text-emerald-500" />
         </h1>
         <p className="text-sm text-muted-foreground">
-          بازپخش ربات Scalp Master روی کندل‌های گذشته (بدون نگاه به آینده، با کارمزد)
+          بازپخش ربات‌ها روی کندل‌های گذشته (بدون نگاه به آینده، با کارمزد)
         </p>
       </div>
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
           <Field label="ربات">
-            <select className={inputCls} value={bot} onChange={(e) => setBot(e.target.value)}>
+            <select className={inputCls} value={bot} onChange={(e) => { setBot(e.target.value); if (e.target.value !== "scalp_master" && tf === "15m") setTf("1h"); }}>
               {BOTS.map((b) => (
                 <option key={b.slug} value={b.slug} disabled={!b.ok}>
                   {b.name}{b.ok ? "" : " (به‌زودی)"}
@@ -185,7 +185,7 @@ export default function BacktestPage() {
           </Field>
           <Field label="تایم‌فریم">
             <select className={inputCls} value={tf} onChange={(e) => setTf(e.target.value)}>
-              <option value="15m">۱۵ دقیقه</option>
+              <option value="15m" disabled={bot !== "scalp_master"}>۱۵ دقیقه (فقط اسکالپ‌مستر)</option>
               <option value="1h">۱ ساعت</option>
               <option value="4h">۴ ساعت</option>
             </select>
