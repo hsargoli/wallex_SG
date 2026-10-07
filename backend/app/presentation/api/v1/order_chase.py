@@ -9,7 +9,7 @@ from app.core.config import Settings, get_settings
 from app.domain.ports.exchange import ExchangePort
 from app.presentation.api.deps import get_exchange
 from app.services.order_chase.logic import decide
-from app.services.order_chase.worker import ChaseConfig, ChaseWorker, manager, validate_market
+from app.services.order_chase.worker import ChaseConfig, ChaseWorker, manager, norm_step, validate_market
 
 router = APIRouter(prefix="/order-chase", tags=["Order Chase"])
 
@@ -56,7 +56,9 @@ async def preview(
         "bids_top3": [[str(p), str(q)] for p, q in bids[:3]],
         "asks_top3": [[str(p), str(q)] for p, q in asks[:3]],
         "tick": str(w._tick()),
-        "step": str(getattr(market, "step_size", None)),
+        "tick_raw": str(getattr(market, "tick_size", None)),
+        "step_raw": str(getattr(market, "step_size", None)),
+        "step": str(norm_step(getattr(market, "step_size", None))),
         "min_notional": str(getattr(market, "min_notional", None)),
         "min_quantity": str(getattr(market, "min_quantity", None)),
         "decision": {"action": d.action.value, "price": str(d.price) if d.price else None, "reason": d.reason},

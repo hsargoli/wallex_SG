@@ -130,3 +130,38 @@ def test_stop_cancels_open_live_order():
 
     run(go())
     assert w.status == "stopped" and ex.canceled == [ex.placed[0].client_id]
+
+
+def test_norm_step_digits_vs_step():
+    from app.services.order_chase.worker import norm_step
+    assert norm_step(4) == D("0.0001")
+    assert norm_step("4") == D("0.0001")
+    assert norm_step(0) == D("1")
+    assert norm_step("0.01") == D("0.01")
+    assert norm_step(None) is None
+
+
+def test_real_wallex_pepe_values():
+    """مقادیر واقعی دیده‌شده: tick=4، step=0، دفتر ~1.123."""
+    ex = FakeEx()
+    cfg = ChaseConfig("PEPETMN", "BUY", D("1.0"), D("1.2"), D("100000"), dry_run=True)
+    w = ChaseWorker(cfg, ex, lambda: False,
+                    NS(tick_size=D(4), step_size=D(0), min_notional=D(50000),
+                       min_quantity=D(1), quote_precision=4))
+    book(w, [(1.123, 100669226), (1.122, 2000000)], [(1.1299, 467259149)])
+    run(w.step())
+    assert w.own is not None and w.own.price == D("1.1231")
+
+
+def test_never_places_outside_range():
+    ex = FakeEx()
+    cfg = ChaseConfig("XTMN", "BUY", D("0.70"), D("0.80"), D("10"), dry_run=False, max_notional=D("100"))
+    w = ChaseWorker(cfg, ex, lambda: True, NS(tick_size=D("0.01"), step_size=D("0.1"),
+                    min_notional=D(1), min_quantity=D("0.1"), quote_precision=2))
+    async def go():
+        try:
+            await w._place(D("0.95"))
+        except ValueError:
+            return True
+        return False
+    assert run(go()) and ex.placed == []

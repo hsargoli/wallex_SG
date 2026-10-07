@@ -33,10 +33,29 @@ def _levels(raw: Any) -> list[Level]:
     return out
 
 
-def floor_step(q: Decimal, step: Decimal | None) -> Decimal:
-    if not step or step <= 0:
+def norm_step(v: Any) -> Decimal | None:
+    """والکس گاهی «تعداد ارقام اعشار» (مثل 4) می‌دهد و گاهی گام واقعی (مثل 0.0001).
+
+    عدد صحیح 0..18 یعنی تعداد ارقام اعشار؛ هر چیز دیگر گام است.
+    """
+    if v is None:
+        return None
+    try:
+        d = Decimal(str(v))
+    except Exception:
+        return None
+    if d < 0:
+        return None
+    if d == d.to_integral_value() and 0 <= d <= 18:
+        return Decimal(1).scaleb(-int(d))
+    return d if d > 0 else None
+
+
+def floor_step(q: Decimal, step: Any) -> Decimal:
+    st = norm_step(step)
+    if not st or st <= 0:
         return q
-    return (q / step).to_integral_value(ROUND_FLOOR) * step
+    return (q / st).to_integral_value(ROUND_FLOOR) * st
 
 
 @dataclass
@@ -105,9 +124,9 @@ class ChaseWorker:
         self.log.append({"t": int(time.time()), "msg": msg})
 
     def _tick(self) -> Decimal:
-        t = getattr(self.market, "tick_size", None)
+        t = norm_step(getattr(self.market, "tick_size", None))
         if t and t > 0:
-            return Decimal(t)
+            return t
         qp = getattr(self.market, "quote_precision", None)
         if isinstance(qp, int):
             return Decimal(1).scaleb(-qp)
@@ -176,6 +195,12 @@ class ChaseWorker:
 
     async def _place(self, price: Decimal) -> None:
         c = self.cfg
+        if price is None or price <= 0:
+            raise ValueError("قیمت هدف نامعتبر است؛ سفارش ثبت نشد")
+        if price > c.high and c.side == "BUY":
+            raise ValueError(f"قیمت هدف ({price}) از سقف بازه بیشتر است؛ سفارش ثبت نشد")
+        if price < c.low and c.side == "SELL":
+            raise ValueError(f"قیمت هدف ({price}) از کف بازه کمتر است؛ سفارش ثبت نشد")
         qty = floor_step(self._need(), getattr(self.market, "step_size", None))
         mn = getattr(self.market, "min_notional", None)
         if mn and qty * price < mn:
