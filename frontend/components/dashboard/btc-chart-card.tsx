@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { RotateCw } from "lucide-react";
-import { useCandles } from "@/lib/queries";
+import { useCandles, useMarkets } from "@/lib/queries";
 import { formatNumber } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,8 @@ const SYMBOL = "BTCTMN";
 export function BtcChartCard() {
   // v1 عمداً: candles-v2 کندل ساختگی (synthetic) هم برمی‌گرداند
   const q = useCandles(SYMBOL, "1h", 48);
+  const markets = useMarkets();
+  const ticker = markets.data?.items?.find((m) => m.symbol === SYMBOL);
 
   // api فیلدها را رشته می‌دهد؛ اینجا عدد می‌شوند و بر اساس زمان مرتب
   const candles: ChartCandle[] = useMemo(() => {
@@ -29,9 +31,18 @@ export function BtcChartCard() {
   }, [q.data]);
 
   const ok = candles.length >= 2;
-  const last = ok ? candles[candles.length - 1].close : null;
-  const ref = candles.length > 24 ? candles[candles.length - 25].close : null;
-  const pct = last !== null && ref ? ((last - ref) / ref) * 100 : null;
+  // قیمت و درصد از تیکر زنده (همان منبع «بازارهای داغ»)؛ اگر نبود از کندل‌ها
+  const tLast = Number(ticker?.last_price);
+  const tPct = Number(ticker?.daily_change_percent);
+  const cLast = ok ? candles[candles.length - 1].close : null;
+  const cRef = candles.length > 24 ? candles[candles.length - 25].close : null;
+  const last = Number.isFinite(tLast) && tLast > 0 ? tLast : cLast;
+  const pct =
+    ticker?.daily_change_percent != null && Number.isFinite(tPct)
+      ? tPct
+      : cLast !== null && cRef
+        ? ((cLast - cRef) / cRef) * 100
+        : null;
 
   return (
     <Card className="shadow-[0_0_70px_-20px_var(--wx-glow)]">
