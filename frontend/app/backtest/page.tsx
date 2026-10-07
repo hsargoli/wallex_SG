@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FlaskConical, Loader2, Trophy, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,6 +115,18 @@ export default function BacktestPage() {
         fee_pct: fee,
       }),
   });
+
+  // پیش‌انتخاب از لینک: /backtest?bot=slug&symbols=ETHTMN,DOGETMN
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    const b = qs.get("bot");
+    if (b && BOTS.some((x) => x.slug === b && x.ok)) setBot(b);
+    const syms = (qs.get("symbols") ?? "")
+      .split(",")
+      .map((x) => x.trim().toUpperCase())
+      .filter((x) => /^[A-Z0-9]{2,20}$/.test(x));
+    if (syms.length) setPicked(Array.from(new Set(syms)).slice(0, 5));
+  }, []);
 
   const cmp = useMutation<CompareBotsResult, Error>({
     mutationFn: () =>
