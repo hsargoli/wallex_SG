@@ -9,6 +9,7 @@ import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
 import { PaperSummary } from "@/components/dashboard/paper-summary";
 import { StatusStrip } from "@/components/dashboard/status-strip";
+import { BtcChartCard } from "@/components/dashboard/btc-chart-card";
 
 export default function DashboardPage() {
   // سلام فقط سمت کلاینت محاسبه می‌شود تا با رندر سرور ناهماهنگ نشود
@@ -36,6 +37,9 @@ export default function DashboardPage() {
 
       {/* ۱) پول من */}
       <KpiCards />
+
+      {/* چارت بیت‌کوین */}
+      <BtcChartCard />
 
       {/* ۲) فرصت‌ها */}
       <ActionBar />
