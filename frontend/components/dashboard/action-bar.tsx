@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Zap, Wallet, ClipboardList, ArrowUpRight } from "lucide-react";
+import { Zap, Wallet, ArrowUpRight } from "lucide-react";
 import { usePaginatedSignals } from "@/lib/hooks/use-paginated-signals";
-import { useMarkets, useOpenOrders, useBudget } from "@/lib/queries";
+import { useMarkets, useBudget } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -60,7 +60,7 @@ function ActionCard({
     <Link
       href={href}
       title={hint}
-      className="group block cursor-help"
+      className="group block"
     >
       <Card
         className={cn(
@@ -89,7 +89,7 @@ function ActionCard({
               </p>
             )}
           </div>
-          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100" />
         </CardContent>
       </Card>
     </Link>
@@ -98,7 +98,6 @@ function ActionCard({
 
 export function ActionBar() {
   const markets = useMarkets();
-  const orders = useOpenOrders();
   const budget = useBudget();
 
   // استخراج نمادها برای اسکن قوی‌ها
@@ -120,7 +119,6 @@ export function ActionBar() {
     currentPage: 1,
   });
 
-  const openOrdersCount = orders.data?.orders?.length ?? 0;
   const budgetUsage = budget.data
     ? Number(budget.data.allocated_budget) > 0
       ? (Number(budget.data.in_use_capital) /
@@ -147,7 +145,7 @@ export function ActionBar() {
     strongCount > 0 ? "emerald" : totalSignals > 0 ? "blue" : "zinc";
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-2">
       <ActionCard
         href="/signals"
         icon={Zap}
@@ -179,24 +177,6 @@ export function ActionBar() {
         tone="amber"
         loading={budget.isLoading}
         hint="بودجه‌ای که برای ربات‌ها و خودکارسازی ترید در نظر گرفته شده. هر ربات سهم مشخصی از این بودجه رو استفاده می‌کنه. هر وقت خواستی کم یا زیادش کنی، برو به کیف پول ربات."
-      />
-
-      <ActionCard
-        href="/orders"
-        icon={ClipboardList}
-        title={
-          orders.isLoading
-            ? "در حال بررسی..."
-            : openOrdersCount > 0
-              ? `${openOrdersCount} سفارش باز`
-              : "سفارش بازی نداری"
-        }
-        subtitle={
-          openOrdersCount > 0 ? "وضعیت سفارش‌ها رو ببین" : "همه‌چیز مرتبه"
-        }
-        tone="blue"
-        loading={orders.isLoading}
-        hint="سفارش‌هایی که هنوز کامل پر نشدن یا در انتظار اجرا هستن. اگه باز بمونن، ممکنه نیاز به لغو یا اصلاح داشته باشن."
       />
     </div>
   );

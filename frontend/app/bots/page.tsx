@@ -8,19 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { SUPPORT, NON_TRADING } from "@/lib/bot-support";
 
-// وضعیت «تأییدشده» هر ربات. capabilities بک‌اند با واقعیت نمی‌خواند، پس فعلاً از این جدول استفاده می‌کنیم.
-// فقط چیزی را true کن که واقعاً کار می‌کند.
-const SUPPORT: Record<string, { backtest: boolean; paper: boolean }> = {
-  scalp_master: { backtest: true, paper: true },
-  trend_follow: { backtest: true, paper: false },
-  mean_revert: { backtest: true, paper: false },
-  volatility_hunter: { backtest: true, paper: false },
-  volatility_hunter_v2: { backtest: true, paper: false },
-};
-
-// ابزارهای غیرمعامله‌گر؛ چیپ «به‌زودی» برایشان معنی ندارد.
-const NON_TRADING = new Set(["market_scanner"]);
 
 const TAGS_FA: Record<string, string> = {
   passive: "منفعل",

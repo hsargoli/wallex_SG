@@ -1,6 +1,8 @@
 "use client";
 
 import { LiveModeBanner } from "@/components/orders/live-mode-banner";
+import { ConfirmOrderDialog } from "@/components/order-bot/confirm-order-dialog";
+import { useLiveMode } from "@/lib/hooks/use-live-mode";
 import { useState } from "react";
 import {
   Bot,
@@ -96,9 +98,13 @@ function OrderForm({ symbol, onSymbolChange }: OrderFormProps) {
   const [condition, setCondition] = useState<"<=" | ">=">("<=");
 
   const placeOrder = usePlaceOrder();
+  type OrderPayload = Parameters<typeof placeOrder.mutate>[0];
+  const [pending, setPending] = useState<OrderPayload | null>(null);
+  const { liveOn, known, loading: modeLoading } = useLiveMode();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!liveOn) return;
 
     if (!quantity || Number(quantity) <= 0) return;
     if (!price || Number(price) <= 0) return;
@@ -118,12 +124,19 @@ function OrderForm({ symbol, onSymbolChange }: OrderFormProps) {
       payload.stop_price_condition = condition;
     }
 
-    placeOrder.mutate(payload, {
+    setPending(payload);
+  };
+
+  const confirmOrder = () => {
+    if (!pending || !liveOn) return;
+    placeOrder.mutate(pending, {
       onSuccess: () => {
         setQuantity("");
         setPrice("");
         setStopPrice("");
+        setPending(null);
       },
+      onError: () => setPending(null),
     });
   };
 
@@ -138,6 +151,12 @@ function OrderForm({ symbol, onSymbolChange }: OrderFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <ConfirmOrderDialog
+          payload={pending}
+          busy={placeOrder.isPending}
+          onConfirm={confirmOrder}
+          onCancel={() => setPending(null)}
+        />
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Symbol */}
           <div className="space-y-2">
@@ -293,10 +312,18 @@ function OrderForm({ symbol, onSymbolChange }: OrderFormProps) {
             </div>
           )}
 
+          {!liveOn && !modeLoading && (
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-300">
+              {known
+                ? "معامله‌ی واقعی غیرفعال است؛ ثبت سفارش قفل است."
+                : "وضعیت معامله‌ی واقعی نامشخص است؛ ثبت سفارش تا روشن‌شدن وضعیت قفل است."}
+            </p>
+          )}
+
           {/* Submit */}
           <Button
             type="submit"
-            disabled={placeOrder.isPending}
+            disabled={placeOrder.isPending || !liveOn}
             className={cn(
               "w-full gap-2",
               mode === "LIMIT"

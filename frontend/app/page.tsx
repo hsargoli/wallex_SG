@@ -8,6 +8,7 @@ import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
 import { PaperSummary } from "@/components/dashboard/paper-summary";
+import { StatusStrip } from "@/components/dashboard/status-strip";
 
 export default function DashboardPage() {
   // سلام فقط سمت کلاینت محاسبه می‌شود تا با رندر سرور ناهماهنگ نشود
@@ -19,7 +20,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* سربرگ + وضعیت سیستم */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
@@ -27,27 +28,28 @@ export default function DashboardPage() {
             {greeting} رفیق
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            نگاهی به وضعیت بازار و ربات‌های معاملاتی
+            وضعیت پول، سفارش‌ها و ربات‌ها در یک نگاه
           </p>
+        </div>
+        <StatusStrip />
+      </div>
+
+      {/* ۱) پول من */}
+      <KpiCards />
+
+      {/* ۲) فرصت‌ها */}
+      <ActionBar />
+
+      {/* ۳) سفارش‌ها و سیستم */}
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <OrdersTimeline />
+        <div className="space-y-6">
+          <PaperSummary />
+          <BotsSummary />
         </div>
       </div>
 
-      {/* Action Bar — کارهای فوری */}
-      <ActionBar />
-
-      {/* KPI Cards */}
-      <KpiCards />
-
-      {/* وضعیت تست زنده */}
-      <PaperSummary />
-
-      {/* Timeline + Bots */}
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <OrdersTimeline />
-        <BotsSummary />
-      </div>
-
-      {/* Hot Markets */}
+      {/* ۴) بازار */}
       <HotMarkets />
     </div>
   );
