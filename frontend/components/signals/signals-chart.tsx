@@ -185,7 +185,6 @@ export function SignalsChart({ indicators, levels, height = 520 }: SignalsChartP
     );
 
     const ema9Data = pick(ema_9);
-    console.log("EMA9 data points:", ema9Data.length, "first:", ema9Data[0], "last:", ema9Data[ema9Data.length - 1]);
     ema9Ref.current?.setData(ema9Data);
     ema21Ref.current?.setData(pick(ema_21));
     bbUpperRef.current?.setData(pick(bb_upper));

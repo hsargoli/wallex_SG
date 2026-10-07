@@ -3,25 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import {
-  LayoutDashboard,
-  Wallet,
-  TrendingUp,
-  Calculator,
-  Activity,
-  Coins,
-  PieChart,
-  Zap,
-  Radar,
-  Bot,
-  Play,
-  ClipboardList,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  FlaskConical,
-} from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, Coins, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
 import { useSidebar } from "./sidebar-provider";
@@ -47,33 +29,34 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "دارایی",
+    label: "کشف فرصت",
     items: [
-      { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
+      { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
+      { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
+      { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
+    ],
+  },
+  {
+    label: "ربات‌ها و آزمون",
+    items: [
+      { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
+      { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
+      { href: "/paper-trading", label: "تست زنده (Paper)", icon: Play, desc: "اجرای ربات روی بازار زنده بدون پول واقعی" },
+    ],
+  },
+  {
+    label: "معامله و دارایی",
+    items: [
+      { href: "/order-bot", label: "ثبت سفارش دستی", icon: SquarePen, desc: "ثبت دستی سفارش روی والکس" },
       { href: "/orders", label: "سفارش‌ها", icon: ClipboardList, desc: "تاریخچه و سفارش‌های باز" },
+      { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
       { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
     ],
   },
   {
-    label: "کشف فرصت",
+    label: "تحلیل",
     items: [
-      { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
-      { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
-      { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
-    ],
-  },
-  {
-    label: "خودکارسازی",
-    items: [
-      { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
-      { href: "/paper-trading", label: "Paper Trading", icon: Play, desc: "شبیه‌سازی و تست استراتژی" },
-      { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
-    ],
-  },
-  {
-    label: "ابزار",
-    items: [
-      { href: "/order-bot", label: "ثبت سفارش", icon: ClipboardList, desc: "ثبت دستی سفارش روی والکس" },
+      { href: "/profitability", label: "سودآوری", icon: Calculator, desc: "محاسبه‌ی سود و زیان معامله" },
     ],
   },
 ];
