@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Clock, History } from "lucide-react";
+import { Clock, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

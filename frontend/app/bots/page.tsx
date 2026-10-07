@@ -138,23 +138,25 @@ function BotCard({
 }
 
 function CapabilityBadge({ capability }: { capability: string }) {
-  const config: Record<string, { icon: React.ElementType; color: string }> = {
-    paper: { icon: Database, color: "border-blue-500/30 text-blue-400" },
-    live: { icon: Zap, color: "border-emerald-500/30 text-emerald-400" },
-    backtest: { icon: Activity, color: "border-purple-500/30 text-purple-400" },
+  const config: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+    paper: { icon: Database, color: "border-blue-500/30 text-blue-400", label: "تست زنده" },
+    live: { icon: Zap, color: "border-emerald-500/30 text-emerald-400", label: "معامله واقعی" },
+    backtest: { icon: Activity, color: "border-purple-500/30 text-purple-400", label: "بک‌تست" },
+    monitor: { icon: Activity, color: "border-zinc-500/30 text-zinc-400", label: "پایش" },
+    signal: { icon: Zap, color: "border-amber-500/30 text-amber-400", label: "سیگنال" },
+    scan: { icon: Cpu, color: "border-sky-500/30 text-sky-400", label: "اسکن" },
+    display: { icon: Cpu, color: "border-zinc-500/30 text-zinc-400", label: "نمایش" },
   };
   const cfg = config[capability] ?? {
     icon: Cpu,
     color: "border-white/10 text-zinc-400",
+    label: capability,
   };
   const Icon = cfg.icon;
   return (
-    <Badge
-      variant="outline"
-      className={cn("gap-1 text-[9px]", cfg.color)}
-    >
+    <Badge variant="outline" className={cn("gap-1 text-[9px]", cfg.color)}>
       <Icon className="h-2.5 w-2.5" />
-      {capability}
+      {cfg.label}
     </Badge>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, TrendingUp, Lock, Unlock, PieChart } from "lucide-react";
+import { Wallet, Lock, Unlock, PieChart } from "lucide-react";
 import { useTotalBudget } from "@/lib/queries";
 import { formatNumber } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";

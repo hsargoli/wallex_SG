@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, Coins, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen } from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
 import { useSidebar } from "./sidebar-provider";

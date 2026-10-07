@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
@@ -8,16 +9,12 @@ import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
 
 export default function DashboardPage() {
-  // Greeting based on time of day
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 5
-      ? "شب بخیر"
-      : hour < 12
-        ? "صبح بخیر"
-        : hour < 17
-          ? "وقت بخیر"
-          : "شب بخیر";
+  // سلام فقط سمت کلاینت محاسبه می‌شود تا با رندر سرور ناهماهنگ نشود
+  const [greeting, setGreeting] = useState("سلام");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 5 ? "شب بخیر" : hour < 12 ? "صبح بخیر" : hour < 17 ? "وقت بخیر" : "شب بخیر");
+  }, []);
 
   return (
     <div className="space-y-6">
