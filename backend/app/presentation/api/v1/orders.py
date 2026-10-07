@@ -35,6 +35,14 @@ from app.presentation.api.v1.schemas import (
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
+@router.get("/trading-mode")
+async def trading_mode():
+    """وضعیت قفل معامله‌ی واقعی (فقط می‌خواند؛ چیزی را تغییر نمی‌دهد)."""
+    from app.core.config import Settings
+
+    return {"live_enabled": bool(getattr(Settings(), "LIVE_TRADING_ENABLED", False)), "field": "LIVE_TRADING_ENABLED"}
+
+
 def _require_live_trading(settings: Settings) -> None:
     """چک feature flag. اگه غیرفعاله، 403."""
     if not settings.can_trade:

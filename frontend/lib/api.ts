@@ -1082,3 +1082,9 @@ export const compareBotsBacktest = async (params: {
   const res = await client.get("/v1/backtest/compare", { params, timeout: 240000 });
   return res.data;
 };
+
+
+export const getTradingMode = async (): Promise<{ live_enabled: boolean; field: string }> => {
+  const res = await client.get("/v1/orders/trading-mode");
+  return res.data;
+};

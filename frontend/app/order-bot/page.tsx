@@ -1,5 +1,6 @@
 "use client";
 
+import { LiveModeBanner } from "@/components/orders/live-mode-banner";
 import { useState } from "react";
 import {
   Bot,
@@ -435,6 +436,7 @@ export default function OrderBotPage() {
 
   return (
     <div className="space-y-6">
+      <LiveModeBanner />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
