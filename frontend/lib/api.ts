@@ -1088,3 +1088,44 @@ export const getTradingMode = async (): Promise<{ live_enabled: boolean; field: 
   const res = await client.get("/v1/orders/trading-mode");
   return res.data;
 };
+
+
+export interface ChaseStatus {
+  id: string;
+  symbol: string;
+  side: "BUY" | "SELL";
+  status: string;
+  dry_run: boolean;
+  low: string;
+  high: string;
+  quantity: string;
+  filled: string;
+  moves: number;
+  own_price: string | null;
+  last_action: string;
+  last_reason: string;
+  errors: number;
+  started_at: number;
+  deadline_at: number;
+  max_notional: string | null;
+  log: { t: number; msg: string }[];
+}
+
+export interface ChaseCreate {
+  symbol: string;
+  side: "BUY" | "SELL";
+  low: string;
+  high: string;
+  quantity: string;
+  dry_run: boolean;
+  max_notional: string | null;
+}
+
+export const chaseApi = {
+  create: (body: ChaseCreate) =>
+    client.post<ChaseStatus>("/v1/order-chase", body).then((r) => r.data),
+  list: () =>
+    client.get<{ items: ChaseStatus[] }>("/v1/order-chase").then((r) => r.data),
+  stop: (id: string) =>
+    client.post<ChaseStatus>(`/v1/order-chase/${id}/stop`).then((r) => r.data),
+};

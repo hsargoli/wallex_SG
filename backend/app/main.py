@@ -26,6 +26,9 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         # --- Shutdown ---
+        from app.services.order_chase.worker import manager as chase_manager
+
+        await chase_manager.stop_all()  # سفارش‌های باز ربات تعقیب لغو می‌شوند
         await exchange.aclose()
 
 

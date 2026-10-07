@@ -2,6 +2,7 @@
 
 import { LiveModeBanner } from "@/components/orders/live-mode-banner";
 import { ConfirmOrderDialog } from "@/components/order-bot/confirm-order-dialog";
+import { ChasePanel } from "@/components/order-bot/chase-panel";
 import { useLiveMode } from "@/lib/hooks/use-live-mode";
 import { useState } from "react";
 import {
@@ -464,6 +465,7 @@ export default function OrderBotPage() {
   return (
     <div className="space-y-6">
       <LiveModeBanner />
+      <ChasePanel />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
