@@ -290,8 +290,8 @@ export default function BacktestPage() {
                   <th className="px-3 py-2 text-right">ترید</th>
                   <th className="px-3 py-2 text-right">Win Rate</th>
                   <th className="px-3 py-2 text-right">PF</th>
-                  <th className="px-3 py-2 text-right">میانگین هر ترید</th>
-                  <th className="px-3 py-2 text-right">سود هر نماد</th>
+                  <th className="px-3 py-2 text-right" title="میانگین سود/زیان هر معامله‌ی بسته‌شده">سود هر معامله</th>
+                  <th className="px-3 py-2 text-right" title="میانگین سود کل دوره روی هر نماد؛ قابل مقایسه با Buy &amp; Hold">سود کل دوره</th>
                   <th className="px-3 py-2 text-right">بدترین افت</th>
                 </tr>
               </thead>
@@ -304,6 +304,9 @@ export default function BacktestPage() {
                   <td className="px-3 py-2 text-muted-foreground">—</td>
                   <td className={"px-3 py-2 font-semibold tabular-nums " + pnlColor(cmp.data.buy_hold_avg_pct)} dir="ltr">
                     {cmp.data.buy_hold_avg_pct > 0 ? "+" : ""}{cmp.data.buy_hold_avg_pct}٪
+                    {Math.abs(cmp.data.buy_hold_avg_pct) > 30 && (
+                      <Badge variant="outline" className="mr-2 text-[10px]">حرکت استثنایی بازار</Badge>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">—</td>
                 </tr>
@@ -344,9 +347,7 @@ export default function BacktestPage() {
             </table>
             <p className="text-[11px] leading-5 text-muted-foreground">
               ⚠️ ۳۰ روز اخیر فقط یک رژیم بازار است، پس این رتبه‌بندی «نشانه‌ی اولیه» است نه حکم نهایی.
-              اندازه‌ی پوزیشن ربات‌ها یکسان نیست (اسکالپ‌مستر ۵۰٪ و بقیه طبق تنظیم خودشان)، پس به PF و میانگین هر ترید نگاه کن. برای مقایسه با Buy &amp; Hold (خرید و نگه‌داشتن حدود ۳۰ روز) فقط ستون «سود هر نماد» را ببین؛ ربات‌ها بخش زیادی از زمان بیرون از بازارند و در بازار صعودی طبیعی است کمتر از B&amp;H سود کنند. قیمت‌ها تومانی‌اند و بخشی از رشد ممکن است از تغییر نرخ دلار باشد.
-              افت ربات‌های غیر از اسکالپ‌مستر بر اساس تریدهای بسته حساب شده و کمتر از افت واقعی است.
-              «بهترین» فقط به ربات با نمونه‌ی کافی (۳۰+ ترید) و PF بالای ۱ می‌رسد.
+              ۳۰ روز اخیر فقط یک رژیم بازار است؛ این رتبه‌بندی نشانه‌ی اولیه است، نه حکم نهایی. برای مقایسه با Buy &amp; Hold ستون «سود کل دوره» را ببین. اندازه‌ی پوزیشن ربات‌ها یکسان نیست و در بازار صعودی طبیعی است ربات‌ها از B&amp;H کمتر سود کنند.
             </p>
           </CardContent>
         </Card>

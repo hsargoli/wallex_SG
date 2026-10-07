@@ -437,8 +437,6 @@ async def compare_bots(
     bh_pnls = []
     bh_errors = []
     per_day = {"1h": 24, "4h": 6, "1D": 1}[tf]
-    end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     
     for sym in syms:
         try:
