@@ -342,3 +342,77 @@
 .sidebar-toggle:hover::before {
   opacity: 1;
 }
+
+/* ============================================
+   Wallex dashboard theme (wx-*)
+   سبز/قرمز کندل‌ها عمداً به data-color وابسته نیست:
+   سبز همیشه یعنی صعود، قرمز همیشه یعنی نزول.
+   ============================================ */
+
+:root {
+  --wx-up: #0d9f6e;
+  --wx-down: #d63b3b;
+  --wx-glow: rgba(13, 159, 110, 0.35);
+}
+
+.dark {
+  --wx-up: #38e0a8;
+  --wx-down: #ff6f6f;
+  --wx-glow: rgba(56, 224, 168, 0.4);
+}
+
+.wx-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  overflow: visible;
+}
+
+.wx-gl {
+  stroke: var(--muted-foreground);
+  stroke-opacity: 0.3;
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+}
+
+.wx-c {
+  --cc: var(--wx-up);
+}
+.wx-c--dn {
+  --cc: var(--wx-down);
+}
+.wx-c line {
+  stroke: var(--cc);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.wx-c rect {
+  fill: var(--cc);
+}
+
+.wx-mvu {
+  animation: wx-mvu 4s ease-in-out infinite;
+}
+.wx-mvd {
+  animation: wx-mvd 4s ease-in-out infinite;
+}
+.wx-live {
+  animation: wx-pulse 2s ease-in-out infinite;
+}
+
+@keyframes wx-mvu {
+  0%, 100% { transform: translateY(0); filter: none; }
+  50% { transform: translateY(-20px); filter: drop-shadow(0 0 8px var(--cc)) drop-shadow(0 0 20px var(--cc)); }
+}
+@keyframes wx-mvd {
+  0%, 100% { transform: translateY(0); filter: none; }
+  50% { transform: translateY(20px); filter: drop-shadow(0 0 8px var(--cc)) drop-shadow(0 0 20px var(--cc)); }
+}
+@keyframes wx-pulse {
+  50% { filter: drop-shadow(0 0 12px var(--cc)) drop-shadow(0 0 28px var(--cc)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-mvu, .wx-mvd, .wx-live { animation: none; }
+}
