@@ -74,8 +74,8 @@ const statusColors: Record<string, string> = {
 const typeLabels: Record<string, string> = {
   LIMIT: "Limit",
   MARKET: "Market",
-  STOP_LIMIT: "🛑 Stop-Limit",
-  STOP_MARKET: "🛑 Stop-Market",
+  STOP_LIMIT: "Stop-Limit",
+  STOP_MARKET: "Stop-Market",
 };
 
 // ---------- Helpers ----------
