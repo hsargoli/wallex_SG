@@ -41,22 +41,17 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
       { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
-      { href: "/paper-trading", label: "تست زنده (Paper)", icon: Play, desc: "اجرای ربات روی بازار زنده بدون پول واقعی" },
+      { href: "/paper-trading", label: "تست زنده", icon: Play, desc: "اجرای ربات روی بازار زنده بدون پول واقعی" },
     ],
   },
   {
     label: "معامله و دارایی",
     items: [
       { href: "/order-bot", label: "ثبت سفارش دستی", icon: SquarePen, desc: "ثبت دستی سفارش روی والکس" },
+      { href: "/profitability", label: "سودآوری", icon: Calculator, desc: "محاسبه‌ی سود و زیان پیش از معامله" },
       { href: "/orders", label: "سفارش‌ها", icon: ClipboardList, desc: "تاریخچه و سفارش‌های باز" },
       { href: "/portfolio", label: "سبد دارایی", icon: PieChart, desc: "دارایی‌های فعلی شما" },
       { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
-    ],
-  },
-  {
-    label: "تحلیل",
-    items: [
-      { href: "/profitability", label: "سودآوری", icon: Calculator, desc: "محاسبه‌ی سود و زیان معامله" },
     ],
   },
 ];
