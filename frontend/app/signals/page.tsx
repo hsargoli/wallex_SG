@@ -375,23 +375,36 @@ export default function SignalsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {/* Headers row */}
+          {/* Headers row — matches SignalRow layout exactly */}
           {paginatedSignals.length > 0 && (
             <div className="flex items-center gap-3 px-3 pb-2 text-[10px] font-bold text-muted-foreground border-b border-border/40">
+              {/* icon column placeholder */}
               <div className="h-9 w-9 shrink-0" />
-              <div className="min-w-[110px] shrink-0">نماد / قیمت</div>
-              <div className="hidden md:block w-[70px] shrink-0 text-center">
+
+              {/* symbol + price + reason */}
+              <div className="min-w-[220px] max-w-[340px] shrink-0">
+                نماد / قیمت
+              </div>
+
+              {/* sparkline */}
+              <div className="hidden w-[70px] shrink-0 text-center md:block">
                 روند
               </div>
-              <div className="hidden lg:block w-16 shrink-0 text-center">
-                24h
+
+              {/* 4-column changes grid: 1h / 24h / 7d / 1m */}
+              <div className="hidden shrink-0 grid-cols-4 gap-2.5 lg:grid">
+                <div className="w-14 text-center">1h</div>
+                <div className="w-14 text-center">24h</div>
+                <div className="w-14 text-center">7d</div>
+                <div className="w-14 text-center">1m</div>
               </div>
-              <div className="hidden lg:block w-16 shrink-0 text-center">
-                7d
-              </div>
-              <div className="hidden md:flex min-w-[110px] shrink-0">
+
+              {/* confidence */}
+              <div className="hidden min-w-[110px] shrink-0 md:flex">
                 اطمینان
               </div>
+
+              {/* signal + strength badge */}
               <div className="mr-auto shrink-0">سیگنال</div>
             </div>
           )}

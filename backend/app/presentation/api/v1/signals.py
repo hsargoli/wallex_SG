@@ -193,11 +193,11 @@ async def _fetch_signal_for(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
                     )
 
-            # تغییر 1m: مقایسه آخرین با کندل 696 ساعت قبل (29 روز × 24)
-            # والکس فقط 29 روز کندل می‌دهد — به همین دلیل 1m (نه 30d)
+            # تغییر 1m: آخرین کندل vs قدیمی‌ترین کندل موجود
+            # والکس ~29 روز می‌دهد؛ از candles[0] استفاده می‌کنیم.
             change_1m = None
-            if len(candles) >= 697:
-                old_price = float(candles[-697].close)
+            if len(candles) >= 20:
+                old_price = float(candles[0].close)
                 if old_price > 0:
                     change_1m = round(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
