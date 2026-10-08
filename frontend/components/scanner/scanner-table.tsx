@@ -16,12 +16,12 @@ interface ScannerTableProps {
 const COLS = [
   { key: "symbol", label: "نماد / قیمت", hint: "نماد معاملاتی و آخرین قیمت" },
   { key: "change_24h", label: "۲۴h", hint: "درصد تغییر قیمت در ۲۴ ساعت گذشته" },
-  { key: "signal", label: "سیگنال", hint: "سیگنال تولیدشده بر اساس RSI، EMA، MACD و باند بولینگر" },
-  { key: "strength", label: "قدرت / الگو", hint: "قدرت سیگنال (قوی/متوسط/ضعیف) و الگوی روند فعلی" },
+  { key: "ema_diff", label: "EMA 9/21", hint: "اختلاف درصدی میانگین متحرک ۹ و ۲۱ — مثبت = صعودی" },
+  { key: "macd_hist", label: "MACD", hint: "هیستوگرام MACD — مثبت = فشار خرید، منفی = فشار فروش" },
   { key: "rsi_14", label: "RSI", hint: "شاخص قدرت نسبی (۱۴) — زیر ۳۰ اشباع فروش، بالای ۷۰ اشباع خرید" },
   { key: "risk_reward", label: "R/R", hint: "نسبت ریسک به ریوارد — بالاتر بهتر" },
   { key: "atr_pct", label: "ATR%", hint: "نوسان میانگین واقعی (۱۴) به درصد قیمت — بالاتر = پرنوسان‌تر" },
-  { key: "trend_score", label: "روند", hint: "امتیاز روند (۰-۱۰۰) — بالاتر = روند قوی‌تر" },
+  { key: "bb_pct", label: "BB%", hint: "موقعیت قیمت در باند بولینگر — ۰٪ کف، ۱۰۰٪ سقف" },
   { key: "sparkline", label: "۲۴ کندل", hint: "نمودار قیمت ۲۴ کندل اخیر" },
 ];
 
@@ -47,7 +47,7 @@ export function ScannerTable({ items, loading }: ScannerTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-white/5 bg-card">
       {/* Header */}
-      <div className="grid grid-cols-[minmax(140px,1.4fr)_minmax(70px,0.7fr)_minmax(80px,0.7fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(80px,0.8fr)_80px] items-center gap-3 border-b border-white/10 bg-white/[0.02] px-4 py-2.5 text-[10px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-[minmax(140px,1.4fr)_minmax(70px,0.7fr)_minmax(85px,0.8fr)_minmax(80px,0.8fr)_minmax(65px,0.65fr)_minmax(65px,0.65fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_80px] items-center gap-3 border-b border-white/10 bg-white/[0.02] px-4 py-2.5 text-[10px] font-medium text-muted-foreground">
         {COLS.map((c) => (
           <Popover key={c.key}>
             <PopoverTrigger asChild>

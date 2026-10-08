@@ -345,6 +345,11 @@ export interface TrendResult {
   rsi_14: string | null;
   atr_14: string | null;
   atr_pct: string | null;
+  ema_9: string | null;
+  ema_21: string | null;
+  ema_diff_pct: string | null;
+  macd_hist: string | null;
+  bb_pct: string | null;
 }
 
 export interface ScannerListMeta {
@@ -581,6 +586,10 @@ export const api = {
   // Portfolio
   getPortfolio: () =>
     client.get<PortfolioResponse>("/v1/account/portfolio").then((r) => r.data),
+
+  // Cost Basis
+  getCostBasis: () =>
+    client.get<CostBasisResponse>("/v1/account/cost-basis").then((r) => r.data),
 
   // Signals
   getSignal: (symbol: string, timeframe: string = "1h") =>
@@ -1132,3 +1141,21 @@ export const chaseApi = {
   stop: (id: string) =>
     client.post<ChaseStatus>(`/v1/order-chase/${id}/stop`).then((r) => r.data),
 };
+
+
+// ---------- Cost Basis ----------
+
+export interface CostBasisItem {
+  symbol: string;
+  avg_buy_price: string;
+  total_qty_bought: string;
+  total_invested: string;
+  orders_count: number;
+  buy_count: number;
+  sell_count: number;
+}
+
+export interface CostBasisResponse {
+  count: number;
+  items: CostBasisItem[];
+}

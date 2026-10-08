@@ -25,6 +25,10 @@ interface SignalsChartProps {
   indicators: IndicatorsResponse;
   levels?: LevelsResponse;
   height?: number;
+  /** اگه مقدار داشته باشه، فقط همین تعداد کندل آخر نمایان می‌شه (zoom) */
+  visibleCandles?: number;
+  /** اگه true، بدون Card و header رندر می‌شه (برای جاگذاری در Card دیگه) */
+  bare?: boolean;
 }
 
 interface Layer {
@@ -41,7 +45,7 @@ const DEFAULT_LAYERS: Layer[] = [
   { key: "levels", label: "سطوح (Pivot + S/R)", color: "text-amber-400", enabled: true },
 ];
 
-export function SignalsChart({ indicators, levels, height = 520 }: SignalsChartProps) {
+export function SignalsChart({ indicators, levels, height, visibleCandles = 520, bare = false }: SignalsChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -252,6 +256,12 @@ export function SignalsChart({ indicators, levels, height = 520 }: SignalsChartP
     });
   }, [levels, layers]);
 
+  const chartEl = <div ref={containerRef} className="w-full" dir="ltr" />;
+
+  if (bare) {
+    return <div className="pt-2">{chartEl}</div>;
+  }
+
   return (
     <Card>
       <CardHeader className="border-b border-white/5">
@@ -289,9 +299,7 @@ export function SignalsChart({ indicators, levels, height = 520 }: SignalsChartP
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
-        <div ref={containerRef} className="w-full" dir="ltr" />
-      </CardContent>
+      <CardContent className="pt-4">{chartEl}</CardContent>
     </Card>
   );
 }

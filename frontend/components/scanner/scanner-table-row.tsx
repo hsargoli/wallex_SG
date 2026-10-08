@@ -1,29 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/format";
 import { Sparkline } from "./sparkline";
-
-const SIGNAL_BADGE = {
-  buy: { label: "خرید", cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-400" },
-  sell: { label: "فروش", cls: "border-red-500/30 bg-red-500/15 text-red-400" },
-  hold: { label: "بی‌طرف", cls: "border-zinc-500/30 bg-zinc-500/15 text-zinc-400" },
-} as const;
-
-const STRENGTH_LABEL: Record<string, string> = {
-  strong: "قوی",
-  medium: "متوسط",
-  weak: "ضعیف",
-};
-
-const DIRECTION_ICON = {
-  bullish: TrendingUp,
-  bearish: TrendingDown,
-  neutral: Minus,
-} as const;
 
 export interface ScanItem {
   symbol: string;
@@ -38,6 +19,11 @@ export interface ScanItem {
   risk_reward: string | null;
   rsi_14: string | null;
   atr_pct: string | null;
+  ema_9: string | null;
+  ema_21: string | null;
+  ema_diff_pct: string | null;
+  macd_hist: string | null;
+  bb_pct: string | null;
   sparkline: number[];
 }
 
@@ -45,14 +31,29 @@ interface ScannerTableRowProps {
   item: ScanItem;
 }
 
+/** رنگ سلول بر اساس مقدار عددی */
+function tone(v: number | null, pos: number, neg: number): string {
+  if (v === null) return "text-muted-foreground";
+  if (v >= pos) return "text-emerald-400";
+  if (v <= neg) return "text-red-400";
+  return "text-foreground";
+}
+
 export function ScannerTableRow({ item }: ScannerTableRowProps) {
-  const change24 = item.change_24h ? Number(item.change_24h) : 0;
-  const isUp24 = change24 >= 0;
+  const change24 = item.change_24h ? Number(item.change_24h) : null;
   const isTMN = item.symbol.endsWith("TMN");
 
-  const sig = SIGNAL_BADGE[item.signal as keyof typeof SIGNAL_BADGE] || SIGNAL_BADGE.hold;
-  const DirIcon = DIRECTION_ICON[item.direction as keyof typeof DIRECTION_ICON] || Minus;
+  // EMA
+  const emaDiff = item.ema_diff_pct ? Number(item.ema_diff_pct) : null;
 
+  // MACD hist
+  const macdHist = item.macd_hist ? Number(item.macd_hist) : null;
+  const macdSig = macdHist === null ? "—" : macdHist >= 0 ? "↑" : "↓";
+
+  // RSI
+  const rsi = item.rsi_14 ? Number(item.rsi_14) : null;
+
+  // ATR
   const atrPct = item.atr_pct ? Number(item.atr_pct) : null;
   const atrTone =
     atrPct === null
@@ -63,20 +64,21 @@ export function ScannerTableRow({ item }: ScannerTableRowProps) {
           ? "text-emerald-400"
           : "text-amber-400";
 
-  const rsi = item.rsi_14 ? Number(item.rsi_14) : null;
-  const rsiTone =
-    rsi === null
+  // BB%
+  const bbPct = item.bb_pct ? Number(item.bb_pct) : null;
+  const bbTone =
+    bbPct === null
       ? "text-muted-foreground"
-      : rsi >= 70
-        ? "text-red-400"
-        : rsi <= 30
-          ? "text-emerald-400"
+      : bbPct < 20
+        ? "text-emerald-400"
+        : bbPct > 80
+          ? "text-red-400"
           : "text-foreground";
 
   return (
     <Link
       href={`/markets/${item.symbol}`}
-      className="grid grid-cols-[minmax(140px,1.4fr)_minmax(70px,0.7fr)_minmax(80px,0.7fr)_minmax(90px,0.9fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(80px,0.8fr)_80px] items-center gap-3 border-b border-white/5 px-4 py-3 text-sm transition hover:bg-emerald-500/[0.03]"
+      className="grid grid-cols-[minmax(140px,1.4fr)_minmax(70px,0.7fr)_minmax(85px,0.8fr)_minmax(80px,0.8fr)_minmax(65px,0.65fr)_minmax(65px,0.65fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_80px] items-center gap-3 border-b border-white/5 px-4 py-3 text-sm transition hover:bg-emerald-500/[0.03]"
     >
       {/* Symbol + price */}
       <div className="min-w-0">
@@ -94,25 +96,22 @@ export function ScannerTableRow({ item }: ScannerTableRowProps) {
       </div>
 
       {/* Change 24h */}
-      <div className={cn("font-mono text-xs", isUp24 ? "text-emerald-400" : "text-red-400")}>
-        {item.change_24h ? `${isUp24 ? "+" : ""}${change24.toFixed(2)}%` : "—"}
+      <div className={cn("font-mono text-xs", change24 === null ? "text-muted-foreground" : change24 >= 0 ? "text-emerald-400" : "text-red-400")}>
+        {change24 === null ? "—" : `${change24 >= 0 ? "+" : ""}${change24.toFixed(2)}%`}
       </div>
 
-      {/* Signal */}
-      <div>
-        <Badge variant="outline" className={cn("text-[10px]", sig.cls)}>
-          {sig.label}
-        </Badge>
+      {/* EMA 9/21 diff */}
+      <div className={cn("font-mono text-xs", tone(emaDiff, 0.1, -0.1))}>
+        {emaDiff === null ? "—" : `${emaDiff >= 0 ? "+" : ""}${emaDiff.toFixed(2)}%`}
       </div>
 
-      {/* Strength + pattern */}
-      <div className="min-w-0 text-xs">
-        <p className="truncate text-foreground">{STRENGTH_LABEL[item.strength] || item.strength}</p>
-        <p className="truncate text-[10px] text-muted-foreground">{item.pattern}</p>
+      {/* MACD hist */}
+      <div className={cn("font-mono text-xs", macdHist === null ? "text-muted-foreground" : macdHist >= 0 ? "text-emerald-400" : "text-red-400")}>
+        {macdHist === null ? "—" : `${macdSig} ${Math.abs(macdHist) >= 1 ? macdHist.toFixed(2) : macdHist.toFixed(4)}`}
       </div>
 
       {/* RSI */}
-      <div className={cn("font-mono text-xs", rsiTone)}>
+      <div className={cn("font-mono text-xs", rsi === null ? "text-muted-foreground" : rsi >= 70 ? "text-red-400" : rsi <= 30 ? "text-emerald-400" : "text-foreground")}>
         {rsi !== null ? rsi.toFixed(1) : "—"}
       </div>
 
@@ -126,10 +125,9 @@ export function ScannerTableRow({ item }: ScannerTableRowProps) {
         {atrPct !== null ? `${atrPct.toFixed(2)}%` : "—"}
       </div>
 
-      {/* Trend score + direction */}
-      <div className="flex items-center gap-1.5">
-        <DirIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="font-mono text-xs font-bold">{item.trend_score}</span>
+      {/* BB% */}
+      <div className={cn("font-mono text-xs", bbTone)}>
+        {bbPct !== null ? `${bbPct.toFixed(0)}%` : "—"}
       </div>
 
       {/* Sparkline */}

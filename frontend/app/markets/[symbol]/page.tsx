@@ -28,6 +28,8 @@ import { MiniChart } from "@/components/charts/mini-chart";
 import { MarketStats } from "@/components/markets/market-stats";
 import { OrderBookSummary } from "@/components/markets/order-book-summary";
 import { IndicatorsGrid } from "@/components/markets/detail/indicators-grid";
+import { TechnicalSnapshot } from "@/components/markets/detail/technical-snapshot";
+import { ChartPreview } from "@/components/charts/chart-preview";
 import { SignalsChart } from "@/components/signals/signals-chart";
 import { SignalCta } from "@/components/signals/detail/signal-cta";
 import { ConfluenceCard } from "@/components/signals/detail/confluence-card";
@@ -216,36 +218,30 @@ export default function SymbolPage({
       {/* ============================================================ */}
       {tab === "analysis" && (
         <div className="space-y-5">
-          {/* چارت پیشرفته + لینک چارت کامل */}
-          {indicators.data && (
-            <Card className="border-white/5 bg-[#0f0f17]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-white/5 pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <LineChart className="h-4 w-4 text-emerald-400" />
-                  نمودار با اندیکاتورها
-                </CardTitle>
-                <Link href={`/markets/${symbol}/chart`}>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-500"
-                  >
-                    مشاهده‌ی چارت کامل
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <SignalsChart
-                  indicators={indicators.data}
-                  levels={levels.data}
-                  height={420}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* چارت + کارت‌ها — inline style برای اطمینان */}
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: "minmax(0, 1fr) 340px" }}
+          >
+            {indicators.data && (
+              <ChartPreview
+                symbol={symbol}
+                indicators={indicators.data}
+                levels={levels.data}
+                height={360}
+                title="نمودار"
+                visibleCandles={80}
+              />
+            )}
 
-          {/* CTA */}
-          <SignalCta symbol={symbol} variant="advanced" />
+            <div className="space-y-4">
+              <TechnicalSnapshot
+                indicators={signal.data?.indicators ?? null}
+                currentPrice={signal.data?.current_price ?? market.data?.last_price ?? null}
+              />
+              <SignalCta symbol={symbol} variant="advanced" />
+            </div>
+          </div>
 
           {/* Confluence */}
           <ConfluenceCard

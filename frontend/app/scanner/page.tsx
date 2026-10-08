@@ -60,27 +60,50 @@ function ScannerContent() {
     [filteredMarkets],
   );
 
-  // ---------- Filter fn for scanned items (signal, strength, RSI, RR) ----------
+  // ---------- Filter fn (فنی: EMA / MACD / BB / RSI / ATR) ----------
   const filterFn = useCallback(
     (it: TrendResult) => {
-      if (state.signal !== "all" && it.signal !== state.signal) return false;
-      if (state.strength !== "all" && it.strength !== state.strength) return false;
+      // EMA cross
+      if (state.emaCross !== "all") {
+        const diff = it.ema_diff_pct ? Number(it.ema_diff_pct) : null;
+        if (diff === null) return false;
+        if (state.emaCross === "bullish" && diff <= 0) return false;
+        if (state.emaCross === "bearish" && diff >= 0) return false;
+      }
+      // MACD side
+      if (state.macdSide !== "all") {
+        const hist = it.macd_hist ? Number(it.macd_hist) : null;
+        if (hist === null) return false;
+        if (state.macdSide === "positive" && hist <= 0) return false;
+        if (state.macdSide === "negative" && hist >= 0) return false;
+      }
+      // BB zone
+      if (state.bbZone !== "all") {
+        const bb = it.bb_pct ? Number(it.bb_pct) : null;
+        if (bb === null) return false;
+        if (state.bbZone === "low" && bb >= 20) return false;
+        if (state.bbZone === "mid" && (bb < 20 || bb > 80)) return false;
+        if (state.bbZone === "high" && bb <= 80) return false;
+      }
+      // RSI range
       if (state.rsiMin !== null && Number(it.rsi_14 || 0) < state.rsiMin) return false;
       if (state.rsiMax !== null && Number(it.rsi_14 || 0) > state.rsiMax) return false;
-      if (state.rrMin !== null && Number(it.risk_reward || 0) < state.rrMin) return false;
+      // ATR min
+      if (state.atrMin !== null && Number(it.atr_pct || 0) < state.atrMin) return false;
       return true;
     },
-    [state.signal, state.strength, state.rsiMin, state.rsiMax, state.rrMin],
+    [state.emaCross, state.macdSide, state.bbZone, state.rsiMin, state.rsiMax, state.atrMin],
   );
 
   const needsFilter =
-    state.signal !== "all" ||
-    state.strength !== "all" ||
+    state.emaCross !== "all" ||
+    state.macdSide !== "all" ||
+    state.bbZone !== "all" ||
     state.rsiMin !== null ||
     state.rsiMax !== null ||
-    state.rrMin !== null;
+    state.atrMin !== null;
 
-  const filterKey = `${state.signal}-${state.strength}-${state.rsiMin}-${state.rsiMax}-${state.rrMin}-${needsFilter ? "1" : "0"}`;
+  const filterKey = `${state.emaCross}-${state.macdSide}-${state.bbZone}-${state.rsiMin}-${state.rsiMax}-${state.atrMin}-${needsFilter ? "1" : "0"}`;
 
   const scan = usePaginatedScanner({
     symbols,
@@ -97,13 +120,18 @@ function ScannerContent() {
     : Math.max(1, Math.ceil(scan.totalSymbols / PAGE_SIZE));
 
   const stats: ScannerStats = useMemo(() => {
-    let bullish = 0, bearish = 0, neutral = 0;
+    let oversold = 0, macdBullish = 0, bbLower = 0, volatile = 0;
     for (const it of scan.items) {
-      if (it.direction === "bullish") bullish++;
-      else if (it.direction === "bearish") bearish++;
-      else neutral++;
+      const rsi = it.rsi_14 ? Number(it.rsi_14) : null;
+      const macd = it.macd_hist ? Number(it.macd_hist) : null;
+      const bb = it.bb_pct ? Number(it.bb_pct) : null;
+      const atr = it.atr_pct ? Number(it.atr_pct) : null;
+      if (rsi !== null && rsi < 30) oversold++;
+      if (macd !== null && macd > 0) macdBullish++;
+      if (bb !== null && bb < 20) bbLower++;
+      if (atr !== null && atr > 2) volatile++;
     }
-    return { bullish, bearish, neutral, total: scan.items.length };
+    return { oversold, macdBullish, bbLower, volatile, total: scan.items.length };
   }, [scan.items]);
 
   const handleTf = (tf: Timeframe) => update({ tf, page: 1 });

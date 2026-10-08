@@ -66,6 +66,34 @@ async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h
                     ((atr_vals[-1] / last_close) * D(100)).quantize(D("0.01"))
                 )
 
+            # ---------- اندیکاتورهای تکمیلی از signal.indicators ----------
+            ind = signal.indicators or {}
+
+            ema_9 = ind.get("ema_9")
+            ema_21 = ind.get("ema_21")
+            macd_hist = ind.get("macd_hist")
+            bb_upper = ind.get("bb_upper")
+            bb_middle = ind.get("bb_middle")
+            bb_lower = ind.get("bb_lower")
+
+            # اختلاف درصدی EMA(9) و EMA(21)
+            ema_diff_pct = None
+            if ema_9 is not None and ema_21 is not None and ema_21 > 0:
+                ema_diff_pct = str(
+                    (((ema_9 - ema_21) / ema_21) * D(100)).quantize(D("0.01"))
+                )
+
+            # موقعیت قیمت در باند بولینگر (٪)
+            bb_pct = None
+            if (
+                bb_upper is not None
+                and bb_lower is not None
+                and bb_upper > bb_lower
+            ):
+                bb_pct = str(
+                    (((last_close - bb_lower) / (bb_upper - bb_lower)) * D(100)).quantize(D("0.01"))
+                )
+
             return {
                 "symbol": symbol,
                 "current_price": str(last_close),
@@ -87,6 +115,12 @@ async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h
                 "rsi_14": rsi_14,
                 "atr_14": atr_14,
                 "atr_pct": atr_pct,
+                # ---------- جدید ----------
+                "ema_9": str(ema_9) if ema_9 is not None else None,
+                "ema_21": str(ema_21) if ema_21 is not None else None,
+                "ema_diff_pct": ema_diff_pct,
+                "macd_hist": str(macd_hist) if macd_hist is not None else None,
+                "bb_pct": bb_pct,
             }
         except Exception:
             return None
