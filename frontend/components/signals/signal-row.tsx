@@ -9,9 +9,33 @@ import { Sparkline } from "./sparkline";
 import { cn } from "@/lib/utils";
 
 const SIGNAL_CONFIG = {
-  buy: { label: "خرید", icon: TrendingUp, text: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", bar: "bg-emerald-500" },
-  sell: { label: "فروش", icon: TrendingDown, text: "text-red-400", bg: "bg-red-500/15 border-red-500/30", bar: "bg-red-500" },
-  hold: { label: "بی‌طرف", icon: Minus, text: "text-zinc-400", bg: "bg-zinc-500/15 border-zinc-500/30", bar: "bg-zinc-500" },
+  buy: {
+    label: "خرید",
+    icon: TrendingUp,
+    text: "text-emerald-400",
+    bg: "bg-emerald-500/15 border-emerald-500/30",
+    bar: "bg-emerald-500",
+    rail: "border-r-emerald-500/50",
+    hover: "hover:border-r-emerald-500/80 hover:bg-emerald-500/[0.04]",
+  },
+  sell: {
+    label: "فروش",
+    icon: TrendingDown,
+    text: "text-red-400",
+    bg: "bg-red-500/15 border-red-500/30",
+    bar: "bg-red-500",
+    rail: "border-r-red-500/50",
+    hover: "hover:border-r-red-500/80 hover:bg-red-500/[0.04]",
+  },
+  hold: {
+    label: "بی‌طرف",
+    icon: Minus,
+    text: "text-zinc-400",
+    bg: "bg-zinc-500/15 border-zinc-500/30",
+    bar: "bg-zinc-500",
+    rail: "border-r-zinc-500/30",
+    hover: "hover:border-r-zinc-500/60 hover:bg-zinc-500/[0.04]",
+  },
 } as const;
 
 const STRENGTH_LABELS: Record<string, string> = {
@@ -19,6 +43,57 @@ const STRENGTH_LABELS: Record<string, string> = {
   medium: "متوسط",
   strong: "قوی",
 };
+
+/**
+ * ترجمه‌ی دلیل‌های فنی به زبان ساده برای تازه‌کار.
+ * کلید = متن دقیقی که backend می‌فرستد (یا بخشی از آن).
+ * مقدار = جمله‌ی ساده.
+ * اگر دلیل در دیکشنری نبود، خود متن اصلی نمایش داده می‌شود.
+ */
+const REASON_TRANSLATIONS: Array<[string, string]> = [
+  // MACD
+  ["MACD > Signal", "نشانه‌ی شروع حرکت صعودی"],
+  ["MACD < Signal", "نشانه‌ی شروع حرکت نزولی"],
+  // Bollinger
+  ["نیمه‌ی بالایی باند", "قیمت در ناحیه‌ی بالای نوسان اخیر"],
+  ["نیمه‌ی پایینی باند", "قیمت در ناحیه‌ی پایین نوسان اخیر"],
+  ["بالای باند", "قیمت به‌طور غیرعادی بالا رفته"],
+  ["زیر باند", "قیمت به‌طور غیرعادی پایین افتاده"],
+  // RSI
+  ["RSI < 30", "قیمت زیادی افتاده — احتمال برگشت"],
+  ["RSI > 70", "قیمت زیادی بالا رفته — احتمال افت"],
+  ["RSI", "قدرت خرید و فروش متعادل"],
+  // EMA
+  ["EMA fast > EMA slow", "روند کلی صعودی"],
+  ["EMA fast < EMA slow", "روند کلی نزولی"],
+  ["EMA", "میانگین قیمت در حال تغییر"],
+  // ADX
+  ["ADX > 20", "بازار جهت مشخصی دارد"],
+  ["ADX < 20", "بازار بی‌جهت است — احتیاط"],
+  ["ADX", "قدرت روند نامشخص"],
+  // Volume
+  ["Volume high", "حجم معاملات بالاست"],
+  ["Volume low", "حجم معاملات کم — احتیاط"],
+  ["حجم بالا", "حجم معاملات بالاست"],
+  ["حجم پایین", "حجم معاملات پایین — احتیاط"],
+  // Trend
+  ["Uptrend", "روند صعودی"],
+  ["Downtrend", "روند نزولی"],
+  ["uptrend", "روند صعودی"],
+  ["downtrend", "روند نزولی"],
+  // fallback
+  ["هیچ قانونی فعال نیست", "نشانه‌ی واضحی دیده نمی‌شود"],
+  ["سیگنال متضاد", "نشانه‌ها با هم متناقض‌اند — صبر کن"],
+  ["داده کافی نیست", "داده‌ی کافی برای تصمیم وجود ندارد"],
+];
+
+/** دلیل فنی را به زبان ساده ترجمه می‌کند. */
+function humanizeReason(reason: string): string {
+  for (const [key, value] of REASON_TRANSLATIONS) {
+    if (reason.includes(key)) return value;
+  }
+  return reason;
+}
 
 interface SignalRowProps {
   signal: BatchSignalItem;
@@ -47,20 +122,33 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
   return (
     <Link
       href={`/signals/${signal.symbol}`}
-      className="group flex items-center gap-3 rounded-lg border border-border/50 bg-card px-3 py-2.5 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/[0.03]"
+      className={cn(
+        "group flex items-center gap-3 rounded-lg border border-border/50 border-r-2 bg-card px-3 py-3 transition-all",
+        config.rail,
+        config.hover,
+      )}
     >
       {/* Signal icon */}
       <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border", config.bg)}>
         <Icon className={cn("h-4 w-4", config.text)} />
       </div>
 
-      {/* Symbol + price */}
-      <div className="min-w-[110px] shrink-0">
+      {/* Symbol + price + reason */}
+      <div className="min-w-[220px] max-w-[340px] shrink-0">
         <p className="font-mono text-sm font-bold">{signal.symbol}</p>
         <p className="font-mono text-[10px] text-muted-foreground">
           {formatPrice(signal.current_price)}{" "}
           <span className="text-[9px] opacity-60">{quote}</span>
         </p>
+        {signal.reasons && signal.reasons.length > 0 && (
+          <p className="mt-1 truncate text-[10px] leading-relaxed">
+            <span className={cn("font-bold", config.text)}>چرا؟</span>
+            <span className="mx-1 text-muted-foreground/60">·</span>
+            <span className="text-muted-foreground">
+              {signal.reasons.slice(0, 2).map(humanizeReason).join(" · ")}
+            </span>
+          </p>
+        )}
       </div>
 
       {/* Sparkline */}
