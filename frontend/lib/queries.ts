@@ -581,3 +581,12 @@ export function useAllSignalsWithProgress(
 
   return { ...query, progress };
 }
+
+
+export function useCostBasis() {
+  return useQuery({
+    queryKey: ["cost-basis"],
+    queryFn: () => api.getCostBasis(),
+    refetchInterval: 60_000,
+  });
+}
