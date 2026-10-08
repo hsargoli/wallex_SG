@@ -26,12 +26,12 @@
 **Wallex Trading Platform** — یک پلتفرم معاملات الگوریتمی روی صرافی والکس (wallex.ir).
 
 ### قابلیت‌ها
-- ۶ ربات معاملاتی با استراتژی مستقل
+- ۸ ربات معاملاتی با استراتژی مستقل
 - شبیه‌ساز بک‌تست روی داده واقعی والکس
 - Paper Trading (شبیه‌سازی زنده)
 - Live Order (LIMIT + STOP_LIMIT روی API واقعی والکس)
 - مدیریت بودجه per-bot
-- ۴۷ endpoint REST
+- ۷۱ endpoint REST
 
 ### تکنولوژی
 - **Backend:** FastAPI + Python 3.12 + DDD
@@ -45,9 +45,9 @@
 | بخش | وضعیت |
 |---|---|
 | Backend (DDD) | ✅ کامل |
-| Frontend (۱۵ صفحه) | ✅ کامل |
-| تست‌ها | ✅ ۷۶ پاس |
-| Shبیه‌ساز | ✅ کار می‌کند |
+| Frontend (۱۹ صفحه) | ✅ کامل |
+| تست‌ها | ✅ ۱۰۰ پاس |
+| شبیه‌ساز | ✅ کار می‌کند |
 | Live Order | ✅ تست‌شده روی والکس |
 | Live Loop | 🚧 در حال |
 | Postgres | 🔜 در برنامه |
@@ -63,13 +63,13 @@
 │   │   ├── domain/             ← Entities، Ports، Value Objects
 │   │   ├── application/        ← Use Cases
 │   │   ├── infrastructure/     ← Wallex adapter، mapper
-│   │   ├── presentation/       ← API routers (۴۷ endpoint)
-│   │   └── services/           ← منطق کسب‌وکار + ۶ ربات
-│   ├── tests/                  ← ۷۶ تست
+│   │   ├── presentation/       ← API routers (۷۱ endpoint)
+│   │   └── services/           ← منطق کسب‌وکار + ۸ ربات
+│   ├── tests/                  ← ۱۰۰ تست
 │   └── pyproject.toml
 │
 ├── frontend/                   ← Next.js 16 + TS
-│   ├── app/                    ← ۱۵ صفحه
+│   ├── app/                    ← ۱۹ صفحه
 │   ├── components/             ← UI، charts، dashboard، bots
 │   └── lib/                    ← api، queries، format، hooks
 │
@@ -195,7 +195,7 @@ Services (Robots, Simulator)
 |---|---|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | معماری + لایه‌ها |
 | [SETUP.md](./SETUP.md) | راه‌اندازی گام‌به‌گام |
-| [API.md](./API.md) | ۴۷ endpoint |
+| [API.md](./API.md) | ۷۱ endpoint |
 | [BOTS.md](./BOTS.md) | فهرست ربات‌ها |
 | [bots/](./bots/) | مستند هر ربات |
 | [reports/](./reports/) | گزارش‌های توسعه |

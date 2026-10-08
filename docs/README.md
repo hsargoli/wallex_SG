@@ -45,8 +45,8 @@
 |------|-------|-------|
 | [**ARCHITECTURE.md**](./ARCHITECTURE.md) | همه | معماری کامل، لایه‌ها، جریان داده، ۶۶۵ خط |
 | [**SETUP.md**](./SETUP.md) | توسعه‌دهنده جدید | راه‌اندازی گام‌به‌گام، ۴۷۵ خط |
-| [**API.md**](./API.md) | Frontend dev / Integration | مستندات ۴۴ endpoint، ۷۴۹ خط |
-| [**BOTS.md**](./BOTS.md) | استراتژیست / توسعه‌دهنده ربات | راهنمای ربات‌ها + Adapter، ۵۶۳ خط |
+| [**API.md**](./API.md) | Frontend dev / Integration | مستندات ۷۱ endpoint، ۷۴۹ خط |
+| [**BOTS.md**](./BOTS.md) | استراتژیست / توسعه‌دهنده ربات | راهنمای ربات‌ها + Adapter، ۲۲۵ خط |
 | [**ML_JOURNEY.md**](./ML_JOURNEY.md) | علاقه‌مند به ML | سفر ML، درس‌ها و تصمیمات |
 | [**README_OLD.md**](./README_OLD.md) | تاریخچه | README قدیمی (آرشیو) |
 
@@ -79,7 +79,7 @@
 
 مستندات API:
 
-- ۴۴ endpoint در ۱۵ گروه
+- ۷۱ endpoint در ۱۵ گروه
 - RFC-7807 error format
 - مثال‌های curl
 - نمونه Response با داده‌ی واقعی
@@ -194,7 +194,7 @@ reports/ → همه گزارش‌ها با تاریخ
 | **Settings** | `~/wallex/backend/app/core/config.py` |
 | **Main app** | `~/wallex/backend/app/main.py` |
 | **Master router** | `~/wallex/backend/app/presentation/api/v1/router.py` |
-| **Shبیه‌ساز** | `~/wallex/backend/app/services/bot_simulator.py` |
+| **شبیه‌ساز** | `~/wallex/backend/app/services/bot_simulator.py` |
 | **Env** | `~/wallex/.env` |
 
 ---
