@@ -116,8 +116,10 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
   const config = SIGNAL_CONFIG[signal.signal] || SIGNAL_CONFIG.hold;
   const Icon = config.icon;
   const confidence = Math.max(0, Math.min(100, signal.confidence));
+  const c1 = signal.change_1h;
   const c24 = signal.change_24h;
   const c7 = signal.change_7d;
+  const c1m = signal.change_1m;
 
   return (
     <Link
@@ -156,20 +158,34 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
         <Sparkline data={signal.sparkline} width={70} height={26} />
       </div>
 
-      {/* Change 24h */}
-      <div className="hidden w-16 shrink-0 text-right lg:block">
-        <p className={cn("font-mono text-xs font-bold", c24 === null ? "text-muted-foreground" : c24 >= 0 ? "text-emerald-400" : "text-red-400")}>
-          {c24 === null ? "—" : `${c24 >= 0 ? "+" : ""}${c24.toFixed(2)}%`}
-        </p>
-        <p className="text-[9px] text-muted-foreground">24h</p>
-      </div>
-
-      {/* Change 7d */}
-      <div className="hidden w-16 shrink-0 text-right lg:block">
-        <p className={cn("font-mono text-xs font-bold", c7 === null ? "text-muted-foreground" : c7 >= 0 ? "text-emerald-400" : "text-red-400")}>
-          {c7 === null ? "—" : `${c7 >= 0 ? "+" : ""}${c7.toFixed(2)}%`}
-        </p>
-        <p className="text-[9px] text-muted-foreground">7d</p>
+      {/* Changes: 1h / 24h / 7d / 1m */}
+      <div className="hidden shrink-0 grid-cols-4 gap-2.5 lg:grid">
+        {[
+          { label: "1h", value: c1 },
+          { label: "24h", value: c24 },
+          { label: "7d", value: c7 },
+          { label: "1m", value: c1m },
+        ].map(({ label, value }) => (
+          <div key={label} className="w-14 text-right">
+            <p
+              className={cn(
+                "font-mono text-sm font-bold leading-tight",
+                value === null
+                  ? "text-muted-foreground/60"
+                  : value >= 0
+                    ? "text-emerald-400"
+                    : "text-red-400",
+              )}
+            >
+              {value === null
+                ? "—"
+                : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`}
+            </p>
+            <p className="text-[10px] leading-tight text-muted-foreground">
+              {label}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Confidence + bar */}

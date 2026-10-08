@@ -476,7 +476,7 @@ export function useBatchSignals(symbols: string[], tf: string = "1h") {
   return useQuery({
     queryKey: ["batch-signals", symbols.join(","), tf],
     queryFn: () =>
-      api.getBatchSignals({ symbols, tf, limit: 200 }),
+      api.getBatchSignals({ symbols, tf, limit: 400 }),
     enabled: symbols.length > 0,
     staleTime: 30_000,
     refetchInterval: 60_000,

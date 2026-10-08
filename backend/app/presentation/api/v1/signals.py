@@ -117,6 +117,8 @@ class BatchSignalItem(BaseModel):
     # تغییرات قیمت
     change_24h: float | None = None
     change_7d: float | None = None
+    change_1h: float | None = None
+    change_1m: float | None = None
     error: str | None = None
 
 
@@ -182,6 +184,25 @@ async def _fetch_signal_for(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
                     )
 
+            # تغییر 1h: مقایسه آخرین با کندل قبلی
+            change_1h = None
+            if len(candles) >= 2:
+                old_price = float(candles[-2].close)
+                if old_price > 0:
+                    change_1h = round(
+                        (float(candles[-1].close) - old_price) / old_price * 100, 2
+                    )
+
+            # تغییر 1m: مقایسه آخرین با کندل 696 ساعت قبل (29 روز × 24)
+            # والکس فقط 29 روز کندل می‌دهد — به همین دلیل 1m (نه 30d)
+            change_1m = None
+            if len(candles) >= 697:
+                old_price = float(candles[-697].close)
+                if old_price > 0:
+                    change_1m = round(
+                        (float(candles[-1].close) - old_price) / old_price * 100, 2
+                    )
+
             return {
                 "symbol": symbol,
                 "signal": sig.type.value,
@@ -197,6 +218,8 @@ async def _fetch_signal_for(
                 "sparkline": sparkline,
                 "change_24h": change_24h,
                 "change_7d": change_7d,
+                "change_1h": change_1h,
+                "change_1m": change_1m,
             }
         except Exception as e:
             return {"symbol": symbol, "error": str(e)[:120]}

@@ -981,6 +981,8 @@ export interface BatchSignalItem {
   sparkline: number[];
   change_24h: number | null;
   change_7d: number | null;
+  change_1h: number | null;
+  change_1m: number | null;
   error?: string | null;
 }
 
