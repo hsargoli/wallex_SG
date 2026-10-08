@@ -151,7 +151,7 @@ PYEOF
 - AI با Python تبدیل می‌کند
 
 ### قواعد کامل
-در `docs/06-development/CONVENTIONS.md` (بعداً منتقل می‌شود)
+در `docs/CONVENTIONS.md`
 
 ---
 
