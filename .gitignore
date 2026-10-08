@@ -84,3 +84,6 @@ backend/data/full_scan/
 backend/data/backtest_results/
 backend/data/api_limits/
 backend/data/paper_v3/
+
+# Candle fetch logs (runtime, not data)
+backend/data/candles/fetch.log
