@@ -134,8 +134,13 @@ async def _fetch_signal_for(
     tf: str,
     limit: int,
     semaphore: asyncio.Semaphore,
+    market_map: dict | None = None,
 ) -> dict:
-    """دریافت candles + تولید سیگنال برای یک نماد (با محدودیت هم‌زمانی)."""
+    """دریافت candles + تولید سیگنال برای یک نماد (با محدودیت هم‌زمانی).
+
+    market_map (اختیاری): {symbol: Market} از Wallex.
+    اگه داده بشه، change_24h/7d از Wallex گرفته می‌شن — هماهنگ با /v1/markets.
+    """
     async with semaphore:
         try:
             candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
@@ -148,18 +153,29 @@ async def _fetch_signal_for(
             recent = candles[-30:] if len(candles) >= 30 else candles
             sparkline = [float(c.close) for c in recent]
 
-            # تغییر 24h: مقایسه آخرین با کندل 24 ساعت قبل
+            # تغییر 24h — منبع واحد: Wallex (هماهنگ با /v1/markets)
+            market = (market_map or {}).get(symbol)
             change_24h = None
-            if len(candles) >= 25:
+            if market is not None and getattr(market, "stats", None):
+                dcp = getattr(market.stats, "daily_change_percent", None)
+                if dcp is not None:
+                    change_24h = float(dcp)
+            # fallback: محاسبه از کندل‌ها
+            if change_24h is None and len(candles) >= 25:
                 old_price = float(candles[-25].close)
                 if old_price > 0:
                     change_24h = round(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
                     )
 
-            # تغییر 7d: مقایسه آخرین با کندل 168 ساعت قبل (7 روز × 24)
+            # تغییر 7d — منبع واحد: Wallex
             change_7d = None
-            if len(candles) >= 169:
+            if market is not None and getattr(market, "stats", None):
+                wcp = getattr(market.stats, "weekly_change_percent", None)
+                if wcp is not None:
+                    change_7d = float(wcp)
+            # fallback: محاسبه از کندل‌ها
+            if change_7d is None and len(candles) >= 169:
                 old_price = float(candles[-169].close)
                 if old_price > 0:
                     change_7d = round(
@@ -199,8 +215,16 @@ async def get_batch_signals(
     use_case = GetCandlesUseCase(exchange=exchange)
     semaphore = asyncio.Semaphore(5)
 
+    # دریافت یک‌باره‌ی Marketها برای change_24h/7d (منبع واحد با /v1/markets)
+    market_map: dict = {}
+    try:
+        markets = await exchange.get_markets()
+        market_map = {str(m.symbol).upper(): m for m in markets}
+    except Exception:
+        pass  # fallback به محاسبه از کندل‌ها
+
     tasks = [
-        _fetch_signal_for(use_case, sym, payload.tf, payload.limit, semaphore)
+        _fetch_signal_for(use_case, sym, payload.tf, payload.limit, semaphore, market_map)
         for sym in payload.symbols
     ]
     results = await asyncio.gather(*tasks)
