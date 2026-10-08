@@ -375,37 +375,25 @@ export default function SignalsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {/* Headers row — matches SignalRow layout exactly */}
+          {/* Headers row — grid matching SignalRow */}
           {paginatedSignals.length > 0 && (
-            <div className="flex items-center gap-3 px-3 pb-2 text-[10px] font-bold text-muted-foreground border-b border-border/40">
-              {/* icon column placeholder */}
-              <div className="h-9 w-9 shrink-0" />
-
-              {/* symbol + price + reason */}
-              <div className="min-w-[220px] max-w-[340px] shrink-0">
-                نماد / قیمت
-              </div>
-
-              {/* sparkline */}
-              <div className="hidden w-[70px] shrink-0 text-center md:block">
-                روند
-              </div>
-
-              {/* 4-column changes grid: 1h / 24h / 7d / 1m */}
-              <div className="hidden shrink-0 grid-cols-4 gap-2.5 lg:grid">
-                <div className="w-14 text-center">1h</div>
-                <div className="w-14 text-center">24h</div>
-                <div className="w-14 text-center">7d</div>
-                <div className="w-14 text-center">1m</div>
-              </div>
-
-              {/* confidence */}
-              <div className="hidden min-w-[110px] shrink-0 md:flex">
-                اطمینان
-              </div>
-
-              {/* signal + strength badge */}
-              <div className="mr-auto shrink-0">سیگنال</div>
+            <div
+              className="grid items-center gap-2 px-3 pb-2 text-[10px] font-bold text-muted-foreground border-b border-border/40"
+              style={{
+                gridTemplateColumns:
+                  "36px 280px 70px 60px 60px 60px 60px 60px 110px 130px",
+              }}
+            >
+              <div />
+              <div>نماد / قیمت</div>
+              <div className="text-center">روند</div>
+              <div className="text-center">1h</div>
+              <div className="text-center">24h</div>
+              <div className="text-center">7d</div>
+              <div className="text-center">1m</div>
+              <div className="text-center">1y</div>
+              <div className="text-center">اطمینان</div>
+              <div className="text-right">سیگنال</div>
             </div>
           )}
 

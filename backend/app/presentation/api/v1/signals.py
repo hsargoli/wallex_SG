@@ -119,6 +119,7 @@ class BatchSignalItem(BaseModel):
     change_7d: float | None = None
     change_1h: float | None = None
     change_1m: float | None = None
+    change_1y: float | None = None
     error: str | None = None
 
 
@@ -193,15 +194,27 @@ async def _fetch_signal_for(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
                     )
 
-            # تغییر 1m: آخرین کندل vs قدیمی‌ترین کندل موجود
-            # والکس ~29 روز می‌دهد؛ از candles[0] استفاده می‌کنیم.
+            # تغییر 1m و 1y — از کندل روزانه (والکس 400 روز می‌ده)
             change_1m = None
-            if len(candles) >= 20:
-                old_price = float(candles[0].close)
-                if old_price > 0:
-                    change_1m = round(
-                        (float(candles[-1].close) - old_price) / old_price * 100, 2
-                    )
+            change_1y = None
+            try:
+                daily = await use_case.execute(
+                    symbol=symbol, timeframe="1D", limit=400
+                )
+                if daily and len(daily) >= 31:
+                    old_price = float(daily[-31].close)
+                    if old_price > 0:
+                        change_1m = round(
+                            (float(daily[-1].close) - old_price) / old_price * 100, 2
+                        )
+                if daily and len(daily) >= 366:
+                    old_price = float(daily[-366].close)
+                    if old_price > 0:
+                        change_1y = round(
+                            (float(daily[-1].close) - old_price) / old_price * 100, 2
+                        )
+            except Exception:
+                pass  # fallback: هر دو None می‌مونن
 
             return {
                 "symbol": symbol,
@@ -220,6 +233,7 @@ async def _fetch_signal_for(
                 "change_7d": change_7d,
                 "change_1h": change_1h,
                 "change_1m": change_1m,
+                "change_1y": change_1y,
             }
         except Exception as e:
             return {"symbol": symbol, "error": str(e)[:120]}

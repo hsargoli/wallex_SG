@@ -983,6 +983,7 @@ export interface BatchSignalItem {
   change_7d: number | null;
   change_1h: number | null;
   change_1m: number | null;
+  change_1y: number | null;
   error?: string | null;
 }
 

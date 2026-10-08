@@ -120,15 +120,20 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
   const c24 = signal.change_24h;
   const c7 = signal.change_7d;
   const c1m = signal.change_1m;
+  const c1y = signal.change_1y;
 
   return (
     <Link
       href={`/signals/${signal.symbol}`}
       className={cn(
-        "group flex items-center gap-3 rounded-lg border border-border/50 border-r-2 bg-card px-3 py-3 transition-all",
+        "group grid items-center gap-2 rounded-lg border border-border/50 border-r-2 bg-card px-3 py-3 transition-all",
         config.rail,
         config.hover,
       )}
+      style={{
+        gridTemplateColumns:
+          "36px 280px 70px 60px 60px 60px 60px 60px 110px 130px",
+      }}
     >
       {/* Signal icon */}
       <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border", config.bg)}>
@@ -136,7 +141,7 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
       </div>
 
       {/* Symbol + price + reason */}
-      <div className="min-w-[220px] max-w-[340px] shrink-0">
+      <div className="min-w-0">
         <p className="font-mono text-sm font-bold">{signal.symbol}</p>
         <p className="font-mono text-[10px] text-muted-foreground">
           {formatPrice(signal.current_price)}{" "}
@@ -154,42 +159,41 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
       </div>
 
       {/* Sparkline */}
-      <div className="hidden md:block">
+      <div>
         <Sparkline data={signal.sparkline} width={70} height={26} />
       </div>
 
-      {/* Changes: 1h / 24h / 7d / 1m */}
-      <div className="hidden shrink-0 grid-cols-4 gap-2.5 lg:grid">
-        {[
-          { label: "1h", value: c1 },
-          { label: "24h", value: c24 },
-          { label: "7d", value: c7 },
-          { label: "1m", value: c1m },
-        ].map(({ label, value }) => (
-          <div key={label} className="w-14 text-right">
-            <p
-              className={cn(
-                "font-mono text-sm font-bold leading-tight",
-                value === null
-                  ? "text-muted-foreground/60"
-                  : value >= 0
-                    ? "text-emerald-400"
-                    : "text-red-400",
-              )}
-            >
-              {value === null
-                ? "—"
-                : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`}
-            </p>
-            <p className="text-[10px] leading-tight text-muted-foreground">
-              {label}
-            </p>
-          </div>
-        ))}
-      </div>
+      {/* Changes: 1h / 24h / 7d / 1m / 1y — 5 fixed cells */}
+      {[
+        { label: "1h", value: c1 },
+        { label: "24h", value: c24 },
+        { label: "7d", value: c7 },
+        { label: "1m", value: c1m },
+        { label: "1y", value: c1y },
+      ].map(({ label, value }) => (
+        <div key={label} className="text-center">
+          <p
+            className={cn(
+              "font-mono text-sm font-bold leading-tight",
+              value === null
+                ? "text-muted-foreground/60"
+                : value >= 0
+                  ? "text-emerald-400"
+                  : "text-red-400",
+            )}
+          >
+            {value === null
+              ? "—"
+              : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`}
+          </p>
+          <p className="text-[10px] leading-tight text-muted-foreground">
+            {label}
+          </p>
+        </div>
+      ))}
 
       {/* Confidence + bar */}
-      <div className="hidden min-w-[110px] shrink-0 items-center gap-2 md:flex">
+      <div className="flex items-center gap-2">
         <span className={cn("font-mono text-xs font-bold", config.text)}>
           {confidence}
         </span>
@@ -199,7 +203,7 @@ export function SignalRow({ signal, quote = "TMN" }: SignalRowProps) {
       </div>
 
       {/* Signal + strength badges */}
-      <div className="mr-auto flex shrink-0 items-center gap-1.5">
+      <div className="flex items-center gap-1.5 justify-end">
         <Badge variant="outline" className={cn("text-[10px] border", config.bg, config.text)}>
           {config.label}
         </Badge>
