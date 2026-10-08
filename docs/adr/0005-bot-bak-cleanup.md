@@ -1,6 +1,6 @@
 # 0005. Bot .bak File Cleanup
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-08
 **Deciders:** Hosein
 
@@ -17,13 +17,13 @@ They are not tracked intentionally, but clutter the tree.
 
 ## Decision (proposed)
 
-1. First: `diff` each `.bak` against its current version to confirm no
-   lost work.
-2. Then: remove them in a single chore commit:
-   `chore(bots): remove 12 .bak files`
-3. If any `.bak` contains unique work, extract it before removal.
+Completed 2026-10-08:
 
-Final action pending witness (the diffs) and Hosein's confirmation.
+1. `diff` each `.bak` against current version — done.
+2. 7 files verified as strict subsets of current → safely removable.
+3. 5 files contained unique lines (12–21 each) → archived, not deleted.
+4. All 12 moved from `backend/app/services/bots/` to
+   `_archive/bots-bak-2026-10-08/` (gitignored, local backup only).
 
 ## Consequences
 

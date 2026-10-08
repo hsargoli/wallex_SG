@@ -1,6 +1,6 @@
 # 0002. Branch Strategy
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-08
 **Deciders:** Hosein
 
@@ -16,14 +16,15 @@ Current branches:
 
 `master` is behind `refactor/full-ddd`. There is no clearly declared mainline.
 
-## Decision (proposed)
+## Decision
 
-1. `refactor/full-ddd` becomes the mainline.
-2. `master` is fast-forwarded from it (or replaced by it).
-3. Old branches are tagged `archive/2026-10-08` and left in place
-   (not deleted — safer and reversible).
-
-Final confirmation pending from Hosein.
+1. `refactor/full-ddd` is the mainline.
+2. `master` fast-forwarded from it on 2026-10-08
+   (109 files changed, 16455 insertions — master was far behind).
+3. Old branches tagged and preserved:
+   - `archive/2026-10-08/master` (pre-merge state)
+   - `archive/2026-10-08/refactor-ddd-and-portability`
+   - `archive/2026-10-08/rescue-crosshair`
 
 ## Consequences
 
