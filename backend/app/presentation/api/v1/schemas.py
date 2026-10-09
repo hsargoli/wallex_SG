@@ -180,3 +180,20 @@ class OrderListResponse(BaseModel):
 
     count: int
     orders: list[OrderResponse]
+
+
+# ---------- Cost Basis ----------
+
+class CostBasisItemOut(BaseModel):
+    symbol: str
+    avg_buy_price: Decimal
+    total_qty_bought: Decimal
+    total_invested: Decimal
+    orders_count: int
+    buy_count: int
+    sell_count: int
+
+
+class CostBasisResponse(BaseModel):
+    count: int
+    items: list[CostBasisItemOut]

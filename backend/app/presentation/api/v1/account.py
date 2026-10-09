@@ -5,6 +5,7 @@ from decimal import Decimal
 from fastapi import APIRouter
 
 from app.application.use_cases.get_balances import GetBalancesUseCase
+from app.application.use_cases.get_cost_basis import GetCostBasisUseCase
 from app.application.use_cases.get_portfolio import GetPortfolioUseCase
 from app.presentation.api.deps import ExchangeDep
 from app.presentation.api.v1.schemas import (
@@ -13,6 +14,8 @@ from app.presentation.api.v1.schemas import (
     KeyBalancesResponse,
     PortfolioItemOut,
     PortfolioResponse,
+    CostBasisItemOut,
+    CostBasisResponse,
 )
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -85,4 +88,26 @@ async def get_portfolio(exchange: ExchangeDep) -> PortfolioResponse:
         total_value_usdt_last=portfolio.total_value_usdt_last,
         usdt_tmn_rate=portfolio.usdt_tmn_rate,
         items=items,
+    )
+
+
+@router.get("/cost-basis", response_model=CostBasisResponse)
+async def get_cost_basis(exchange: ExchangeDep) -> CostBasisResponse:
+    """میانگین وزنی قیمت خرید هر دارایی (BUY + FILLED)."""
+    use_case = GetCostBasisUseCase(exchange=exchange)
+    items = await use_case.execute()
+    return CostBasisResponse(
+        count=len(items),
+        items=[
+            CostBasisItemOut(
+                symbol=it.symbol,
+                avg_buy_price=it.avg_buy_price,
+                total_qty_bought=it.total_qty_bought,
+                total_invested=it.total_invested,
+                orders_count=it.orders_count,
+                buy_count=it.buy_count,
+                sell_count=it.sell_count,
+            )
+            for it in items
+        ],
     )
