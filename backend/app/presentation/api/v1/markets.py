@@ -269,6 +269,153 @@ async def get_facts_endpoint(
     }
 
 
+@router.get("/overview/{symbol}")
+async def get_overview_endpoint(
+    symbol: str,
+    exchange: ExchangeDep,
+    tf: str = "1h",
+):
+    """نمای کلی یک نماد — ۶ بازه‌ی تغییر + سیگنال + آمار.
+
+    تنها ۳ درخواست به والکس:
+      - markets (برای stats و 24h_ch / 7d_ch)
+      - candles در تایم‌فریم درخواستی (پیش‌فرض 1h)
+      - candles روزانه (1D، برای محاسبه‌ی m1/m3/y1)
+    """
+    from decimal import Decimal as D
+
+    from fastapi import HTTPException, status
+
+    from app.application.use_cases.get_candles import GetCandlesUseCase
+    from app.application.use_cases.get_market import GetMarketUseCase
+    from app.services.signal_engine import generate_signal
+
+    # ─── ۱) market (stats) ───
+    try:
+        market = await GetMarketUseCase(exchange=exchange).execute(symbol)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"مارکت {symbol} پیدا نشد: {e}",
+        ) from e
+
+    stats = market.stats
+
+    # ─── ۲) کندل‌های تایم‌فریم درخواستی ───
+    use_case = GetCandlesUseCase(exchange=exchange)
+    try:
+        hourly = await use_case.execute(symbol=symbol, timeframe=tf, limit=200)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+    if not hourly:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"داده‌ای برای {symbol} یافت نشد",
+        )
+
+    # ─── ۳) کندل‌های روزانه (برای m1/m3/y1) ───
+    daily = await _safe_fetch(use_case, symbol, "1D", 400)
+
+    # ─── محاسبه‌ی تغییرات ───
+    def _pct(last: D, ref: D | None) -> float | None:
+        if ref is None or ref == 0:
+            return None
+        try:
+            return round(float(((last - ref) / ref) * D(100)), 2)
+        except Exception:
+            return None
+
+    last_close = hourly[-1].close
+
+    # 1h: آخرین کندل vs کندل قبلی
+    change_1h = _pct(last_close, hourly[-2].close) if len(hourly) >= 2 else None
+
+    # 24h و 7d: مستقیم از Wallex (منبع واحد)
+    change_24h = (
+        float(stats.daily_change_percent)
+        if stats and stats.daily_change_percent is not None
+        else None
+    )
+    change_7d = (
+        float(stats.weekly_change_percent)
+        if stats and stats.weekly_change_percent is not None
+        else None
+    )
+
+    # 1m, 3m, 1y: از کندل روزانه
+    def _daily_change(days: int) -> float | None:
+        if len(daily) < days + 1:
+            return None
+        ref = daily[-(days + 1)].close
+        return _pct(last_close, ref)
+
+    change_1m = _daily_change(30)
+    change_3m = _daily_change(90)
+    change_1y = _daily_change(365)
+
+    # ─── سیگنال ───
+    sig = generate_signal(hourly)
+
+    # ─── پاسخ ───
+    return {
+        "symbol": symbol,
+        "timeframe": tf,
+        "current_price": str(last_close),
+        "changes": {
+            "h1": change_1h,
+            "h24": change_24h,
+            "d7": change_7d,
+            "m1": change_1m,
+            "m3": change_3m,
+            "y1": change_1y,
+        },
+        "signal": {
+            "type": sig.type.value,
+            "strength": sig.strength.value,
+            "confidence": sig.confidence,
+            "reasons": list(sig.reasons[:3]),
+            "buy_score": sig.buy_score,
+            "sell_score": sig.sell_score,
+            "stop_loss": str(sig.stop_loss) if sig.stop_loss else None,
+            "take_profit": str(sig.take_profit) if sig.take_profit else None,
+            "risk_reward": str(sig.risk_reward) if sig.risk_reward else None,
+        },
+        "stats": {
+            "volume_24h": (
+                str(stats.daily_volume)
+                if stats and stats.daily_volume is not None
+                else None
+            ),
+            "quote_volume_24h": (
+                str(stats.daily_quote_volume)
+                if stats and stats.daily_quote_volume is not None
+                else None
+            ),
+            "high_24h": (
+                str(stats.daily_high)
+                if stats and stats.daily_high is not None
+                else None
+            ),
+            "low_24h": (
+                str(stats.daily_low)
+                if stats and stats.daily_low is not None
+                else None
+            ),
+            "bid": (
+                str(stats.bid_price)
+                if stats and stats.bid_price is not None
+                else None
+            ),
+            "ask": (
+                str(stats.ask_price)
+                if stats and stats.ask_price is not None
+                else None
+            ),
+        },
+    }
+
+
 async def _safe_fetch(use_case, symbol, tf, limit):
     """دریافت امن کندل از use case — در صورت خطا آرایه خالی."""
     try:

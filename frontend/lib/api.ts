@@ -591,6 +591,14 @@ export const api = {
   getCostBasis: () =>
     client.get<CostBasisResponse>("/v1/account/cost-basis").then((r) => r.data),
 
+  // Market Overview
+  getMarketOverview: (symbol: string, tf: string = "1h") =>
+    client
+      .get<MarketOverviewResponse>(`/v1/markets/overview/${symbol}`, {
+        params: { tf },
+      })
+      .then((r) => r.data),
+
   // Signals
   getSignal: (symbol: string, timeframe: string = "1h") =>
     client
@@ -1159,3 +1167,47 @@ export interface CostBasisResponse {
   count: number;
   items: CostBasisItem[];
 }
+
+
+// ---------- Market Overview ----------
+
+export interface MarketOverviewChanges {
+  h1: number | null;
+  h24: number | null;
+  d7: number | null;
+  m1: number | null;
+  m3: number | null;
+  y1: number | null;
+}
+
+export interface MarketOverviewSignal {
+  type: "buy" | "sell" | "hold";
+  strength: "weak" | "medium" | "strong";
+  confidence: number;
+  reasons: string[];
+  buy_score: number;
+  sell_score: number;
+  stop_loss: string | null;
+  take_profit: string | null;
+  risk_reward: string | null;
+}
+
+export interface MarketOverviewStats {
+  volume_24h: string | null;
+  quote_volume_24h: string | null;
+  high_24h: string | null;
+  low_24h: string | null;
+  bid: string | null;
+  ask: string | null;
+}
+
+export interface MarketOverviewResponse {
+  symbol: string;
+  timeframe: string;
+  current_price: string;
+  changes: MarketOverviewChanges;
+  signal: MarketOverviewSignal;
+  stats: MarketOverviewStats;
+}
+
+// ---------- end Market Overview ----------

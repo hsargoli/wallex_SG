@@ -590,3 +590,14 @@ export function useCostBasis() {
     refetchInterval: 60_000,
   });
 }
+
+
+export function useMarketOverview(symbol: string | null, tf: string = "1h") {
+  return useQuery({
+    queryKey: ["market-overview", symbol, tf],
+    queryFn: () => api.getMarketOverview(symbol!, tf),
+    enabled: !!symbol,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+  });
+}

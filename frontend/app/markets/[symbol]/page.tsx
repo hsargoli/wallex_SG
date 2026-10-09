@@ -26,6 +26,7 @@ import { formatNumber, formatPrice } from "@/lib/format";
 import type { Timeframe } from "@/lib/api";
 import { MiniChart } from "@/components/charts/mini-chart";
 import { MarketStats } from "@/components/markets/market-stats";
+import { MarketOverviewCard } from "@/components/markets/market-overview-card";
 import { OrderBookSummary } from "@/components/markets/order-book-summary";
 import { IndicatorsGrid } from "@/components/markets/detail/indicators-grid";
 import { TechnicalSnapshot } from "@/components/markets/detail/technical-snapshot";
@@ -160,6 +161,9 @@ export default function SymbolPage({
       {/* 24h stats */}
       {/* ============================================================ */}
       <MarketStats market={market.data} loading={market.isLoading} />
+
+      {/* نگاه کلی — ۶ بازه + سیگنال */}
+      <MarketOverviewCard symbol={symbol} timeframe={timeframe} />
 
       {/* ============================================================ */}
       {/* Tabs + TF picker */}
