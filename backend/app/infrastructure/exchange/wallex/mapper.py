@@ -48,6 +48,9 @@ def map_ticker_stats(raw: dict[str, Any] | None) -> TickerStats | None:
         daily_high=_dec(raw.get("24h_highPrice")),
         daily_low=_dec(raw.get("24h_lowPrice")),
         daily_trade_count=_int((direction.get("BUY") or 0) + (direction.get("SELL") or 0)) or None,
+        weekly_volume=_dec(raw.get("7d_volume")),
+        bid_count=_int(raw.get("bidCount")),
+        ask_count=_int(raw.get("askCount")),
     )
 
 

@@ -23,6 +23,9 @@ class TickerStats:
     daily_high: Decimal | None
     daily_low: Decimal | None
     daily_trade_count: int | None
+    weekly_volume: Decimal | None = None
+    bid_count: int | None = None
+    ask_count: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

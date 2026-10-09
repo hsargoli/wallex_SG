@@ -1192,13 +1192,84 @@ export interface MarketOverviewSignal {
   risk_reward: string | null;
 }
 
+export interface MarketRange {
+  max: string;
+  min: string;
+  change_pct: number;
+}
+
 export interface MarketOverviewStats {
   volume_24h: string | null;
   quote_volume_24h: string | null;
   high_24h: string | null;
   low_24h: string | null;
+  volume_7d: string | null;
   bid: string | null;
   ask: string | null;
+  bid_volume: string | null;
+  ask_volume: string | null;
+  bid_count: number | null;
+  ask_count: number | null;
+  trade_count: number | null;
+  range_30d: MarketRange | null;
+  range_90d: MarketRange | null;
+  range_1y: MarketRange | null;
+}
+
+export interface MoneyFlow {
+  buy_volume: string;
+  sell_volume: string;
+  buy_pct: number;
+  sell_pct: number;
+  buy_count: number;
+  sell_count: number;
+  total_trades: number;
+  pressure: "strong_buy" | "buy" | "balanced" | "sell" | "strong_sell";
+  pressure_fa: string;
+  price_change_pct: number | null;
+  combined:
+    | "confirmed_bullish"
+    | "divergence_resistance"
+    | "confirmed_bearish"
+    | "divergence_support"
+    | "neutral";
+  combined_fa: string;
+}
+
+export interface MoneyFlow {
+  buy_volume: string;
+  sell_volume: string;
+  buy_pct: number;
+  sell_pct: number;
+  buy_count: number;
+  sell_count: number;
+  total_trades: number;
+  pressure: "strong_buy" | "buy" | "balanced" | "sell" | "strong_sell";
+  pressure_fa: string;
+  price_change_pct: number | null;
+  combined:
+    | "confirmed_bullish"
+    | "divergence_resistance"
+    | "confirmed_bearish"
+    | "divergence_support"
+    | "neutral";
+  combined_fa: string;
+}
+
+export interface CandleCountItem {
+  total: number;
+  green: number;
+  red: number;
+  doji: number;
+  green_pct: number;
+}
+
+export interface CandleCount {
+  h1: CandleCountItem | null;
+  h24: CandleCountItem | null;
+  d7: CandleCountItem | null;
+  d30: CandleCountItem | null;
+  y1: CandleCountItem | null;
 }
 
 export interface MarketOverviewResponse {
@@ -1208,6 +1279,8 @@ export interface MarketOverviewResponse {
   changes: MarketOverviewChanges;
   signal: MarketOverviewSignal;
   stats: MarketOverviewStats;
+  money_flow: MoneyFlow | null;
+  candle_count: CandleCount | null;
 }
 
 // ---------- end Market Overview ----------

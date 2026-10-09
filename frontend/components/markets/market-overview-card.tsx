@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -165,6 +165,20 @@ export function MarketOverviewCard({
             )}
           </div>
         </div>
+
+        {/* Anchor به Rules */}
+        <button
+          type="button"
+          onClick={() => {
+            document
+              .getElementById("section-rules")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-border/40 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] hover:text-emerald-400"
+        >
+          <ArrowDown className="h-3 w-3" />
+          مشاهده‌ی همه‌ی قوانین سیگنال
+        </button>
       </CardContent>
     </Card>
   );

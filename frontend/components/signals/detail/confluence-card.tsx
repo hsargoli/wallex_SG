@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, AlertCircle, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, Minus, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -92,6 +92,22 @@ export function ConfluenceCard({ data, loading }: ConfluenceCardProps) {
           </Badge>
         </div>
       </CardContent>
+
+      {/* Anchor به MultiTf */}
+      <div className="border-t border-border/40 px-5 pb-3 pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            document
+              .getElementById("section-multi-tf")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-border/40 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] hover:text-emerald-400"
+        >
+          <ArrowDown className="h-3 w-3" />
+          جزئیات هر تایم‌فریم
+        </button>
+      </div>
     </Card>
   );
 }

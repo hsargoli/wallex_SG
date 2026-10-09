@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity } from "lucide-react";
+import { Activity, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -140,6 +140,20 @@ export function TechnicalSnapshot({ indicators, currentPrice }: TechnicalSnapsho
             </div>
           ))}
         </div>
+
+        {/* Anchor به IndicatorsGrid */}
+        <button
+          type="button"
+          onClick={() => {
+            document
+              .getElementById("section-indicators")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          className="mt-3 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-border/40 py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] hover:text-emerald-400"
+        >
+          <ArrowDown className="h-3 w-3" />
+          جزئیات کامل اندیکاتورها
+        </button>
       </CardContent>
     </Card>
   );

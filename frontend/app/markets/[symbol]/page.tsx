@@ -27,6 +27,7 @@ import type { Timeframe } from "@/lib/api";
 import { MiniChart } from "@/components/charts/mini-chart";
 import { MarketStats } from "@/components/markets/market-stats";
 import { MarketOverviewCard } from "@/components/markets/market-overview-card";
+import { MarketStatsPanel } from "@/components/markets/market-stats-panel";
 import { OrderBookSummary } from "@/components/markets/order-book-summary";
 import { IndicatorsGrid } from "@/components/markets/detail/indicators-grid";
 import { TechnicalSnapshot } from "@/components/markets/detail/technical-snapshot";
@@ -67,7 +68,7 @@ export default function SymbolPage({
   const multi = useMultiTfSignals(symbol);
   const levels = useLevels(symbol, timeframe);
   const { isFavorite, toggle, mounted } = useFavorites();
-  const [tab, setTab] = useState<"analysis" | "trade">("analysis");
+  const [tab, setTab] = useState<"analysis" | "trade" | "stats">("analysis");
 
   const change = Number(market.data?.daily_change_percent || 0);
   const isUp = change >= 0;
@@ -196,6 +197,19 @@ export default function SymbolPage({
             <BarChart3 className="h-3.5 w-3.5" />
             معامله و دفتر سفارش
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTab("stats")}
+            className={cn(
+              "gap-1.5 rounded-b-none border-b-2 border-transparent",
+              tab === "stats" &&
+                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+            )}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            آمار
+          </Button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -254,7 +268,7 @@ export default function SymbolPage({
           />
 
           {/* Multi-TF Grid */}
-          <div>
+          <div id="section-multi-tf" className="scroll-mt-4">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
               <Activity className="h-4 w-4 text-emerald-400" />
               سیگنال در تایم‌فریم‌ها
@@ -274,7 +288,7 @@ export default function SymbolPage({
           </div>
 
           {/* اندیکاتورها */}
-          <div>
+          <div id="section-indicators" className="scroll-mt-4">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
               <Activity className="h-4 w-4 text-emerald-400" />
               اندیکاتورهای کلیدی
@@ -287,7 +301,7 @@ export default function SymbolPage({
 
           {/* Rules Breakdown */}
           {signal.data && signal.data.rules && signal.data.rules.length > 0 && (
-            <Card>
+            <Card id="section-rules" className="scroll-mt-4">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-base">
                   <span className="flex items-center gap-2">
@@ -328,6 +342,13 @@ export default function SymbolPage({
             <LevelsPanel symbol={symbol} timeframe={timeframe} />
           </div>
         </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* Tab: آمار */}
+      {/* ============================================================ */}
+      {tab === "stats" && (
+        <MarketStatsPanel symbol={symbol} timeframe={timeframe} />
       )}
 
       {/* ============================================================ */}

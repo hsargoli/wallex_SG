@@ -317,6 +317,9 @@ async def get_overview_endpoint(
     # ─── ۳) کندل‌های روزانه (برای m1/m3/y1) ───
     daily = await _safe_fetch(use_case, symbol, "1D", 400)
 
+    # ─── جریان پول ───
+    money_flow = await _compute_money_flow(exchange, symbol)
+
     # ─── محاسبه‌ی تغییرات ───
     def _pct(last: D, ref: D | None) -> float | None:
         if ref is None or ref == 0:
@@ -382,6 +385,7 @@ async def get_overview_endpoint(
             "risk_reward": str(sig.risk_reward) if sig.risk_reward else None,
         },
         "stats": {
+            # ۲۴ ساعت
             "volume_24h": (
                 str(stats.daily_volume)
                 if stats and stats.daily_volume is not None
@@ -402,6 +406,13 @@ async def get_overview_endpoint(
                 if stats and stats.daily_low is not None
                 else None
             ),
+            # ۷ روز
+            "volume_7d": (
+                str(stats.weekly_volume)
+                if stats and stats.weekly_volume is not None
+                else None
+            ),
+            # دفتر سفارش
             "bid": (
                 str(stats.bid_price)
                 if stats and stats.bid_price is not None
@@ -412,7 +423,185 @@ async def get_overview_endpoint(
                 if stats and stats.ask_price is not None
                 else None
             ),
+            "bid_volume": (
+                str(stats.bid_volume)
+                if stats and stats.bid_volume is not None
+                else None
+            ),
+            "ask_volume": (
+                str(stats.ask_volume)
+                if stats and stats.ask_volume is not None
+                else None
+            ),
+            "bid_count": (
+                int(stats.bid_count)
+                if stats and stats.bid_count is not None
+                else None
+            ),
+            "ask_count": (
+                int(stats.ask_count)
+                if stats and stats.ask_count is not None
+                else None
+            ),
+            # جهت
+            "trade_count": (
+                int(stats.daily_trade_count)
+                if stats and getattr(stats, "daily_trade_count", None) is not None
+                else None
+            ),
+            # محاسبه از کندل‌ها
+            "range_30d": _calc_range(daily, 30),
+            "range_90d": _calc_range(daily, 90),
+            "range_1y": _calc_range(daily, 365),
         },
+        "money_flow": money_flow,
+        "candle_count": {
+            "h1": _count_candles(hourly, 4),
+            "h24": _count_candles(hourly, 24),
+            "d7": _count_candles(hourly, 168),
+            "d30": _count_candles(daily, 30),
+            "y1": _count_candles(daily, 365),
+        },
+    }
+
+
+async def _compute_money_flow(exchange, symbol: str) -> dict | None:
+    """جریان پول از ۵۰ معامله‌ی آخر والکس (~۳۰ دقیقه)."""
+    import httpx
+    from app.core.config import get_settings
+
+    try:
+        settings = get_settings()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"{settings.WALLEX_BASE_URL}/v1/trades",
+                params={"symbol": symbol},
+            )
+            r.raise_for_status()
+            data = r.json()
+    except Exception:
+        return None
+
+    trades = (data.get("result") or {}).get("latestTrades") or []
+    if not trades:
+        return None
+
+    buy_vol = 0.0
+    sell_vol = 0.0
+    buy_count = 0
+    sell_count = 0
+
+    for t in trades:
+        try:
+            qty = float(t.get("quantity") or 0)
+            is_buy = bool(t.get("isBuyOrder"))
+            if is_buy:
+                buy_vol += qty
+                buy_count += 1
+            else:
+                sell_vol += qty
+                sell_count += 1
+        except (TypeError, ValueError):
+            continue
+
+    total = buy_vol + sell_vol
+    if total <= 0:
+        return None
+
+    buy_pct = round((buy_vol / total) * 100, 1)
+    sell_pct = round(100 - buy_pct, 1)
+
+    # تغییر قیمت در همین بازه (اولین معامله vs آخرین)
+    price_change_pct = None
+    try:
+        first_price = float(trades[0].get("price") or 0)
+        last_price = float(trades[-1].get("price") or 0)
+        if first_price > 0:
+            price_change_pct = round(
+                ((last_price - first_price) / first_price) * 100, 3
+            )
+    except (TypeError, ValueError, IndexError):
+        pass
+
+    # تفسیر ترکیبی (واگرایی)
+    if buy_pct >= 55 and price_change_pct is not None and price_change_pct > 0:
+        combined = "confirmed_bullish"
+        combined_fa = "تایید صعودی — خریداران غالب و قیمت در حال رشد"
+    elif buy_pct >= 55 and price_change_pct is not None and price_change_pct < 0:
+        combined = "divergence_resistance"
+        combined_fa = "واگرایی — خریداران بیشترند ولی قیمت می‌افتد (مقاومت)"
+    elif sell_pct >= 55 and price_change_pct is not None and price_change_pct < 0:
+        combined = "confirmed_bearish"
+        combined_fa = "تایید نزولی — فروشندگان غالب و قیمت در حال افت"
+    elif sell_pct >= 55 and price_change_pct is not None and price_change_pct > 0:
+        combined = "divergence_support"
+        combined_fa = "واگرایی — فروشندگان بیشترند ولی قیمت بالا می‌رود (حمایت)"
+    else:
+        combined = "neutral"
+        combined_fa = "متعادل — فشار خرید و فروش نزدیک به هم"
+
+    if buy_pct >= 65:
+        pressure, pressure_fa = "strong_buy", "فشار خرید قوی"
+    elif buy_pct >= 55:
+        pressure, pressure_fa = "buy", "فشار خرید ملایم"
+    elif buy_pct >= 45:
+        pressure, pressure_fa = "balanced", "متعادل"
+    elif buy_pct >= 35:
+        pressure, pressure_fa = "sell", "فشار فروش ملایم"
+    else:
+        pressure, pressure_fa = "strong_sell", "فشار فروش قوی"
+
+    return {
+        "buy_volume": str(buy_vol),
+        "sell_volume": str(sell_vol),
+        "buy_pct": buy_pct,
+        "sell_pct": sell_pct,
+        "buy_count": buy_count,
+        "sell_count": sell_count,
+        "total_trades": buy_count + sell_count,
+        "pressure": pressure,
+        "pressure_fa": pressure_fa,
+        "price_change_pct": price_change_pct,
+        "combined": combined,
+        "combined_fa": combined_fa,
+    }
+
+
+def _count_candles(candles: list, n: int) -> dict | None:
+    """شمارش کندل‌های سبز/قرمز در N کندل آخر."""
+    if not candles or len(candles) < 2:
+        return None
+    window = candles[-n:] if len(candles) >= n else candles
+    green = sum(1 for c in window if c.close > c.open)
+    red = sum(1 for c in window if c.close < c.open)
+    doji = len(window) - green - red
+    total = green + red
+    if total == 0:
+        return None
+    return {
+        "total": len(window),
+        "green": green,
+        "red": red,
+        "doji": doji,
+        "green_pct": round((green / total) * 100, 1),
+    }
+
+
+def _calc_range(candles: list, days: int) -> dict | None:
+    """بازه‌ی max/min در N روز اخیر (از کندل روزانه)."""
+    if not candles or len(candles) < days + 1:
+        return None
+    window = candles[-(days + 1):]
+    highs = [c.high for c in window]
+    lows = [c.low for c in window]
+    first = window[0].close
+    last = window[-1].close
+    if first == 0:
+        return None
+    return {
+        "max": str(max(highs)),
+        "min": str(min(lows)),
+        "change_pct": round(float(((last - first) / first) * 100), 2),
     }
 
 
