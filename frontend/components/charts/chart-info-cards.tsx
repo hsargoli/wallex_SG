@@ -28,13 +28,16 @@ function fmtNum(v?: string | null, digits = 2): string {
   if (!v) return "—";
   const n = Number(v);
   if (!Number.isFinite(n)) return "—";
-  if (Math.abs(n) >= 1_000_000) {
-    return (n / 1_000_000).toFixed(2) + "M";
+  const abs = Math.abs(n);
+  // اعداد اعشاری (مثل PEPE = 1.0058)
+  if (abs > 0 && abs < 1) {
+    return n.toLocaleString("en-US", { maximumFractionDigits: 6 });
   }
-  if (Math.abs(n) >= 1_000) {
-    return (n / 1_000).toFixed(2) + "K";
-  }
-  return n.toLocaleString("en-US", { maximumFractionDigits: digits });
+  // اعداد بزرگ: همیشه کامل با جداکننده
+  return n.toLocaleString("en-US", {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: 0,
+  });
 }
 
 export function ChartInfoCards({

@@ -8,7 +8,7 @@ import {
   TrendingUp,
   TrendingDown,
   ExternalLink,
-  AlertTriangle,
+  AlertTriangle, Sun, Moon,
 } from "lucide-react";
 import {
   useIndicators,
@@ -55,6 +55,7 @@ export default function ChartPage({
   const [rsiSize, setRsiSize] = useState<PaneSize>("M");
   const [macdSize, setMacdSize] = useState<PaneSize>("M");
   const [legendData, setLegendData] = useState<LegendData | undefined>();
+  const [chartTheme, setChartTheme] = useState<"dark" | "light">("dark");
   const handleCrosshairMove = useCallback((d: LegendData | undefined) => {
     setLegendData(d);
   }, []);
@@ -221,7 +222,7 @@ export default function ChartPage({
       />
 
       {/* Chart */}
-      <Card className="border-white/5 bg-[#0f0f17]">
+      <Card className={cn("border-white/5", chartTheme === "dark" ? "bg-[#0f0f17]" : "bg-white")}>
         <CardHeader className="flex flex-col gap-3 border-b border-white/5 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">نمودار قیمت</CardTitle>
@@ -248,6 +249,28 @@ export default function ChartPage({
           {/* Layer toggles */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] text-muted-foreground">لایه‌ها:</span>
+            <button
+              onClick={() => setChartTheme((t) => (t === "dark" ? "light" : "dark"))}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[11px] font-medium transition",
+                chartTheme === "dark"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:border-amber-500/60 hover:bg-amber-500/20"
+                  : "border-slate-500/40 bg-slate-500/10 text-slate-400 hover:border-slate-500/60 hover:bg-slate-500/20",
+              )}
+              title={chartTheme === "dark" ? "روشن کردن تم" : "تیره کردن تم"}
+            >
+              {chartTheme === "dark" ? (
+                <>
+                  <Sun className="h-3.5 w-3.5" />
+                  <span>تم روشن</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-3.5 w-3.5" />
+                  <span>تم تیره</span>
+                </>
+              )}
+            </button>
             <LayerToggle
               label="EMA 9/21"
               active={showEMA}
@@ -339,6 +362,7 @@ export default function ChartPage({
             loading={candlesQuery.isLoading || indicatorsQuery.isLoading}
             onCrosshairMove={handleCrosshairMove}
             onZoomOutLimit={handleZoomOutLimit}
+            theme={chartTheme}
           />
         </CardContent>
       </Card>

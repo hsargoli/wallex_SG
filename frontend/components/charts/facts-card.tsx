@@ -14,12 +14,25 @@ import { type PeriodFacts, type FactsSummary } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/info-tip";
 
 interface FactsCardProps {
   periods?: PeriodFacts[];
   summary?: FactsSummary;
   loading?: boolean;
 }
+
+
+const TERM_TIPS = {
+  change_pct: "تغییر قیمت از ابتدای این بازه تا الان. مثلاً ۴۱.۳٪- یعنی قیمت در ۱ سال گذشته ۴۱.۳٪ افت داشته.",
+  trend: "جهت قیمت در لحظه‌ی فعلی بر اساس ترکیب EMA، MACD و RSI. صعودی = فشار خرید، نزولی = فشار فروش.",
+  start_end: "آغاز = قیمت در ابتدای بازه. پایان = قیمت فعلی. مقایسه‌ی این دو، بازدهی دوره رو نشون می‌ده.",
+  low_high: "کف = پایین‌ترین قیمت این بازه. سقف = بالاترین قیمت این بازه. فاصله‌ی این دو، دامنه‌ی نوسان کل دوره‌ست.",
+  avg_range: "نوسان/کندل = میانگین فاصله‌ی سقف تا کف هر کندل. نوسان/روز = میانگین نوسان روزانه. عدد بالاتر = نوسان بیشتر.",
+  pullback: "پولبک = تعداد دفعاتی که قیمت در روند صعودی موقتاً افت کرده و بعد ادامه داده. عدد بالاتر = روند پرنوسان‌تر.",
+  volume: "حجم = نسبت حجم معاملات فعلی به میانگین. مثلاً ۲.۳x یعنی حجم ۲.۳ برابر میانگین. بالاتر = علاقه‌ی بیشتر بازار.",
+  facts: "این آمار از تحلیل کندل‌های واقعی استخراج شده — نه پیش‌بینی. فقط داده‌ی گذشته رو نشون می‌ده.",
+};
 
 const PERIOD_META: Record<
   string,
@@ -260,7 +273,10 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
             className="flex items-center gap-1.5"
             title="تغییر قیمت از ابتدای این بازه تا الان"
           >
-            <span className="text-muted-foreground">بازدهی دوره:</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              بازدهی دوره:
+              <InfoTip text={TERM_TIPS.change_pct} />
+            </span>
             <span
               className={cn(
                 "flex items-center gap-1 font-mono text-xs font-bold",
@@ -281,7 +297,10 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
             className="flex items-center gap-1.5"
             title="جهت قیمت در لحظه‌ی فعلی بر اساس EMA/MACD/RSI"
           >
-            <span className="text-muted-foreground">روند فعلی:</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              روند فعلی:
+              <InfoTip text={TERM_TIPS.trend} />
+            </span>
             <span
               className={cn(
                 "flex items-center gap-1 font-mono text-xs font-bold",
@@ -303,6 +322,7 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
           bottomLabel="پایان"
           bottomValue={fmtNum(period.last_price)}
           tone="zinc"
+          infoTip={TERM_TIPS.start_end}
         />
         <PairStat
           topLabel="کف"
@@ -310,6 +330,16 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
           bottomLabel="سقف"
           bottomValue={fmtNum(period.high_price)}
           tone="red"
+          infoTip={TERM_TIPS.low_high}
+          positionPct={(() => {
+            const low = Number(period.low_price || 0);
+            const high = Number(period.high_price || 0);
+            const last = Number(period.last_price || 0);
+            if (high > low && last > 0) {
+              return ((last - low) / (high - low)) * 100;
+            }
+            return null;
+          })()}
         />
         <PairStat
           topLabel="نوسان/کندل"
@@ -325,6 +355,7 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
               : "—"
           }
           tone="purple"
+          infoTip={TERM_TIPS.avg_range}
         />
         <PairStat
           topLabel="پولبک"
@@ -336,6 +367,7 @@ function PeriodBlock({ period }: { period: PeriodFacts }) {
               : "—"
           }
           tone="amber"
+          infoTip={TERM_TIPS.volume}
         />
       </div>
 
@@ -391,24 +423,48 @@ function PairStat({
   bottomLabel,
   bottomValue,
   tone,
+  infoTip,
+  positionPct,
 }: {
   topLabel: string;
   topValue: string;
   bottomLabel: string;
   bottomValue: string;
   tone: keyof typeof MINI_TONES;
+  infoTip?: string;
+  /** موقعیت ۰-۱۰۰ برای نوار افقی (فقط برای کف/سقف) */
+  positionPct?: number | null;
 }) {
   return (
     <div className={cn("rounded-xl border px-4 py-3", MINI_TONES[tone])}>
       {/* ردیف ۱ */}
       <div className="flex flex-col gap-0.5">
-        <span className="text-xs text-muted-foreground">{topLabel}</span>
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          {topLabel}
+          {infoTip && <InfoTip text={infoTip} />}
+        </span>
         <span className="truncate font-mono text-base font-bold">
           {topValue}
         </span>
       </div>
-      {/* خط جداکننده */}
-      <div className="my-2 border-t border-white/10" />
+
+      {/* نوار موقعیت (اختیاری) */}
+      {positionPct !== undefined && positionPct !== null && (
+        <div className="my-2">
+          <div className="h-1 overflow-hidden rounded-full bg-white/10">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all",
+                tone === "red" ? "bg-red-500" : tone === "emerald" ? "bg-emerald-500" : "bg-amber-500",
+              )}
+              style={{ width: `${Math.max(0, Math.min(100, positionPct))}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {!positionPct && <div className="my-2 border-t border-white/10" />}
+
       {/* ردیف ۲ */}
       <div className="flex flex-col gap-0.5">
         <span className="text-xs text-muted-foreground">{bottomLabel}</span>

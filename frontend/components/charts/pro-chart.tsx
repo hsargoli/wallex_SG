@@ -48,7 +48,29 @@ interface ProChartProps {
   macdHeight?: number;
   loading?: boolean;
   onCrosshairMove?: (data: LegendData | undefined) => void;
+  /** تم چارت: dark (پیش‌فرض) یا light */
+  theme?: "dark" | "light";
   onZoomOutLimit?: () => void;
+}
+
+type ChartTheme = "dark" | "light";
+
+function getChartTheme(theme: ChartTheme) {
+  if (theme === "light") {
+    return {
+      textColor: "#52525b",
+      gridColor: "rgba(0, 0, 0, 0.05)",
+      borderColor: "rgba(0, 0, 0, 0.1)",
+      crosshairColor: "rgba(0, 0, 0, 0.3)",
+    };
+  }
+  // dark (default)
+  return {
+    textColor: "#a1a1aa",
+    gridColor: "rgba(255, 255, 255, 0.03)",
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    crosshairColor: "rgba(255, 255, 255, 0.3)",
+  };
 }
 
 export function ProChart({
@@ -68,6 +90,7 @@ export function ProChart({
   loading = false,
   onCrosshairMove,
   onZoomOutLimit,
+  theme = "dark",
 }: ProChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -111,23 +134,24 @@ export function ProChart({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const t = getChartTheme(theme);
     const chart = createChart(containerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#a1a1aa",
+        textColor: t.textColor,
         fontFamily: "Vazirmatn, system-ui, sans-serif",
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: "rgba(255, 255, 255, 0.03)" },
-        horzLines: { color: "rgba(255, 255, 255, 0.03)" },
+        vertLines: { color: t.gridColor },
+        horzLines: { color: t.gridColor },
       },
       rightPriceScale: {
-        borderColor: "rgba(255, 255, 255, 0.06)",
+        borderColor: t.borderColor,
         scaleMargins: { top: 0.1, bottom: showVolume ? 0.25 : 0.1 },
       },
       timeScale: {
-        borderColor: "rgba(255, 255, 255, 0.06)",
+        borderColor: t.borderColor,
         timeVisible: true,
         secondsVisible: false,
       },
@@ -412,6 +436,21 @@ export function ProChart({
       macdPaneRef.current = null;
     };
   }, [height, showVolume, showEMA, showBB, showRSI, showMACD]);
+
+  // ---------- Live theme update (بدون remount) ----------
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const t = getChartTheme(theme);
+    chartRef.current.applyOptions({
+      layout: { textColor: t.textColor },
+      grid: {
+        vertLines: { color: t.gridColor },
+        horzLines: { color: t.gridColor },
+      },
+      rightPriceScale: { borderColor: t.borderColor },
+      timeScale: { borderColor: t.borderColor },
+    });
+  }, [theme]);
 
   // Update data
   useEffect(() => {
