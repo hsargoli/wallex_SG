@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
+import { PortfolioSignals } from "@/components/dashboard/portfolio-signals";
 import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
@@ -40,6 +41,9 @@ export default function DashboardPage() {
 
       {/* چارت بیت‌کوین */}
       <BtcChartCard />
+
+      {/* سیگنال دارایی‌های من */}
+      <PortfolioSignals />
 
       {/* ۲) فرصت‌ها */}
       <ActionBar />

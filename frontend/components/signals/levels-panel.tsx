@@ -1,24 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Target, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
+import { Target, TrendingUp, TrendingDown, ChevronDown, BookOpen } from "lucide-react";
 import { useLevels } from "@/lib/queries";
 import { formatPrice } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/info-tip";
 
 export function LevelsPanel({
   symbol,
   timeframe,
+  compact = false,
 }: {
   symbol: string;
   timeframe: string;
+  compact?: boolean;
 }) {
   const levels = useLevels(symbol, timeframe);
   const [showPivot, setShowPivot] = useState(true);
   const [showSwings, setShowSwings] = useState(true);
+  const [showPivotExplain, setShowPivotExplain] = useState(false);
+  const [showSwrExplain, setShowSwrExplain] = useState(false);
 
   if (levels.isLoading) {
     return <Skeleton className="h-64 w-full" />;
@@ -41,6 +46,7 @@ export function LevelsPanel({
             <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-5 w-5 text-emerald-400" />
               سطوح Pivot Point
+              <InfoTip text="سطوح کلاسیک Pivot — R1/R2/R3 مقاومت (سقف)، PP نقطه‌ی محوری، S1/S2/S3 حمایت (کف). قیمت معمولاً بین این سطوح نوسان می‌کند." />
             </CardTitle>
             <ChevronDown
               className={cn(
@@ -81,6 +87,94 @@ export function LevelsPanel({
                 <PivotRow label="S2" value={pivot.s2} current={currentPrice} color="text-emerald-400" />
                 <PivotRow label="S3" value={pivot.s3} current={currentPrice} color="text-emerald-400" />
               </div>
+
+              {/* دکمه توضیح */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPivotExplain((v) => !v);
+                }}
+                className={cn(
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-2 text-[11px] transition-colors",
+                  showPivotExplain
+                    ? "border-emerald-500/40 bg-emerald-500/[0.05] text-emerald-400"
+                    : "border-border/40 text-muted-foreground hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] hover:text-emerald-400",
+                )}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                {showPivotExplain ? "بستن توضیحات" : "توضیح کامل این سطوح"}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    showPivotExplain && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {/* پنل توضیحات Pivot */}
+              {showPivotExplain && (
+                <div className="mt-3 space-y-3 rounded-lg border border-border/40 bg-background/40 p-4 text-[12px] leading-relaxed text-muted-foreground">
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-emerald-400">
+                      📍 این سطوح چیه؟
+                    </p>
+                    <p>
+                      Pivot Points یک روش کلاسیک تحلیل تکنیکاله که سطوح کلیدی قیمت رو بر اساس
+                      سه عدد دوره‌ی قبل (بالاترین قیمت، پایین‌ترین قیمت، قیمت بسته) حساب می‌کنه.
+                      این سطوح به سه بخش تقسیم می‌شن:
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 border-r-2 border-red-500/40 pr-3">
+                    <p className="text-sm font-bold text-red-400">
+                      🔴 R1 / R2 / R3 (مقاومت‌ها)
+                    </p>
+                    <p>
+                      سه سطح بالای PP. اینا جاهایی‌ان که اگه قیمت بهشون برسه، احتمال
+                      برگشت به پایین هست. هرچی R بالاتر، مقاومتش قوی‌تر.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 border-r-2 border-amber-500/40 pr-3">
+                    <p className="text-sm font-bold text-amber-400">
+                      🟡 PP (نقطه‌ی محوری)
+                    </p>
+                    <p>
+                      مرکز همه‌چیز. معیار تشخیص روند:
+                    </p>
+                    <p className="text-[11px]">
+                      • قیمت <b>بالای</b> PP = تمایل صعودی
+                      <br />
+                      • قیمت <b>زیر</b> PP = تمایل نزولی
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 border-r-2 border-emerald-500/40 pr-3">
+                    <p className="text-sm font-bold text-emerald-400">
+                      🟢 S1 / S2 / S3 (حمایت‌ها)
+                    </p>
+                    <p>
+                      سه سطح پایین PP. اگه قیمت بهشون برسه، احتمال برگشت به بالا هست.
+                      هرچی S پایین‌تر، حمایتش قوی‌تر.
+                    </p>
+                  </div>
+
+                  <div className="rounded-md border border-amber-500/20 bg-amber-500/[0.03] p-2.5 text-[11px]">
+                    <p className="mb-1 font-bold text-amber-400">⚠️ چطور استفاده کنم؟</p>
+                    <p>
+                      این سطوح <b>خط قطعی نیستن</b> — فقط جاهایی‌ان که احتمال واکنش قیمت بیشتره.
+                      مثلاً اگه قیمت به R1 برسه و نتونه ردش کنه، احتمال افت هست → فرصت فروش.
+                      اگه R1 رو بشکنه و بالا بره، ممکنه بره سمت R2.
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] italic">
+                    💡 نکته: در روندهای قوی، قیمت می‌تونه از همه‌ی این سطوح رد بشه. اینا
+                    راهنما هستن، نه تضمین.
+                  </p>
+                </div>
+              )}
             </CardContent>
           )}
         </Card>
@@ -114,6 +208,102 @@ export function LevelsPanel({
                   <SwingRow key={i} swing={swing} />
                 ))}
               </div>
+
+              {/* دکمه توضیح */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSwrExplain((v) => !v);
+                }}
+                className={cn(
+                  "mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-2 text-[11px] transition-colors",
+                  showSwrExplain
+                    ? "border-emerald-500/40 bg-emerald-500/[0.05] text-emerald-400"
+                    : "border-border/40 text-muted-foreground hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] hover:text-emerald-400",
+                )}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                {showSwrExplain ? "بستن توضیحات" : "توضیح کامل این سطوح"}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    showSwrExplain && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {/* پنل توضیحات S/R */}
+              {showSwrExplain && (
+                <div className="mt-3 space-y-3 rounded-lg border border-border/40 bg-background/40 p-4 text-[12px] leading-relaxed text-muted-foreground">
+                  <div>
+                    <p className="mb-1 text-sm font-bold text-emerald-400">
+                      📍 این سطوح چیه؟
+                    </p>
+                    <p>
+                      این سطوح به‌صورت خودکار از <b>نقاط چرخش (swing points)</b> قیمت پیدا می‌شن.
+                      یه swing high یعنی جایی که قیمت بالا رفته و برگشته پایین.
+                      یه swing low یعنی جایی که قیمت پایین اومده و برگشته بالا.
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="mb-1 font-bold text-foreground">
+                      🔍 چطور پیدا می‌شن؟
+                    </p>
+                    <p>
+                      برای هر کندل، بررسی می‌شه که آیا از ۵ کندل چپ و ۵ کندل راستش بالاتر/پایین‌تر
+                      هست یا نه. اگه بله، اون یه swing point هست. بعد سطوح نزدیک به هم
+                      (کمتر از ۰.۵٪ فاصله) ادغام می‌شن تا خطوط تمیز دربیان.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 border-r-2 border-amber-500/40 pr-3">
+                    <p className="text-sm font-bold text-amber-400">
+                      📊 قدرت سطوح (Badge)
+                    </p>
+                    <div className="space-y-1.5 text-[11px]">
+                      <p>
+                        <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-bold text-emerald-400">قوی</span>
+                        {" "}= ۴ بار یا بیشتر لمس شده. سطح قابل‌اعتماد.
+                      </p>
+                      <p>
+                        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-bold text-amber-400">متوسط</span>
+                        {" "}= ۲ یا ۳ بار لمس شده. نسبتاً قابل‌اعتماد.
+                      </p>
+                      <p>
+                        <span className="rounded bg-zinc-500/15 px-1.5 py-0.5 font-bold text-zinc-400">ضعیف</span>
+                        {" "}= فقط ۱ بار لمس شده. چندان قابل‌اعتماد نیست.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 border-r-2 border-emerald-500/40 pr-3">
+                    <p className="text-sm font-bold text-emerald-400">
+                      💡 «تعداد لمس» چیه؟
+                    </p>
+                    <p>
+                      هر بار که قیمت به یک سطح نزدیک می‌شه، برگشت می‌خوره، و دوباره بهش برمی‌گرده،
+                      یک «لمس» حساب می‌شه. هرچی تعداد لمس بیشتر، اون سطح معتبرتره —
+                      چون بارها ثابت کرده که قیمت بهش واکنش نشون می‌ده.
+                    </p>
+                  </div>
+
+                  <div className="rounded-md border border-amber-500/20 bg-amber-500/[0.03] p-2.5 text-[11px]">
+                    <p className="mb-1 font-bold text-amber-400">⚠️ چطور استفاده کنم؟</p>
+                    <p>
+                      وقتی قیمت به یه سطح <b>حمایت</b> نزدیک می‌شه و سطح قویه، فرصت خرید
+                      احتمالی. وقتی به یه سطح <b>مقاومت</b> قوی نزدیک می‌شه، فرصت فروش.
+                      ولی حتماً با اندیکاتورهای دیگه (RSI، MACD) تأیید کن.
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] italic">
+                    💡 تفاوت با Pivot: Pivot از فرمول ریاضی محاسبه می‌شه، ولی S/R از رفتار واقعی
+                    قیمت (نقاط چرخش) استخراج می‌شه. هر دو مکمل همدیگه‌ان.
+                  </p>
+                </div>
+              )}
             </CardContent>
           )}
         </Card>

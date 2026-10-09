@@ -4,6 +4,7 @@ import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CandleCount, CandleCountItem } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/info-tip";
 
 interface Props {
   data: CandleCount | null;
@@ -79,6 +80,7 @@ export function CandleCountCard({ data }: Props) {
         <CardTitle className="flex items-center gap-2 text-sm">
           <BarChart3 className="h-4 w-4 text-blue-400" />
           کندل‌های سبز و قرمز
+          <InfoTip text="درصد کندل‌های صعودی (سبز، close>open) به کل کندل‌ها. بالای ۵۵٪ = فشار خرید، زیر ۴۵٪ = فشار فروش." />
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">

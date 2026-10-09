@@ -4,9 +4,12 @@ import { ArrowLeftRight, TrendingUp, TrendingDown, Zap, AlertTriangle, CheckCirc
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MoneyFlow } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/info-tip";
 
 interface Props {
   data: MoneyFlow | null;
+  /** اگه simple باشه، فقط نوار + تفسیر نمایش داده می‌شه */
+  simple?: boolean;
 }
 
 const COMBINED_STYLES: Record<
@@ -80,7 +83,7 @@ function fmtVol(v: string | number): string {
   return n.toFixed(6);
 }
 
-export function MoneyFlowCard({ data }: Props) {
+export function MoneyFlowCard({ data, simple = false }: Props) {
   if (!data) {
     return (
       <Card>
@@ -105,6 +108,7 @@ export function MoneyFlowCard({ data }: Props) {
         <CardTitle className="flex items-center gap-2 text-sm">
           <ArrowLeftRight className="h-4 w-4 text-purple-400" />
           جریان پول (۳۰ دقیقه اخیر)
+          <InfoTip text="نسبت حجم خریداران به فروشندگان در ۵۰ معامله‌ی آخر والکس (~۳۰ دقیقه). فشار خرید یعنی خریداران غالبند." />
         </CardTitle>
         <span
           className={cn(
@@ -118,7 +122,7 @@ export function MoneyFlowCard({ data }: Props) {
 
       <CardContent className="space-y-4">
         {/* خط تغییر قیمت در همین بازه */}
-        {data.price_change_pct !== null && (
+        {!simple && data.price_change_pct !== null && (
           <div className="flex items-center justify-between rounded-lg border border-border/50 bg-background/40 px-3 py-2">
             <span className="text-[11px] text-muted-foreground">
               تغییر قیمت در این بازه
@@ -165,7 +169,7 @@ export function MoneyFlowCard({ data }: Props) {
         </div>
 
         {/* جزئیات */}
-        <div className="grid grid-cols-2 gap-3">
+        {!simple && (<div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-2.5">
             <p className="text-[10px] text-muted-foreground">
               حجم خرید ({data.buy_count} معامله)
@@ -182,7 +186,7 @@ export function MoneyFlowCard({ data }: Props) {
               {fmtVol(data.sell_volume)}
             </p>
           </div>
-        </div>
+        </div>)}
 
         {/* تفسیر ترکیبی (واگرایی) */}
         {(() => {
@@ -210,11 +214,17 @@ export function MoneyFlowCard({ data }: Props) {
         })()}
 
         {/* یادداشت شفافیت */}
-        <p className="rounded-md border border-dashed border-border/40 bg-background/30 px-2.5 py-2 text-[10px] leading-relaxed text-muted-foreground">
-          ℹ️ این تحلیل <span className="font-bold text-foreground">فقط بر اساس حجم خرید و فروش</span> است
-          و با سیگنال اصلی (RSI/EMA/MACD در تب تحلیل) ممکن است تفاوت داشته باشد.
-          برای تصمیم نهایی، هر دو را با هم ببینید.
-        </p>
+        {simple ? (
+          <p className="text-[10px] text-muted-foreground">
+            ℹ️ فقط بر اساس حجم خرید و فروش — نه تکنیکال
+          </p>
+        ) : (
+          <p className="rounded-md border border-dashed border-border/40 bg-background/30 px-2.5 py-2 text-[10px] leading-relaxed text-muted-foreground">
+            ℹ️ این تحلیل <span className="font-bold text-foreground">فقط بر اساس حجم خرید و فروش</span> است
+            و با سیگنال اصلی (RSI/EMA/MACD در تب تحلیل) ممکن است تفاوت داشته باشد.
+            برای تصمیم نهایی، هر دو را با هم ببینید.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
