@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SignalsChart } from "@/components/signals/signals-chart";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/ui/info-tip";
 
 interface ChartPreviewProps {
   symbol: string;
@@ -42,6 +43,7 @@ export function ChartPreview({
         <CardTitle className="flex items-center gap-2 text-base">
           <LineChart className="h-4 w-4 text-emerald-400" />
           {title}
+          <InfoTip text="نمودار کندل‌استیک با EMA (میانگین متحرک)، باند بولینگر و سطوح کلیدی (Pivot و S/R). برای دیدن کامل، روی «چارت کامل» کلیک کن." />
         </CardTitle>
 
         <div className="flex items-center gap-2">

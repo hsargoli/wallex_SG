@@ -26,6 +26,7 @@ import { formatNumber, formatPrice } from "@/lib/format";
 import type { Timeframe } from "@/lib/api";
 import { MiniChart } from "@/components/charts/mini-chart";
 import { MarketStats } from "@/components/markets/market-stats";
+import { SymbolSwitcher } from "@/components/markets/symbol-switcher";
 import { MarketOverviewCard } from "@/components/markets/market-overview-card";
 import { MarketStatsPanel } from "@/components/markets/market-stats-panel";
 import { OrderBookSummary } from "@/components/markets/order-book-summary";
@@ -161,75 +162,78 @@ export default function SymbolPage({
       {/* ============================================================ */}
       {/* 24h stats */}
       {/* ============================================================ */}
+      {/* ============================================================ */}
+      {/* SymbolSwitcher + Tabs + TF picker — مثل signals بلافاصله بعد از هدر */}
+      {/* ============================================================ */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SymbolSwitcher current={symbol} basePath="/markets" suffix="" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab("analysis")}
+              className={cn(
+                "gap-1.5 rounded-b-none border-b-2 border-transparent",
+                tab === "analysis" &&
+                  "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              تحلیل تکنیکال
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab("trade")}
+              className={cn(
+                "gap-1.5 rounded-b-none border-b-2 border-transparent",
+                tab === "trade" &&
+                  "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+              )}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              معامله و دفتر سفارش
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab("stats")}
+              className={cn(
+                "gap-1.5 rounded-b-none border-b-2 border-transparent",
+                tab === "stats" &&
+                  "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              آمار
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {TIMEFRAMES.map((tf) => (
+              <Button
+                key={tf}
+                variant="ghost"
+                size="sm"
+                onClick={() => setTimeframe(tf)}
+                className={cn(
+                  "h-7 px-2.5 font-mono text-xs",
+                  timeframe === tf &&
+                    "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
+                )}
+              >
+                {tf}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <MarketStats market={market.data} loading={market.isLoading} />
 
       {/* نگاه کلی — ۶ بازه + سیگنال */}
       <MarketOverviewCard symbol={symbol} timeframe={timeframe} />
-
-      {/* ============================================================ */}
-      {/* Tabs + TF picker */}
-      {/* ============================================================ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTab("analysis")}
-            className={cn(
-              "gap-1.5 rounded-b-none border-b-2 border-transparent",
-              tab === "analysis" &&
-                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
-            )}
-          >
-            <Activity className="h-3.5 w-3.5" />
-            تحلیل تکنیکال
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTab("trade")}
-            className={cn(
-              "gap-1.5 rounded-b-none border-b-2 border-transparent",
-              tab === "trade" &&
-                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
-            )}
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-            معامله و دفتر سفارش
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTab("stats")}
-            className={cn(
-              "gap-1.5 rounded-b-none border-b-2 border-transparent",
-              tab === "stats" &&
-                "border-emerald-500 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10",
-            )}
-          >
-            <Activity className="h-3.5 w-3.5" />
-            آمار
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1">
-          {TIMEFRAMES.map((tf) => (
-            <Button
-              key={tf}
-              variant="ghost"
-              size="sm"
-              onClick={() => setTimeframe(tf)}
-              className={cn(
-                "h-7 px-2.5 font-mono text-xs",
-                timeframe === tf &&
-                  "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
-              )}
-            >
-              {tf}
-            </Button>
-          ))}
-        </div>
-      </div>
 
       {/* ============================================================ */}
       {/* Tab: تحلیل تکنیکال */}
