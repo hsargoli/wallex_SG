@@ -23,6 +23,8 @@ dependencies = [
     "numpy>=2.4.6",
     "joblib>=1.6.0",
     "slowapi>=0.1.10",
+    "jdatetime>=6.1.0",
+    "requests>=2.34.2",
 ]
 
 [dependency-groups]
