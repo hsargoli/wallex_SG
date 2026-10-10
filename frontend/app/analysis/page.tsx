@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Activity, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { useAnalysis } from "@/lib/queries";
+import { useAnalysis, useMarkets } from "@/lib/queries";
 import type { AnalysisRegimeCounts } from "@/lib/api";
 import { formatPct } from "@/lib/format";
 
-const SYMBOLS = ["BTCTMN", "ETHTMN", "USDTTMN"] as const;
 const TIMEFRAMES = ["1h"] as const;
 
 const REGIME_LABELS: Record<string, { fa: string; color: string }> = {
@@ -43,10 +42,26 @@ function RegimeBar({ counts, total }: { counts: AnalysisRegimeCounts; total: num
 }
 
 export default function AnalysisPage() {
-  const [symbol, setSymbol] = useState<string>(SYMBOLS[0]);
+  const [symbol, setSymbol] = useState<string>("BTCTMN");
   const [timeframe, setTimeframe] = useState<string>(TIMEFRAMES[0]);
 
+  const { data: marketsData } = useMarkets();
   const { data, isLoading, isError } = useAnalysis(symbol, timeframe);
+
+  // نمادها بر اساس حجم معاملات (تومانی/تتری) نزولی
+  const rankedSymbols = useMemo(() => {
+    const items = marketsData?.items ?? [];
+    return items
+      .filter((m) => m.symbol && m.daily_quote_volume)
+      .map((m) => ({
+        symbol: m.symbol,
+        quoteVolume: Number(m.daily_quote_volume ?? 0),
+        faName: m.fa_name ?? m.symbol,
+        enName: m.en_name ?? m.symbol,
+      }))
+      .filter((m) => m.quoteVolume > 0)
+      .sort((a, b) => b.quoteVolume - a.quoteVolume);
+  }, [marketsData]);
 
   return (
     <div className="space-y-6 p-6" dir="rtl">
@@ -60,9 +75,16 @@ export default function AnalysisPage() {
           <select
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
-            className="rounded-lg border border-border/50 bg-card px-3 py-1.5 text-sm"
+            className="rounded-lg border border-border/50 bg-card px-3 py-1.5 text-sm min-w-[200px]"
           >
-            {SYMBOLS.map((s) => <option key={s} value={s}>{s}</option>)}
+            {rankedSymbols.length === 0 && (
+              <option value={symbol}>{symbol}</option>
+            )}
+            {rankedSymbols.map((s) => (
+              <option key={s.symbol} value={s.symbol}>
+                {s.symbol} — {s.faName}
+              </option>
+            ))}
           </select>
           <select
             value={timeframe}
