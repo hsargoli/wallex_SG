@@ -25,6 +25,7 @@ dependencies = [
     "slowapi>=0.1.10",
     "jdatetime>=6.1.0",
     "requests>=2.34.2",
+    "python-socketio>=5.17.0",
 ]
 
 [dependency-groups]
