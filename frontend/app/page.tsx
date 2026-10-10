@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
+import { LiveTickerCard } from "@/components/dashboard/live-ticker-card";
 import { PortfolioSignals } from "@/components/dashboard/portfolio-signals";
 import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
@@ -38,6 +39,9 @@ export default function DashboardPage() {
 
       {/* ۱) پول من */}
       <KpiCards />
+
+      {/* تیکر زنده بیت‌کوین */}
+      <LiveTickerCard symbol="BTCTMN" />
 
       {/* چارت بیت‌کوین */}
       <BtcChartCard />
