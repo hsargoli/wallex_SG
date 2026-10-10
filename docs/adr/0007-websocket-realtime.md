@@ -61,3 +61,28 @@ git reset --hard v0.9-pre-websocket
 - docs/AI_PROJECT_GUIDE.md
 - docs/ROADMAP.md
 - https://developers.wallex.ir/docs/socket-intro
+
+## Update — 2026-10-10: Decision Final
+
+Explored Wallex WS with raw `websocket-client`
+(see `backend/scripts/explore_wallex_ws.py`). Confirmed working:
+
+- URL: `wss://api.wallex.ir/ws` (no trailing slash)
+- Engine.IO handshake on connect, then send `"40"` for Socket.IO
+- Subscribe: `["subscribe", {"channel": "all@price"}]`
+- Message format: `["all@price", {"symbol", "price", "24h_ch"}]`
+
+**Architecture chosen: B.**
+
+- Backend: raw `websocket-client` -> Wallex (1 connection)
+- Backend: native FastAPI WebSocket -> frontend (N connections)
+- Frontend: browser-native WebSocket (zero dependency)
+- Message: flat `{symbol, price, 24h_ch}` (no envelope)
+
+**Rejected:**
+
+- A (python-socketio end-to-end): library appends trailing slash,
+  incompatible with Wallex `/ws`
+- C (centralized polling): still pull-based, not real-time
+
+Status: Proposed -> Accepted
