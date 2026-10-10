@@ -1,6 +1,6 @@
 # 0008. Nooaah Analysis Engine — DDD Subdomain
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-10
 **Deciders:** Hosein, Di
 
@@ -112,6 +112,35 @@ Rejected:
    that *consumes* the analysis engine. Analysis stays in the subdomain;
    the bot is orchestration only.
 3. **Migrate `services/` debt.** Out of scope; separate ADR.
+
+## Update — 2026-10-10: Port-based classifier (two implementations)
+
+After writing this ADR, we discovered `services/regime_detector.py`
+already exists — a rule-based classifier using ADX, ATR%, EMA
+alignment, and cumulative return, calibrated for 1h crypto.
+
+It is well-written and in active use (see `test_regime_filter.py`).
+Rejected the "Phase 1 without classifier" plan. Revised:
+
+- Phase 1 ships TWO classifiers behind `RegimeClassifierPort`:
+  - `infrastructure/analysis/rule_based_classifier.py`
+    — migrated from `services/regime_detector.py`
+  - `infrastructure/analysis/kmeans_classifier.py`
+    — new, data-driven, K chosen via silhouette
+- Selector via env: `ANALYSIS_CLASSIFIER=rule_based|kmeans`
+- Enables A/B comparison on real data (see "Future Work" #2)
+
+Why the revision:
+
+1. Throwing away a working rule-based classifier is wasteful.
+2. `RegimeClassifierPort` was flagged as "premature" in Risks — with
+   two implementations it becomes justified, not ceremony.
+3. The user's goal is "personality of each symbol"; comparing two
+   classifiers strengthens the analysis, not weakens it.
+
+All other decisions unchanged. Phase 1 ships both classifiers.
+
+Status: Proposed -> Accepted
 
 ## Rollback
 

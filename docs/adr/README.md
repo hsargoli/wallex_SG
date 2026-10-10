@@ -14,5 +14,6 @@ Each file: `NNNN-short-title.md`.
 | [0005](./0005-bot-bak-cleanup.md) | Bot .bak Cleanup | Accepted |
 | [0006](./0006-price-change-source.md) | Price Change Source | Accepted |
 | [0007](./0007-websocket-realtime.md) | WebSocket Realtime | Accepted |
+| [0008](./0008-nooaah-analysis-ddd.md) | Nooaah Analysis DDD | Accepted |
 
 Template: [template.md](./template.md)
