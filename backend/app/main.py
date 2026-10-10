@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -9,6 +10,8 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter
 from app.infrastructure.exchange.wallex.client import WallexExchange
+from app.infrastructure.exchange.wallex.ticker_ws import WallexTickerClient
+from app.presentation.api.v1.realtime import TickerFanout, router as realtime_router
 from app.presentation.api.v1.router import router as v1_router
 
 
@@ -22,13 +25,22 @@ async def lifespan(app: FastAPI):
     app.state.exchange = exchange
     app.state.settings = settings
 
+    # Real-time ticker (Wallex Socket.IO)
+    loop = asyncio.get_running_loop()
+    fanout = TickerFanout(loop)
+    ticker_client = WallexTickerClient(on_tick=fanout.on_tick)
+    app.state.ticker_fanout = fanout
+    app.state.ticker_client = ticker_client
+    ticker_client.start()
+
     try:
         yield
     finally:
         # --- Shutdown ---
         from app.services.order_chase.worker import manager as chase_manager
 
-        await chase_manager.stop_all()  # سفارش‌های باز ربات تعقیب لغو می‌شوند
+        await chase_manager.stop_all()
+        ticker_client.stop()
         await exchange.aclose()
 
 
@@ -67,6 +79,7 @@ app.add_middleware(
 
 # ---------- Routes ----------
 app.include_router(v1_router)
+app.include_router(realtime_router)  # /ws/ticker/{symbol}
 
 
 @app.get("/")
