@@ -13,5 +13,6 @@ Each file: `NNNN-short-title.md`.
 | [0004](./0004-heredoc-policy.md) | Heredoc Policy | Accepted |
 | [0005](./0005-bot-bak-cleanup.md) | Bot .bak Cleanup | Accepted |
 | [0006](./0006-price-change-source.md) | Price Change Source | Accepted |
+| [0007](./0007-websocket-realtime.md) | WebSocket Realtime | Accepted |
 
 Template: [template.md](./template.md)
