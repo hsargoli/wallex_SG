@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen } from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
 import { useSidebar } from "./sidebar-provider";
@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
       { href: "/markets", label: "بازارها", icon: TrendingUp, desc: "قیمت لحظه‌ای رمزارزها" },
       { href: "/scanner", label: "اسکنر بازار", icon: Radar, desc: "پیدا کردن فرصت‌ها" },
       { href: "/signals", label: "سیگنال‌ها", icon: Zap, desc: "سیگنال‌های معاملاتی" },
+      { href: "/analysis", label: "شخصیت ارز", icon: Brain, desc: "تحلیل رژیم و رفتار هر نماد" },
     ],
   },
   {
