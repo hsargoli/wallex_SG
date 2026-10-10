@@ -36,6 +36,7 @@ class GridRow:
     min_confidence: int
     tp_atr_mult: float
     sl_atr_mult: float
+    confirmation_candles: int
     trades: int
     win_rate: float
     total_return: float
@@ -55,13 +56,14 @@ class GridRow:
 
 
 def _to_row(
-    tn: int, conf: int, tp: float, sl: float, stats
+    tn: int, conf: int, tp: float, sl: float, cc: int, stats
 ) -> GridRow:
     return GridRow(
         top_n=tn,
         min_confidence=conf,
         tp_atr_mult=tp,
         sl_atr_mult=sl,
+        confirmation_candles=cc,
         trades=stats.total_trades,
         win_rate=stats.win_rate,
         total_return=stats.total_return_pct,
@@ -111,11 +113,13 @@ def run_grid_on(
     conf_values: list[int],
     tp_values: list[float],
     sl_values: list[float],
+    confirmation_values: list[int],
     label: str,
     warmup: int = 200,
 ) -> list[GridRow]:
     total = (
-        len(top_n_values) * len(conf_values) * len(tp_values) * len(sl_values)
+        len(top_n_values) * len(conf_values) * len(tp_values)
+        * len(sl_values) * len(confirmation_values)
     )
     print(f"\n🔍 [{label}] {total} combinations")
 
@@ -123,8 +127,10 @@ def run_grid_on(
     results: list[GridRow] = []
     t0 = time.monotonic()
 
-    for i, (tn, conf, tp, sl) in enumerate(
-        itertools.product(top_n_values, conf_values, tp_values, sl_values)
+    for i, (tn, conf, tp, sl, cc) in enumerate(
+        itertools.product(
+            top_n_values, conf_values, tp_values, sl_values, confirmation_values
+        )
     ):
         used = {s: candles[s] for s in symbols[:tn]}
         cfg = NooaahConfig(
@@ -132,10 +138,11 @@ def run_grid_on(
             min_confidence=conf,
             tp_atr_mult=tp,
             sl_atr_mult=sl,
+            confirmation_candles=cc,
         )
         try:
             stats = run_nooaah_backtest(used, cfg, warmup=warmup)
-            results.append(_to_row(tn, conf, tp, sl, stats))
+            results.append(_to_row(tn, conf, tp, sl, cc, stats))
         except Exception:
             continue
 
@@ -154,7 +161,7 @@ def print_top(
     print(f"  🏆 Top {n} by composite score — {label}")
     print(f"{'=' * 100}")
     print(
-        f"  {'top':>4} {'conf':>5} {'tp':>5} {'sl':>5} | "
+        f"  {'top':>4} {'conf':>5} {'tp':>5} {'sl':>5} {'cc':>4} | "
         f"{'trades':>7} {'WR%':>6} {'ret%':>8} {'DD%':>6} "
         f"{'PF':>5} {'Sharpe':>7}"
     )
@@ -162,7 +169,8 @@ def print_top(
     for r in scored[:n]:
         print(
             f"  {r.top_n:>4} {r.min_confidence:>5} "
-            f"{r.tp_atr_mult:>5.1f} {r.sl_atr_mult:>5.1f} | "
+            f"{r.tp_atr_mult:>5.1f} {r.sl_atr_mult:>5.1f} "
+            f"{r.confirmation_candles:>4} | "
             f"{r.trades:>7} {r.win_rate:>6.1f} {r.total_return:>+8.2f} "
             f"{r.max_dd:>6.2f} {r.profit_factor:>5.2f} {r.sharpe:>7.3f}"
         )
@@ -180,7 +188,7 @@ def check_zombies(rows: list[GridRow]) -> None:
     print(f"{'=' * 100}")
 
     # برای هر پارامتر: آیا unique results داره؟
-    for param_name in ("top_n", "min_confidence", "tp_atr_mult", "sl_atr_mult"):
+    for param_name in ("top_n", "min_confidence", "tp_atr_mult", "sl_atr_mult", "confirmation_candles"):
         # گروه‌بندی بر اساس سایر پارامترها
         groups: dict[tuple, set] = {}
         for r in rows:
@@ -245,14 +253,17 @@ async def main() -> None:
             f"Use --limit ≥ {min_limit}"
         )
 
+    # grid کوچک: 3×1×2×1×3 = 18 combos (شروع سریع)
     top_n_values = [3, 5, 8]
-    conf_values = [45, 50, 55, 60, 65]
-    tp_values = [2.0, 3.0, 5.0, 8.0]
-    sl_values = [0.5, 1.0, 1.5]
+    conf_values = [55]
+    tp_values = [3.0, 8.0]
+    sl_values = [1.5]
+    confirmation_values = [1, 2, 3]
 
     # ---- grid روی TRAIN ----
     train_rows = run_grid_on(
-        train, top_n_values, conf_values, tp_values, sl_values, "TRAIN",
+        train, top_n_values, conf_values, tp_values, sl_values,
+        confirmation_values, "TRAIN",
         warmup=args.warmup,
     )
     print_top(train_rows, "TRAIN", n=5)
@@ -277,11 +288,12 @@ async def main() -> None:
         min_confidence=best.min_confidence,
         tp_atr_mult=best.tp_atr_mult,
         sl_atr_mult=best.sl_atr_mult,
+        confirmation_candles=best.confirmation_candles,
     )
     test_stats = run_nooaah_backtest(test_used, test_cfg, warmup=args.warmup)
     test_row = _to_row(
         best.top_n, best.min_confidence, best.tp_atr_mult, best.sl_atr_mult,
-        test_stats,
+        best.confirmation_candles, test_stats,
     )
     save([test_row], TEST_FILE)
 
