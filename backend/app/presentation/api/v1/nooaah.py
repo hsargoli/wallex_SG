@@ -122,7 +122,12 @@ async def backtest(
             detail="no candles fetched",
         )
 
-    stats = run_nooaah_backtest(candles_by_symbol, cfg)
+    try:
+        stats = run_nooaah_backtest(candles_by_symbol, cfg)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
     recent = [
         TradeOut(
             entry_price=str(t.entry_price),

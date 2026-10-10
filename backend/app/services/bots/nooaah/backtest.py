@@ -39,7 +39,10 @@ def run_nooaah_backtest(
 
     min_len = min(len(c) for c in candles_by_symbol.values())
     if min_len <= warmup + 50:
-        return result
+        raise ValueError(
+            f"not enough data: {min_len} candles ≤ warmup+50 ({warmup + 50}). "
+            f"Need ≥ {warmup + 51} candles."
+        )
 
     first_symbol = next(iter(candles_by_symbol))
 
