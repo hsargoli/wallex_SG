@@ -552,6 +552,10 @@ export const api = {
     client.get<Market>(`/v1/markets/${symbol}`).then((r) => r.data),
   getAnalysis: (symbol: string, timeframe: string = "1h") =>
     client.get<AnalysisResult>(`/v1/analysis/${symbol}?timeframe=${timeframe}`).then((r) => r.data),
+  getNooaahStatus: (top: number = 5) =>
+    client.get<NooaahStatusResponse>(`/v1/nooaah/status?top=${top}`).then((r) => r.data),
+  getNooaahBacktest: (top: number = 5, limit: number = 500) =>
+    client.get<NooaahBacktestResponse>(`/v1/nooaah/backtest?top=${top}&limit=${limit}`).then((r) => r.data),
   getOrderBook: (symbol: string) =>
     client
       .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)
@@ -1306,5 +1310,51 @@ export interface AnalysisResult {
   volatility_std: number;
   rsi_mean: number;
   trend_mean: number;
+}
+
+// ---------- Nooaah types ----------
+
+export interface NooaahProposal {
+  symbol: string;
+  action: string;
+  entry: number;
+  take_profit: number;
+  stop_loss: number;
+  confidence: number;
+  regime: string;
+  reason: string;
+}
+
+export interface NooaahStatusResponse {
+  symbols_analyzed: string[];
+  duration_seconds: number;
+  proposal: NooaahProposal | null;
+  error: string | null;
+}
+
+export interface NooaahTrade {
+  entry_price: string;
+  exit_price: string;
+  side: string;
+  return_pct: number;
+  exit_reason: string;
+  confidence: number;
+  duration_candles: number;
+}
+
+export interface NooaahBacktestResponse {
+  symbols: string[];
+  candles_analyzed: number;
+  signals_generated: number;
+  total_trades: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  total_return_pct: number;
+  max_drawdown_pct: number;
+  profit_factor: number;
+  sharpe_ratio: number;
+  avg_duration_candles: number;
+  recent_trades: NooaahTrade[];
 }
 

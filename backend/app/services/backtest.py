@@ -49,6 +49,9 @@ class BacktestResult:
     sharpe_ratio: float = 0.0
     avg_duration_candles: float = 0.0
     equity_curve: list[float] = field(default_factory=list)
+    # برای نمودار: نقطه‌به‌نقطه (per candle)، با benchmark
+    equity_curve_full: list[float] = field(default_factory=list)
+    buy_hold_curve: list[float] = field(default_factory=list)
 
 
 def _gen_signal(candles_window: list[Candle]):

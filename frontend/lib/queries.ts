@@ -612,3 +612,19 @@ export function useAnalysis(symbol: string | null, timeframe: string = "1h") {
   });
 }
 
+export function useNooaahStatus(top: number = 5) {
+  return useQuery({
+    queryKey: ["nooaah-status", top],
+    queryFn: () => api.getNooaahStatus(top),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useNooaahBacktest() {
+  return useMutation({
+    mutationFn: ({ top, limit }: { top: number; limit: number }) =>
+      api.getNooaahBacktest(top, limit),
+  });
+}
+

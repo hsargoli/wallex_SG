@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.presentation.api.v1 import (
     account,
     analysis,
+    nooaah,
     backtest,
     bot,
     bots,
@@ -25,6 +26,7 @@ from app.presentation.api.v1 import (
 router = APIRouter(prefix="/v1")
 router.include_router(markets.router)
 router.include_router(analysis.router)
+router.include_router(nooaah.router)
 router.include_router(account.router)
 router.include_router(bot.router)
 router.include_router(bots.router)

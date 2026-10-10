@@ -142,6 +142,25 @@ All other decisions unchanged. Phase 1 ships both classifiers.
 
 Status: Proposed -> Accepted
 
+## Update — 2026-10-10: Equity chart via raw SVG
+
+The Nooaah page shows a backtest equity chart. Options considered:
+
+- **raw SVG** (chosen)
+- `lightweight-charts` (already in the project for `MiniChart`)
+- `recharts` (not installed, would be a new dependency)
+
+Chose raw SVG because:
+
+- Only 2 lines (Nooaah vs buy-and-hold benchmark).
+- RTL + Persian labels are simpler in raw SVG.
+- Zero new dependencies.
+- Chart component exposes a `series` interface, so swapping to
+  `lightweight-charts` later is a one-file change.
+
+Benchmark: **equal-weighted buy-and-hold of the same symbols**,
+computed server-side. The frontend has no financial logic.
+
 ## Rollback
 
 No code written yet. If Phase 1 is rejected before merge:

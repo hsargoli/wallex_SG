@@ -49,9 +49,24 @@ def run_nooaah_backtest(
 
     equity = 100.0
     equity_curve = [equity]
+    equity_curve_full: list[float] = []
+
+    # benchmark: buy-and-hold برابر وزن از همه‌ی نمادها
+    start_closes: dict[str, float] = {
+        sym: float(c[warmup].close) for sym, c in candles_by_symbol.items()
+    }
+    buy_hold_curve: list[float] = []
 
     for i in range(warmup, min_len):
         current_time = candles_by_symbol[first_symbol][i].time
+
+        # benchmark per candle
+        avg = sum(
+            (float(c[i].close) / start_closes[sym]) * 100
+            for sym, c in candles_by_symbol.items()
+            if start_closes[sym] > 0
+        ) / len(start_closes)
+        buy_hold_curve.append(round(avg, 4))
 
         # ---- اگر پوزیشن باز هست، چک خروج ----
         if position is not None:
@@ -92,6 +107,7 @@ def run_nooaah_backtest(
                 equity *= (1 + ret / 100)
                 equity_curve.append(round(equity, 4))
                 position = None
+            equity_curve_full.append(round(equity, 4))
             continue
 
         # ---- تصمیم جدید ----
@@ -102,6 +118,7 @@ def run_nooaah_backtest(
         proposal = decide(windows, config)
 
         if proposal is None:
+            equity_curve_full.append(round(equity, 4))
             continue
 
         current = candles_by_symbol[proposal.symbol][i]
@@ -114,6 +131,7 @@ def run_nooaah_backtest(
             "take_profit": Decimal(str(proposal.take_profit)),
             "confidence": proposal.confidence,
         }
+        equity_curve_full.append(round(equity, 4))
 
     # ---- آمار ----
     result.signals_generated = signals_generated
@@ -165,4 +183,6 @@ def run_nooaah_backtest(
                 result.sharpe_ratio = avg_ret / std
 
     result.equity_curve = equity_curve
+    result.equity_curve_full = equity_curve_full
+    result.buy_hold_curve = buy_hold_curve
     return result
