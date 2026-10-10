@@ -1,0 +1,63 @@
+# 0007. Real-time Prices via Wallex Socket.IO
+
+**Status:** Proposed
+**Date:** 2026-10-10
+**Deciders:** Hosein, Di
+
+## Context
+
+The frontend currently polls via React Query with intervals from 3s to 120s.
+Multiple components on the same page each poll independently. Opening 2-3
+tabs multiplies the load: N clients x M components = redundant requests
+against both our backend and the Wallex REST API. This creates a rate-limit
+risk and lags the UI.
+
+Discovery (2026-10-09): Wallex exposes a Socket.IO endpoint at
+`wss://api.wallex.ir/ws`. A manual HTTP/1.1 Upgrade returned
+`101 Switching Protocols` followed by an Engine.IO handshake
+(`{"sid":...,"pingInterval":20000,"pingTimeout":30000}`).
+
+Documented channels include `all@price` (all markets), `MARKET@trade`,
+`MARKET@buyDepth`, and private channels. Connection limits: 30-minute
+lifetime, server PING every 20s, max 100 PONGs per connection.
+
+## Decision
+
+We will build real-time price streaming for tickers. The backend will
+maintain a single Socket.IO connection to Wallex and fan out updates to
+our own clients.
+
+Final architecture (A/B/C) is deferred to an Update section after
+exploration in `backend/scripts/explore_wallex_ws.py`:
+- A) Socket.IO end-to-end (Wallex -> backend -> frontend)
+- B) Socket.IO in (Wallex -> backend), native WS out (backend -> frontend)
+- C) Centralized polling + cache in backend, push to frontend
+
+## Consequences
+
+- Positive: removes N x M redundant requests; true push; lower Wallex load.
+- Negative: 1-2 new dependencies (python-socketio backend, socket.io-client
+  frontend if option A/B); backend becomes stateful (ConnectionManager).
+- Neutral: polling remains as fallback; two code paths to maintain.
+
+## Alternatives
+
+1. Cache TTL in backend (5s). Simple, but still pull-based; no push.
+2. Centralized polling in backend. Reduces load, still not real-time.
+3. Do nothing. N x M problem remains.
+
+## Risks
+
+- Multi-worker (Phase 1 Postgres): ConnectionManager needs Redis pub/sub.
+- nginx (Phase 5): requires Upgrade header passthrough config.
+- Reconnect logic: 30-min lifetime + 100 PONG cap require auto-reconnect.
+
+## Rollback
+
+git reset --hard v0.9-pre-websocket
+
+## References
+
+- docs/AI_PROJECT_GUIDE.md
+- docs/ROADMAP.md
+- https://developers.wallex.ir/docs/socket-intro
