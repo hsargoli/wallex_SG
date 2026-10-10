@@ -601,3 +601,14 @@ export function useMarketOverview(symbol: string | null, tf: string = "1h") {
     refetchInterval: 15_000,
   });
 }
+
+export function useAnalysis(symbol: string | null, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["analysis", symbol, timeframe],
+    queryFn: () => api.getAnalysis(symbol!, timeframe),
+    enabled: !!symbol,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+

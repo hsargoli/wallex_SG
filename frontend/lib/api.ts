@@ -550,6 +550,8 @@ export const api = {
     client.get<MarketsResponse>("/v1/markets").then((r) => r.data),
   getMarket: (symbol: string) =>
     client.get<Market>(`/v1/markets/${symbol}`).then((r) => r.data),
+  getAnalysis: (symbol: string, timeframe: string = "1h") =>
+    client.get<AnalysisResult>(`/v1/analysis/${symbol}?timeframe=${timeframe}`).then((r) => r.data),
   getOrderBook: (symbol: string) =>
     client
       .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)
@@ -1284,3 +1286,25 @@ export interface MarketOverviewResponse {
 }
 
 // ---------- end Market Overview ----------
+
+// ---------- Analysis types ----------
+
+export interface AnalysisRegimeCounts {
+  trending_up: number;
+  trending_down: number;
+  ranging: number;
+  choppy: number;
+}
+
+export interface AnalysisResult {
+  symbol: string;
+  timeframe: string;
+  window_count: number;
+  regime_counts: AnalysisRegimeCounts;
+  dominant_regime: string | null;
+  volatility_mean: number;
+  volatility_std: number;
+  rsi_mean: number;
+  trend_mean: number;
+}
+
