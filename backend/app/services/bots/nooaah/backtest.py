@@ -23,6 +23,8 @@ def run_nooaah_backtest(
     config: NooaahConfig,
     max_duration: int = 24,
     warmup: int = WARMUP,
+    start_idx: int = 0,
+    end_idx: int | None = None,
 ) -> BacktestResult:
     """backtest چندنمادی Nooaah.
 
@@ -38,10 +40,17 @@ def run_nooaah_backtest(
         return result
 
     min_len = min(len(c) for c in candles_by_symbol.values())
-    if min_len <= warmup + 50:
+
+    # effective trading window
+    effective_start = max(start_idx, warmup)
+    effective_end = end_idx if end_idx is not None else min_len
+
+    if effective_end - effective_start < 50:
         raise ValueError(
-            f"not enough data: {min_len} candles ≤ warmup+50 ({warmup + 50}). "
-            f"Need ≥ {warmup + 51} candles."
+            f"trading window too small: [{effective_start}, {effective_end}) "
+            f"= {effective_end - effective_start} candles, need ≥ 50. "
+            f"(data={min_len}, warmup={warmup}, start_idx={start_idx}, "
+            f"end_idx={end_idx})"
         )
 
     first_symbol = next(iter(candles_by_symbol))
@@ -56,11 +65,12 @@ def run_nooaah_backtest(
 
     # benchmark: buy-and-hold برابر وزن از همه‌ی نمادها
     start_closes: dict[str, float] = {
-        sym: float(c[warmup].close) for sym, c in candles_by_symbol.items()
+        sym: float(c[effective_start].close)
+        for sym, c in candles_by_symbol.items()
     }
     buy_hold_curve: list[float] = []
 
-    for i in range(warmup, min_len):
+    for i in range(effective_start, effective_end):
         current_time = candles_by_symbol[first_symbol][i].time
 
         # benchmark per candle

@@ -87,3 +87,6 @@ backend/data/paper_v3/
 
 # Candle fetch logs (runtime, not data)
 backend/data/candles/fetch.log
+
+# Nooaah grid search results (runtime output)
+backend/data/nooaah_grid_*.json
