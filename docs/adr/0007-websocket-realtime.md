@@ -1,6 +1,7 @@
 # 0007. Real-time Prices via Wallex Socket.IO
 
-**Status:** Proposed
+**Status:** Accepted
+**Implementation:** MVP in progress (phase 1)
 **Date:** 2026-10-10
 **Deciders:** Hosein, Di
 
@@ -48,10 +49,33 @@ exploration in `backend/scripts/explore_wallex_ws.py`:
 
 ## Risks
 
-- Multi-worker (Phase 1 Postgres): ConnectionManager needs Redis pub/sub.
-- nginx (Phase 5): requires Upgrade header passthrough config.
-- Reconnect logic: 30-min lifetime + 100 PONG cap require auto-reconnect.
+- **Memory leak in subscribers**: every WS client must unsubscribe on
+  disconnect; a missed `finally` leaks queues silently. Mitigated by
+  `test_unsubscribe_no_leak` (subscribe/unsubscribe 10x, assert empty).
+- **Multi-worker (Phase 1 Postgres)**: with `uvicorn --workers N`, each
+  worker opens its own Wallex connection. Mitigation (future): Redis pub/sub.
+- **Wallex disconnect**: single upstream connection; if Wallex drops,
+  clients are blind until reconnect. Mitigation: auto-reconnect + polling
+  fallback in frontend with stale indicator.
+- **nginx (Phase 5)**: requires Upgrade header passthrough config.
+- **PONG cap**: max 100 PONGs (~33 min); we reconnect at 25 min.
 
+## Future Work (post-MVP)
+
+This MVP is not the final architecture. Known limitations:
+
+### 1. Multi-worker support
+Redis pub/sub between workers so all clients see all ticks.
+
+### 2. Microservice migration
+Extract Wallex client into a standalone Python service that writes to
+Redis; FastAPI reads from Redis. Removes the thread bridge entirely.
+
+### 3. Metrics & monitoring
+- live connection count
+- ticks per second
+- reconnect time
+- alert if Wallex silent > 30s
 ## Rollback
 
 git reset --hard v0.9-pre-websocket
