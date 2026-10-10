@@ -76,6 +76,12 @@ Redis; FastAPI reads from Redis. Removes the thread bridge entirely.
 - ticks per second
 - reconnect time
 - alert if Wallex silent > 30s
+## Observation (MVP verified 2026-10-10)
+
+- Full chain verified: Wallex -> thread -> Fanout -> endpoint -> client.
+- 30 ticks in 30 seconds (BTCTMN: 1, USDTTMN: 2, others: 27).
+- Two tests conducted, inconclusive regarding rate-limiting.
+- Note: BTC is a low-volume symbol; other symbols are more active.
 ## Rollback
 
 git reset --hard v0.9-pre-websocket
