@@ -17,6 +17,7 @@ class NooaahConfig:
     momentum_exit_candles: int = 30    # پنجره‌ی 1m برای momentum exit (0 = off)
     momentum_red_ratio: float = 0.6    # نسبت کندل‌های قرمز برای exit
     volume_z_min: float = -0.5         # فیلتر: اگه volume_z < این → وارد نشو (بهینه: A2)
+    daily_loss_limit: float = 100.0    # C1: اگه ضرر امروز > X٪ → تا فردا وارد نشو (100 = off)
     cooldown_after_sl: int = 0         # B3: چند کندل بعد از SL صبر کن (0 = off)
     use_confidence_sizing: bool = False  # B1: حجم متناسب با confidence
     conf_sizing_low: int = 80          # آستانه‌ی پایین confidence

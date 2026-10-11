@@ -61,6 +61,11 @@ def run_nooaah_backtest(
     trades: list[Trade] = []
     last_sl_idx: dict[str, int] = {}  # B3: آخرین ایندکس SL برای هر نماد
 
+    # C1: daily loss tracking
+    DAY_SECONDS = 86400
+    current_day = None
+    daily_pnl_pct = 0.0
+
     equity = 100.0
     equity_curve = [equity]
     equity_curve_full: list[float] = []
@@ -82,6 +87,12 @@ def run_nooaah_backtest(
 
     for i in range(effective_start, effective_end):
         current_time = candles_by_symbol[first_symbol][i].time
+
+        # C1: reset روزانه
+        this_day = current_time // DAY_SECONDS
+        if current_day is None or this_day != current_day:
+            current_day = this_day
+            daily_pnl_pct = 0.0
 
         # benchmark per candle
         avg = sum(
@@ -178,6 +189,9 @@ def run_nooaah_backtest(
                 if exit_reason == "stop_loss":
                     last_sl_idx[position["symbol"]] = i
 
+                # C1: به‌روزرسانی daily pnl
+                daily_pnl_pct += weighted_ret
+
                 equity *= (1 + weighted_ret / 100)
                 equity_curve.append(round(equity, 4))
                 position = None
@@ -195,6 +209,11 @@ def run_nooaah_backtest(
         if proposal is not None and config.cooldown_after_sl > 0:
             last = last_sl_idx.get(proposal.symbol)
             if last is not None and (i - last) < config.cooldown_after_sl:
+                proposal = None
+
+        # C1: daily loss limit
+        if proposal is not None and config.daily_loss_limit < 100.0:
+            if daily_pnl_pct <= -config.daily_loss_limit:
                 proposal = None
 
         if proposal is None:
