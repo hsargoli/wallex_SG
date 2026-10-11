@@ -162,6 +162,18 @@ def run_nooaah_backtest(
                     exit_price = position["tp2"]
                     exit_reason = "remaining_tp2"
 
+            # D2: stale exit
+            if (
+                exit_price is None
+                and config.stale_exit_hours > 0
+                and (i - position["entry_idx"]) >= config.stale_exit_hours
+            ):
+                cur_close = float(current.close)
+                cur_profit_pct = (cur_close / float(position["entry_price"]) - 1) * 100
+                if cur_profit_pct < config.stale_exit_min_profit:
+                    exit_price = current.close
+                    exit_reason = "stale"
+
             if exit_price is None and (i - position["entry_idx"]) >= max_duration:
                 exit_price = current.close
                 exit_reason = "timeout"

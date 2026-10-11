@@ -173,6 +173,8 @@ async def main() -> None:
     parser.add_argument("--daily-loss-limit", type=float, default=100.0)
     parser.add_argument("--max-positions", type=int, default=1)
     parser.add_argument("--partial", action="store_true")
+    parser.add_argument("--stale-hours", type=int, default=0)
+    parser.add_argument("--stale-profit", type=float, default=0.5)
     parser.add_argument("--tp2-mult", type=float, default=5.0)
     parser.add_argument("--partial-fraction", type=float, default=0.5)
     parser.add_argument("--conf-sizing", action="store_true")
@@ -305,6 +307,8 @@ async def main() -> None:
         use_partial_exit=args.partial,
         tp2_atr_mult=args.tp2_mult,
         partial_fraction=args.partial_fraction,
+        stale_exit_hours=args.stale_hours,
+        stale_exit_min_profit=args.stale_profit,
         use_confidence_sizing=args.conf_sizing,
         size_mult_low=args.mult_low,
         size_mult_high=args.mult_high,

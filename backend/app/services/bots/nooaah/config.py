@@ -17,6 +17,8 @@ class NooaahConfig:
     momentum_exit_candles: int = 30    # پنجره‌ی 1m برای momentum exit (0 = off)
     momentum_red_ratio: float = 0.6    # نسبت کندل‌های قرمز برای exit
     volume_z_min: float = -0.5         # فیلتر: اگه volume_z < این → وارد نشو (بهینه: A2)
+    stale_exit_hours: int = 0          # D2: اگه N ساعت بازه و profit < stale_exit_min_profit → ببند (0=off)
+    stale_exit_min_profit: float = 0.5  # D2: حداقل سود (٪)
     use_partial_exit: bool = False     # D1: خروج تدریجی (TP1: 50%, TP2: 50%)
     tp2_atr_mult: float = 5.0          # D1: TP دوم (× ATR)
     partial_fraction: float = 0.5      # D1: چقدر در TP1 بفروش
