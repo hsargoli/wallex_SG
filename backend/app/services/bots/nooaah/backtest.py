@@ -12,7 +12,7 @@ from typing import Sequence
 from app.domain.entities.candle import Candle
 from app.services.backtest import BacktestResult, Trade
 from app.services.bots.nooaah.config import NooaahConfig
-from app.services.bots.nooaah.strategy import decide
+from app.services.bots.nooaah.strategy import decide, should_exit_on_momentum
 
 WARMUP = 200
 FEE_PCT = 0.2
@@ -25,6 +25,7 @@ def run_nooaah_backtest(
     warmup: int = WARMUP,
     start_idx: int = 0,
     end_idx: int | None = None,
+    candles_1m_by_symbol: dict[str, Sequence[Candle]] | None = None,
 ) -> BacktestResult:
     """backtest چندنمادی Nooaah.
 
@@ -68,6 +69,14 @@ def run_nooaah_backtest(
         sym: float(c[effective_start].close)
         for sym, c in candles_by_symbol.items()
     }
+
+    # index 1m candles by (symbol, hour_start) — per-symbol
+    hour_1m: dict[tuple[str, int], list[Candle]] = {}
+    if candles_1m_by_symbol and config.momentum_exit_candles > 0:
+        for sym, lst in candles_1m_by_symbol.items():
+            for c in lst:
+                h = (c.time // 3600) * 3600
+                hour_1m.setdefault((sym, h), []).append(c)
     buy_hold_curve: list[float] = []
 
     for i in range(effective_start, effective_end):
@@ -88,16 +97,60 @@ def run_nooaah_backtest(
             exit_price: Decimal | None = None
             exit_reason = ""
 
-            if current.low <= position["stop_loss"]:
-                exit_price = position["stop_loss"]
-                exit_reason = "stop_loss"
-            elif current.high >= position["take_profit"]:
-                exit_price = position["take_profit"]
-                exit_reason = "take_profit"
+            # peak tracking (برای trailing)
+            current_high_f = float(current.high)
+            if current_high_f > position["peak_high"]:
+                position["peak_high"] = current_high_f
+
+            if config.use_trailing:
+                # effective SL = max(initial_SL, peak - trailing_atr_mult × ATR)
+                initial_sl_f = float(position["stop_loss"])
+                trailing_sl_f = (
+                    position["peak_high"]
+                    - position["atr_abs"] * config.trailing_atr_mult
+                )
+                effective_sl_f = max(initial_sl_f, trailing_sl_f)
+                effective_sl = Decimal(str(effective_sl_f))
+
+                if current.low <= effective_sl:
+                    exit_price = effective_sl
+                    # اگه SL بالاتر از initial رفت → trailing
+                    exit_reason = (
+                        "trailing"
+                        if effective_sl_f > initial_sl_f + 1e-9
+                        else "stop_loss"
+                    )
+            else:
+                if current.low <= position["stop_loss"]:
+                    exit_price = position["stop_loss"]
+                    exit_reason = "stop_loss"
+                elif current.high >= position["take_profit"]:
+                    exit_price = position["take_profit"]
+                    exit_reason = "take_profit"
 
             if exit_price is None and (i - position["entry_idx"]) >= max_duration:
                 exit_price = current.close
                 exit_reason = "timeout"
+
+            # momentum exit (اگر هنوز بازه و فعاله)
+            if (
+                exit_price is None
+                and config.momentum_exit_candles > 0
+                and hour_1m
+                and i > position["entry_idx"]  # فقط بعد از ساعت ورود
+            ):
+                h_start = (current.time // 3600) * 3600
+                m1 = hour_1m.get((position["symbol"], h_start))
+                if m1 and should_exit_on_momentum(
+                    m1,
+                    window=config.momentum_exit_candles,
+                    red_ratio=config.momentum_red_ratio,
+                    mode=config.momentum_mode,
+                    consecutive=config.momentum_consecutive,
+                    cumulative_pct=config.momentum_cumulative_pct,
+                ):
+                    exit_price = current.close
+                    exit_reason = "momentum"
 
             if exit_price is not None:
                 entry_p = position["entry_price"]
@@ -136,6 +189,8 @@ def run_nooaah_backtest(
             continue
 
         current = candles_by_symbol[proposal.symbol][i]
+        # atr_abs از فاصله‌ی entry→SL استخراج می‌شه
+        atr_abs = (proposal.entry - proposal.stop_loss) / max(config.sl_atr_mult, 0.01)
         position = {
             "symbol": proposal.symbol,
             "entry_idx": i,
@@ -144,6 +199,8 @@ def run_nooaah_backtest(
             "stop_loss": Decimal(str(proposal.stop_loss)),
             "take_profit": Decimal(str(proposal.take_profit)),
             "confidence": proposal.confidence,
+            "atr_abs": atr_abs,
+            "peak_high": proposal.entry,
         }
         equity_curve_full.append(round(equity, 4))
 

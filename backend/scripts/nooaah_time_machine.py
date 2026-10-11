@@ -9,16 +9,45 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import csv
 from datetime import datetime, timezone
+from pathlib import Path
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from decimal import Decimal
+
 from app.domain.entities.candle import Candle
 from app.infrastructure.exchange.wallex.client import WallexExchange
 from app.services.bots.nooaah.backtest import run_nooaah_backtest
 from app.services.bots.nooaah.bot import NooaahBot
 from app.services.bots.nooaah.config import NooaahConfig
+
+
+def load_1m_csv(symbol: str) -> list[Candle]:
+    """بارگذاری 1m از CSV (اگه موجود)."""
+    path = Path(__file__).resolve().parent.parent / "data" / "candles" / f"{symbol}_1m.csv"
+    if not path.exists():
+        return []
+    out: list[Candle] = []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.reader(f)
+        next(reader, None)  # header
+        for row in reader:
+            if len(row) == 6:
+                try:
+                    out.append(Candle(
+                        time=int(row[0]),
+                        open=Decimal(row[1]),
+                        high=Decimal(row[2]),
+                        low=Decimal(row[3]),
+                        close=Decimal(row[4]),
+                        volume=Decimal(row[5]),
+                    ))
+                except Exception:
+                    continue
+    return out
 
 
 def parse_date(s: str) -> int:
@@ -136,6 +165,18 @@ async def main() -> None:
     parser.add_argument("--sl", type=float, default=1.5)
     parser.add_argument("--cc", type=int, default=2)
     parser.add_argument("--warmup", type=int, default=120)
+    parser.add_argument("--momentum", type=int, default=0, help="window 1m for momentum exit (0=off)")
+    parser.add_argument("--red-ratio", type=float, default=0.6)
+    parser.add_argument("--mom-mode", default="ratio", choices=["ratio", "consecutive", "cumulative"])
+    parser.add_argument("--vol-z-min", type=float, default=-10.0)
+    parser.add_argument("--rsi-max", type=float, default=100.0)
+    parser.add_argument("--rsi-min", type=float, default=0.0)
+    parser.add_argument("--trailing", action="store_true", help="استفاده از Trailing ATR به‌جای TP")
+    parser.add_argument("--trailing-mult", type=float, default=1.5)
+    parser.add_argument("--mom-consecutive", type=int, default=4)
+    parser.add_argument("--mom-cumulative-pct", type=float, default=-0.3)
+    parser.add_argument("--regime-window", type=int, default=20)
+    parser.add_argument("--regime-ratio", type=float, default=0.30)
     args = parser.parse_args()
 
     configure_logging()
@@ -164,13 +205,27 @@ async def main() -> None:
     print(f"  بازه:      {args.start} → {args.end}")
     print(f"  نمادها:    {', '.join(symbols)}")
     print(f"  سرمایه:    {args.capital:,.0f}")
-    print(f"  پارامترها: conf={args.conf} tp={args.tp} sl={args.sl} cc={args.cc}")
+    mom_str = f"mom={args.momentum}({args.red_ratio})" if args.momentum > 0 else "mom=off"
+    rg_str = f"rg={args.regime_window}({args.regime_ratio})" if args.regime_window > 0 else "rg=off"
+    tr_str = f"trailing={args.trailing_mult}" if args.trailing else "trailing=off"
+    rsi_str = f"rsi=[{args.rsi_min},{args.rsi_max}]" if (args.rsi_max < 100 or args.rsi_min > 0) else "rsi=off"
+    print(f"  پارامترها: conf={args.conf} tp={args.tp} sl={args.sl} cc={args.cc} {mom_str} {rg_str} {tr_str} {rsi_str}")
 
     print(f"\n📥 Fetching {args.limit} candles per symbol...")
     data = await fetch_all(symbols, args.limit)
     if not data:
         print("❌ no data")
         return
+
+    # بارگذاری 1m (اگه momentum فعاله)
+    candles_1m_by_symbol: dict[str, list[Candle]] = {}
+    if args.momentum > 0:
+        print(f"\n📥 Loading 1m candles for momentum exit (window={args.momentum})...")
+        for sym in data.keys():
+            m1 = load_1m_csv(sym)
+            if m1:
+                candles_1m_by_symbol[sym] = m1
+                print(f"   {sym}: {len(m1)} 1m candles")
 
     # پیدا کردن idx range
     filtered_data: dict[str, list[Candle]] = {}
@@ -221,6 +276,18 @@ async def main() -> None:
         tp_atr_mult=args.tp,
         sl_atr_mult=args.sl,
         confirmation_candles=args.cc,
+        momentum_exit_candles=args.momentum,
+        momentum_red_ratio=args.red_ratio,
+        momentum_mode=args.mom_mode,
+        momentum_consecutive=args.mom_consecutive,
+        momentum_cumulative_pct=args.mom_cumulative_pct,
+        regime_filter_window=args.regime_window,
+        regime_filter_min_ratio=args.regime_ratio,
+        use_trailing=args.trailing,
+        trailing_atr_mult=args.trailing_mult,
+        rsi_entry_max=args.rsi_max,
+        rsi_entry_min=args.rsi_min,
+        volume_z_min=args.vol_z_min,
     )
 
     stats = run_nooaah_backtest(
@@ -228,6 +295,7 @@ async def main() -> None:
         warmup=args.warmup,
         start_idx=effective_start,
         end_idx=effective_end,
+        candles_1m_by_symbol=candles_1m_by_symbol or None,
     )
 
     # گزارش

@@ -59,6 +59,33 @@ def _confirmed_regime(
     return latest
 
 
+def _recent_trending_up_ratio(
+    candles: Sequence[Candle],
+    config: NooaahConfig,
+    classifier: RuleBasedClassifier,
+) -> float:
+    """نسبت trending_up در N کندل اخیر (شبیه‌سازی گذشته).
+
+    برای هر offset از 0 تا N-1، پنجره‌ی context را classify می‌کنیم
+    و می‌بینیم چند تا trending_up بوده.
+    """
+    n = config.regime_filter_window
+    if n <= 0:
+        return 1.0
+    tu = 0
+    total = 0
+    for offset in range(n):
+        end = len(candles) - offset
+        if end < config.min_candles:
+            break
+        window = candles[max(0, end - config.context_candles) : end]
+        r = classifier.classify(window)
+        if r.regime == RegimeType.TRENDING_UP:
+            tu += 1
+        total += 1
+    return tu / total if total > 0 else 0.0
+
+
 def propose_trade(
     symbol: str,
     candles: Sequence[Candle],
@@ -79,6 +106,28 @@ def propose_trade(
     result = _confirmed_regime(candles, config, classifier)
     if result is None:
         return None
+
+    # regime filter: نسبت trending_up اخیر
+    if config.regime_filter_window > 0:
+        ratio = _recent_trending_up_ratio(candles, config, classifier)
+        if ratio < config.regime_filter_min_ratio:
+            return None
+
+    # Volume filter (A2)
+    if config.volume_z_min > -10.0:
+        from app.domain.analysis.models.feature_math import volume_z as _vz
+        vz = _vz(list(candles[-config.context_candles :]))
+        if vz < config.volume_z_min:
+            return None
+
+    # RSI filter (A1)
+    if config.rsi_entry_max < 100.0 or config.rsi_entry_min > 0.0:
+        from app.domain.analysis.models.feature_math import rsi as _rsi
+        current_rsi = _rsi(list(candles[-config.context_candles :]), 14)
+        if current_rsi > config.rsi_entry_max:
+            return None
+        if current_rsi < config.rsi_entry_min:
+            return None
 
     entry = float(candles[-1].close)
     if entry <= 0:
@@ -120,3 +169,48 @@ def decide(
         for sym, candles in symbols_candles.items()
     ]
     return pick_best(proposals)
+
+def should_exit_on_momentum(
+    candles_1m: Sequence[Candle],
+    window: int = 30,
+    red_ratio: float = 0.6,
+    mode: str = "ratio",
+    consecutive: int = 4,
+    cumulative_pct: float = -0.3,
+) -> bool:
+    """momentum exit — سه معیار.
+
+    - ratio:       ≥ red_ratio از window کندل قرمز
+    - consecutive: ≥ consecutive کندل قرمز پشت‌سرهم
+    - cumulative:  مجموع تغییرات window کندل < cumulative_pct٪
+    """
+    if window <= 0 or len(candles_1m) < window:
+        return False
+    recent = candles_1m[-window:]
+
+    if mode == "ratio":
+        reds = sum(1 for c in recent if c.close < c.open)
+        return (reds / window) >= red_ratio
+
+    if mode == "consecutive":
+        streak = 0
+        best = 0
+        for c in recent:
+            if c.close < c.open:
+                streak += 1
+                if streak > best:
+                    best = streak
+            else:
+                streak = 0
+        return best >= consecutive
+
+    if mode == "cumulative":
+        first_close = float(recent[0].close)
+        last_close = float(recent[-1].close)
+        if first_close <= 0:
+            return False
+        change_pct = (last_close - first_close) / first_close * 100
+        return change_pct < cumulative_pct
+
+    return False
+

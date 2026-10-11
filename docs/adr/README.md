@@ -15,5 +15,6 @@ Each file: `NNNN-short-title.md`.
 | [0006](./0006-price-change-source.md) | Price Change Source | Accepted |
 | [0007](./0007-websocket-realtime.md) | WebSocket Realtime | Accepted |
 | [0008](./0008-nooaah-analysis-ddd.md) | Nooaah Analysis DDD | Accepted |
+| [0009](./0009-nooaah-ml-stack.md) | Nooaah ML Stack (LightGBM) | Accepted |
 
 Template: [template.md](./template.md)
