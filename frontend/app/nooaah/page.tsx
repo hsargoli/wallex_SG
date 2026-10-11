@@ -18,10 +18,56 @@ import { EquityChart } from "@/components/charts/equity-chart";
 const pnlColor = (v: number) =>
   v > 0 ? "text-emerald-500" : v < 0 ? "text-red-500" : "text-muted-foreground";
 
+const PRESETS = {
+  conservative: {
+    label: "🟢 احتیاط",
+    conf: 85, cc: 2, tp: 3.0, sl: 1.5, vol_z_min: -0.5,
+  },
+  normal: {
+    label: "🟡 عادی",
+    conf: 75, cc: 2, tp: 3.0, sl: 1.5, vol_z_min: -0.5,
+  },
+  aggressive: {
+    label: "🔴 تهاجمی",
+    conf: 60, cc: 1, tp: 2.0, sl: 1.0, vol_z_min: -1.0,
+  },
+} as const;
+
+type PresetKey = keyof typeof PRESETS;
+
 export default function NooaahPage() {
   const [top, setTop] = useState(5);
+  const [start, setStart] = useState("2026-09-25");
+  const [end, setEnd] = useState("2026-10-05");
+  const [preset, setPreset] = useState<PresetKey>("conservative");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [conf, setConf] = useState(85);
+  const [cc, setCc] = useState(2);
+  const [tp, setTp] = useState(3.0);
+  const [sl, setSl] = useState(1.5);
+  const [volZMin, setVolZMin] = useState(-0.5);
+  const [useCustom, setUseCustom] = useState(false);
+
   const status = useNooaahStatus(top);
   const backtest = useNooaahBacktest();
+
+  const applyPreset = (key: PresetKey) => {
+    setPreset(key);
+    const p = PRESETS[key];
+    setConf(p.conf);
+    setCc(p.cc);
+    setTp(p.tp);
+    setSl(p.sl);
+    setVolZMin(p.vol_z_min);
+  };
+
+  const runBacktest = () => {
+    const params = useCustom
+      ? { top, start, end, conf, cc, tp, sl, vol_z_min: volZMin }
+      : { top, start, end, ...PRESETS[preset] };
+    // @ts-expect-error: PRESETS includes label which API ignores
+    backtest.mutate(params);
+  };
 
   return (
     <div className="space-y-6 p-6" dir="rtl">
@@ -44,6 +90,99 @@ export default function NooaahPage() {
           </select>
         </div>
       </div>
+
+      {/* Settings Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">تنظیمات اجرا</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Date range + top */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              از تاریخ
+              <input
+                type="date"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              تا تاریخ
+              <input
+                type="date"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              تعداد نمادها
+              <select
+                value={top}
+                onChange={(e) => setTop(Number(e.target.value))}
+                className="h-9 rounded-lg border border-border bg-background px-3 text-sm"
+              >
+                {[3, 5, 8, 10].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Preset selector */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">حالت:</span>
+            {(Object.keys(PRESETS) as PresetKey[]).map((k) => (
+              <button
+                key={k}
+                onClick={() => { applyPreset(k); setUseCustom(false); }}
+                className={`rounded-lg border px-3 py-1.5 text-sm transition-all ${
+                  preset === k && !useCustom
+                    ? "border-primary bg-primary/10 font-bold"
+                    : "border-border/50 hover:bg-muted/50"
+                }`}
+              >
+                {PRESETS[k].label}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="rounded-lg border border-border/50 px-3 py-1.5 text-xs hover:bg-muted/50"
+            >
+              {showAdvanced ? "بستن" : "تنظیمات پیشرفته"}
+            </button>
+          </div>
+
+          {/* Advanced override */}
+          {showAdvanced && (
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <NumField label="min_confidence" value={conf} onChange={(v) => { setConf(v); setUseCustom(true); }} />
+              <NumField label="confirmation" value={cc} onChange={(v) => { setCc(v); setUseCustom(true); }} />
+              <NumField label="tp_atr" value={tp} onChange={(v) => { setTp(v); setUseCustom(true); }} step={0.1} />
+              <NumField label="sl_atr" value={sl} onChange={(v) => { setSl(v); setUseCustom(true); }} step={0.1} />
+              <NumField label="vol_z_min" value={volZMin} onChange={(v) => { setVolZMin(v); setUseCustom(true); }} step={0.1} />
+            </div>
+          )}
+
+          {/* Run button */}
+          <Button
+            onClick={runBacktest}
+            disabled={backtest.isPending}
+            className="w-full md:w-auto"
+          >
+            {backtest.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FlaskConical className="h-4 w-4" />
+            )}
+            <span className="mr-2">
+              {backtest.isPending ? "در حال اجرا..." : "اجرای بک‌تست"}
+            </span>
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Status Section */}
       <Card>
@@ -137,23 +276,7 @@ export default function NooaahPage() {
       {/* Backtest Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between text-base">
-            <span>بک‌تست</span>
-            <Button
-              size="sm"
-              onClick={() => backtest.mutate({ top, limit: 500 })}
-              disabled={backtest.isPending}
-            >
-              {backtest.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FlaskConical className="h-4 w-4" />
-              )}
-              <span className="mr-2">
-                {backtest.isPending ? "در حال اجرا..." : "اجرای بک‌تست"}
-              </span>
-            </Button>
-          </CardTitle>
+          <CardTitle className="text-base">نتایج بک‌تست</CardTitle>
         </CardHeader>
         <CardContent>
           {backtest.error && (
@@ -260,6 +383,32 @@ export default function NooaahPage() {
     </div>
   );
 }
+
+function NumField({
+  label,
+  value,
+  onChange,
+  step = 1,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <span className="font-mono">{label}</span>
+      <input
+        type="number"
+        value={value}
+        step={step}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-8 rounded-lg border border-border bg-background px-2 text-sm text-foreground"
+      />
+    </label>
+  );
+}
+
 
 function Stat({
   label,

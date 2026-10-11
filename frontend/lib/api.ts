@@ -554,8 +554,24 @@ export const api = {
     client.get<AnalysisResult>(`/v1/analysis/${symbol}?timeframe=${timeframe}`).then((r) => r.data),
   getNooaahStatus: (top: number = 5) =>
     client.get<NooaahStatusResponse>(`/v1/nooaah/status?top=${top}`).then((r) => r.data),
-  getNooaahBacktest: (top: number = 5, limit: number = 500) =>
-    client.get<NooaahBacktestResponse>(`/v1/nooaah/backtest?top=${top}&limit=${limit}`).then((r) => r.data),
+  getNooaahBacktest: (params: {
+    top?: number;
+    limit?: number;
+    symbols?: string;
+    start?: string;
+    end?: string;
+    conf?: number;
+    cc?: number;
+    tp?: number;
+    sl?: number;
+    vol_z_min?: number;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) qs.set(k, String(v));
+    });
+    return client.get<NooaahBacktestResponse>(`/v1/nooaah/backtest?${qs}`).then((r) => r.data);
+  },
   getOrderBook: (symbol: string) =>
     client
       .get<OrderBookResponse>(`/v1/markets/orderbook/${symbol}`)

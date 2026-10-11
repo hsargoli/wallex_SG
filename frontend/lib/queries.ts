@@ -621,10 +621,23 @@ export function useNooaahStatus(top: number = 5) {
   });
 }
 
+export type NooaahBacktestParams = {
+  top?: number;
+  limit?: number;
+  symbols?: string;
+  start?: string;
+  end?: string;
+  conf?: number;
+  cc?: number;
+  tp?: number;
+  sl?: number;
+  vol_z_min?: number;
+};
+
 export function useNooaahBacktest() {
   return useMutation({
-    mutationFn: ({ top, limit }: { top: number; limit: number }) =>
-      api.getNooaahBacktest(top, limit),
+    mutationFn: (params: NooaahBacktestParams) =>
+      api.getNooaahBacktest(params),
   });
 }
 
