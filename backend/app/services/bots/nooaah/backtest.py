@@ -59,6 +59,7 @@ def run_nooaah_backtest(
     signals_generated = 0
     position: dict | None = None
     trades: list[Trade] = []
+    last_sl_idx: dict[str, int] = {}  # B3: آخرین ایندکس SL برای هر نماد
 
     equity = 100.0
     equity_curve = [equity]
@@ -173,6 +174,10 @@ def run_nooaah_backtest(
                         symbol=position["symbol"],
                     )
                 )
+                # B3: اگه SL خورد → ثبت
+                if exit_reason == "stop_loss":
+                    last_sl_idx[position["symbol"]] = i
+
                 equity *= (1 + weighted_ret / 100)
                 equity_curve.append(round(equity, 4))
                 position = None
@@ -185,6 +190,12 @@ def run_nooaah_backtest(
         }
         signals_generated += 1
         proposal = decide(windows, config)
+
+        # B3: cooldown filter
+        if proposal is not None and config.cooldown_after_sl > 0:
+            last = last_sl_idx.get(proposal.symbol)
+            if last is not None and (i - last) < config.cooldown_after_sl:
+                proposal = None
 
         if proposal is None:
             equity_curve_full.append(round(equity, 4))

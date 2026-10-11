@@ -169,6 +169,7 @@ async def main() -> None:
     parser.add_argument("--red-ratio", type=float, default=0.6)
     parser.add_argument("--mom-mode", default="ratio", choices=["ratio", "consecutive", "cumulative"])
     parser.add_argument("--vol-z-min", type=float, default=-10.0)
+    parser.add_argument("--cooldown", type=int, default=0)
     parser.add_argument("--conf-sizing", action="store_true")
     parser.add_argument("--mult-low", type=float, default=0.7)
     parser.add_argument("--mult-high", type=float, default=1.5)
@@ -293,6 +294,7 @@ async def main() -> None:
         rsi_entry_max=args.rsi_max,
         rsi_entry_min=args.rsi_min,
         volume_z_min=args.vol_z_min,
+        cooldown_after_sl=args.cooldown,
         use_confidence_sizing=args.conf_sizing,
         size_mult_low=args.mult_low,
         size_mult_high=args.mult_high,
