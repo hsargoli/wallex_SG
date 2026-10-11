@@ -90,3 +90,11 @@ backend/data/candles/fetch.log
 
 # Nooaah grid search results (runtime output)
 backend/data/nooaah_grid_*.json
+
+# Nooaah 1m candles (large, regenerable via fetch_candles_1m.py)
+backend/data/candles/*_1m.csv
+
+
+# Nooaah ML models (regenerable via train_*)
+backend/data/models/nooaah_lgbm_*.txt
+
