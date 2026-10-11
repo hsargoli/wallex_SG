@@ -141,6 +141,27 @@ def run_nooaah_backtest(
                     exit_price = position["take_profit"]
                     exit_reason = "take_profit"
 
+            # D1: partial exit logic
+            exit_fraction = 1.0  # پیش‌فرض: همه پوزیشن
+            if config.use_partial_exit and not position["partial_taken"]:
+                # اگه TP1 خورد → نصف بفروش، SL بره breakeven
+                if current.high >= position["tp1"]:
+                    exit_price = position["tp1"]
+                    exit_reason = "tp1_partial"
+                    exit_fraction = config.partial_fraction
+                    position["partial_taken"] = True
+                    # SL → breakeven
+                    position["stop_loss"] = position["entry_price"]
+
+            if config.use_partial_exit and position["partial_taken"] and exit_price is None:
+                # نیمه‌ی باقی: TP2 یا SL جدید
+                if current.low <= position["stop_loss"]:
+                    exit_price = position["stop_loss"]
+                    exit_reason = "remaining_sl"
+                elif current.high >= position["tp2"]:
+                    exit_price = position["tp2"]
+                    exit_reason = "remaining_tp2"
+
             if exit_price is None and (i - position["entry_idx"]) >= max_duration:
                 exit_price = current.close
                 exit_reason = "timeout"
@@ -169,7 +190,9 @@ def run_nooaah_backtest(
                 entry_p = position["entry_price"]
                 ret = float((exit_price / entry_p - 1) * 100) - FEE_PCT
                 size_mult = position.get("size_mult", 1.0)
-                weighted_ret = ret * size_mult
+                # D1: ضریب fraction
+                effective_size = size_mult * exit_fraction
+                weighted_ret = ret * effective_size
                 trades.append(
                     Trade(
                         entry_time=position["entry_time"],
@@ -197,8 +220,13 @@ def run_nooaah_backtest(
                 capital_fraction = 1.0 / max(config.max_concurrent_positions, 1)
                 equity *= (1 + weighted_ret * capital_fraction / 100)
                 equity_curve.append(round(equity, 4))
-                positions.remove(position)
-                closed_any = True
+
+                # D1: اگه partial بود، پوزیشن بمونه
+                if exit_reason == "tp1_partial":
+                    pass  # position باقی می‌مونه
+                else:
+                    positions.remove(position)
+                    closed_any = True
 
         equity_curve_full.append(round(equity, 4))
 
@@ -253,6 +281,14 @@ def run_nooaah_backtest(
             "atr_abs": atr_abs,
             "peak_high": proposal.entry,
             "size_mult": proposal.size_mult,
+            "partial_taken": False,
+            "tp2": Decimal(str(
+                proposal.entry
+                + (proposal.entry - proposal.stop_loss)
+                / max(config.sl_atr_mult, 0.01)
+                * config.tp2_atr_mult
+            )),
+            "tp1": Decimal(str(proposal.take_profit)),
         })
         equity_curve_full.append(round(equity, 4))
 

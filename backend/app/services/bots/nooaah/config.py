@@ -17,6 +17,9 @@ class NooaahConfig:
     momentum_exit_candles: int = 30    # پنجره‌ی 1m برای momentum exit (0 = off)
     momentum_red_ratio: float = 0.6    # نسبت کندل‌های قرمز برای exit
     volume_z_min: float = -0.5         # فیلتر: اگه volume_z < این → وارد نشو (بهینه: A2)
+    use_partial_exit: bool = False     # D1: خروج تدریجی (TP1: 50%, TP2: 50%)
+    tp2_atr_mult: float = 5.0          # D1: TP دوم (× ATR)
+    partial_fraction: float = 0.5      # D1: چقدر در TP1 بفروش
     max_concurrent_positions: int = 1  # B2: حداکثر پوزیشن همزمان (1 = تک‌پوزیشن)
     daily_loss_limit: float = 100.0    # C1: اگه ضرر امروز > X٪ → تا فردا وارد نشو (100 = off)
     cooldown_after_sl: int = 0         # B3: چند کندل بعد از SL صبر کن (0 = off)
