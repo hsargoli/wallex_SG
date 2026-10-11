@@ -17,6 +17,11 @@ class NooaahConfig:
     momentum_exit_candles: int = 30    # پنجره‌ی 1m برای momentum exit (0 = off)
     momentum_red_ratio: float = 0.6    # نسبت کندل‌های قرمز برای exit
     volume_z_min: float = -0.5         # فیلتر: اگه volume_z < این → وارد نشو (بهینه: A2)
+    use_confidence_sizing: bool = False  # B1: حجم متناسب با confidence
+    conf_sizing_low: int = 80          # آستانه‌ی پایین confidence
+    conf_sizing_high: int = 95         # آستانه‌ی بالا confidence
+    size_mult_low: float = 0.7         # حجم در conf_sizing_low
+    size_mult_high: float = 1.5        # حجم در conf_sizing_high
     rsi_entry_max: float = 100.0       # فیلتر: اگه RSI > این → وارد نشو (100 = off)
     rsi_entry_min: float = 0.0         # فیلتر: اگه RSI < این → وارد نشو (0 = off)
     use_trailing: bool = False         # Trailing ATR (بدون TP)

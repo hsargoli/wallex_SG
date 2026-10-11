@@ -26,6 +26,7 @@ class TradeProposal:
     confidence: int
     regime: str
     reason: str
+    size_mult: float = 1.0  # B1: ضریب حجم
 
 
 def _confirmed_regime(
@@ -137,6 +138,8 @@ def propose_trade(
     tp = entry * (1 + config.tp_atr_mult * atr_pct)
     sl = entry * (1 - config.sl_atr_mult * atr_pct)
 
+    size_mult = _confidence_mult(result.confidence, config)
+
     return TradeProposal(
         symbol=symbol,
         action="BUY",
@@ -146,7 +149,22 @@ def propose_trade(
         confidence=result.confidence,
         regime=result.regime.value,
         reason=" | ".join(result.reasons),
+        size_mult=size_mult,
     )
+
+
+def _confidence_mult(conf: int, cfg: NooaahConfig) -> float:
+    """محاسبه‌ی ضریب حجم از confidence (linear interpolation)."""
+    if not cfg.use_confidence_sizing:
+        return 1.0
+    lo, hi = cfg.conf_sizing_low, cfg.conf_sizing_high
+    ml, mh = cfg.size_mult_low, cfg.size_mult_high
+    if conf <= lo:
+        return ml
+    if conf >= hi:
+        return mh
+    t = (conf - lo) / (hi - lo)
+    return ml + t * (mh - ml)
 
 
 def pick_best(

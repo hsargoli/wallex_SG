@@ -169,6 +169,11 @@ async def main() -> None:
     parser.add_argument("--red-ratio", type=float, default=0.6)
     parser.add_argument("--mom-mode", default="ratio", choices=["ratio", "consecutive", "cumulative"])
     parser.add_argument("--vol-z-min", type=float, default=-10.0)
+    parser.add_argument("--conf-sizing", action="store_true")
+    parser.add_argument("--mult-low", type=float, default=0.7)
+    parser.add_argument("--mult-high", type=float, default=1.5)
+    parser.add_argument("--conf-low", type=int, default=80)
+    parser.add_argument("--conf-high", type=int, default=95)
     parser.add_argument("--rsi-max", type=float, default=100.0)
     parser.add_argument("--rsi-min", type=float, default=0.0)
     parser.add_argument("--trailing", action="store_true", help="استفاده از Trailing ATR به‌جای TP")
@@ -288,6 +293,11 @@ async def main() -> None:
         rsi_entry_max=args.rsi_max,
         rsi_entry_min=args.rsi_min,
         volume_z_min=args.vol_z_min,
+        use_confidence_sizing=args.conf_sizing,
+        size_mult_low=args.mult_low,
+        size_mult_high=args.mult_high,
+        conf_sizing_low=args.conf_low,
+        conf_sizing_high=args.conf_high,
     )
 
     stats = run_nooaah_backtest(

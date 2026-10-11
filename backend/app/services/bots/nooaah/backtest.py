@@ -155,6 +155,8 @@ def run_nooaah_backtest(
             if exit_price is not None:
                 entry_p = position["entry_price"]
                 ret = float((exit_price / entry_p - 1) * 100) - FEE_PCT
+                size_mult = position.get("size_mult", 1.0)
+                weighted_ret = ret * size_mult
                 trades.append(
                     Trade(
                         entry_time=position["entry_time"],
@@ -171,7 +173,7 @@ def run_nooaah_backtest(
                         symbol=position["symbol"],
                     )
                 )
-                equity *= (1 + ret / 100)
+                equity *= (1 + weighted_ret / 100)
                 equity_curve.append(round(equity, 4))
                 position = None
             equity_curve_full.append(round(equity, 4))
@@ -201,6 +203,7 @@ def run_nooaah_backtest(
             "confidence": proposal.confidence,
             "atr_abs": atr_abs,
             "peak_high": proposal.entry,
+            "size_mult": proposal.size_mult,
         }
         equity_curve_full.append(round(equity, 4))
 
@@ -243,15 +246,18 @@ def run_nooaah_backtest(
                 max_dd = dd
         result.max_drawdown_pct = max_dd
 
-        returns = [t.return_pct for t in trades]
-        if len(returns) > 1:
-            avg_ret = sum(returns) / len(returns)
-            variance = sum((r - avg_ret) ** 2 for r in returns) / (
-                len(returns) - 1
-            )
-            std = variance ** 0.5
-            if std > 0:
-                result.sharpe_ratio = avg_ret / std
+        # Sharpe از equity curve (weighted)
+        if len(equity_curve) > 2:
+            eq_returns = [
+                (equity_curve[i] - equity_curve[i-1]) / equity_curve[i-1]
+                for i in range(1, len(equity_curve))
+            ]
+            if len(eq_returns) > 1:
+                avg_r = sum(eq_returns) / len(eq_returns)
+                var = sum((r - avg_r) ** 2 for r in eq_returns) / (len(eq_returns) - 1)
+                std = var ** 0.5
+                if std > 0:
+                    result.sharpe_ratio = avg_r / std
 
     result.equity_curve = equity_curve
     result.equity_curve_full = equity_curve_full
