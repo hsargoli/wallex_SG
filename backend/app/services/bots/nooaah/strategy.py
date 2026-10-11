@@ -88,12 +88,28 @@ def _recent_trending_up_ratio(
 
 
 def _aggregate_to_4h(candles: Sequence[Candle]) -> list[Candle]:
-    """هر ۴ کندل 1h → ۱ کندل 4h (exact)."""
+    """هر ۴ کندل 1h → ۱ کندل 4h، هم‌تراز با مرزهای واقعی UTC.
+
+    مرز 4h: ساعت 0, 4, 8, 12, 16, 20 (UTC).
+    خوشه‌های ناقص (کمتر از ۴ کندل) به‌عنوان 4h کامل استفاده نمی‌شن —
+    این از داده‌ی ناقص/آینده در aggregation جلوگیری می‌کنه.
+    """
+    if not candles:
+        return []
+
+    FOUR_H_SECONDS = 4 * 3600
+    buckets: dict[int, list[Candle]] = {}
+    for c in candles:
+        boundary = (c.time // FOUR_H_SECONDS) * FOUR_H_SECONDS
+        buckets.setdefault(boundary, []).append(c)
+
     out: list[Candle] = []
-    n = len(candles)
-    # از آخر به عقب که همیشه ۴تایی کامل داشته باشیم
-    for i in range(0, n - 3, 4):
-        chunk = candles[i : i + 4]
+    for boundary in sorted(buckets.keys()):
+        chunk = buckets[boundary]
+        # فقط خوشه‌های کاملاً ۴تایی
+        if len(chunk) < 4:
+            continue
+        chunk = chunk[:4]  # در صورت اضافه، فقط ۴ تا
         out.append(
             Candle(
                 time=chunk[0].time,
