@@ -167,8 +167,25 @@ def propose_trade(
         return None
 
     atr_pct = (result.atr_pct / 100) if result.atr_pct else 0.01
-    tp = entry * (1 + config.tp_atr_mult * atr_pct)
-    sl = entry * (1 - config.sl_atr_mult * atr_pct)
+
+    # C2: dynamic multiplier based on volatility ratio
+    tp_mult = config.tp_atr_mult
+    sl_mult = config.sl_atr_mult
+    if config.use_dynamic_atr:
+        from app.domain.analysis.models.feature_math import volatility as _vol
+        short = candles[-config.vol_short_window :]
+        long_ = candles[-config.vol_long_window :]
+        v_now = _vol(short)
+        v_avg = _vol(long_)
+        if v_avg > 0:
+            ratio = v_now / v_avg
+            # clamp 0.5 تا 2.0 که افراط نکنیم
+            ratio = max(0.5, min(2.0, ratio))
+            tp_mult = config.tp_atr_mult * ratio
+            sl_mult = config.sl_atr_mult * ratio
+
+    tp = entry * (1 + tp_mult * atr_pct)
+    sl = entry * (1 - sl_mult * atr_pct)
 
     size_mult = _confidence_mult(result.confidence, config)
 
