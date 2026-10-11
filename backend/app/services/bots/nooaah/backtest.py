@@ -115,6 +115,7 @@ def run_nooaah_backtest(
                         duration_candles=i - position["entry_idx"],
                         exit_reason=exit_reason,
                         confidence=position["confidence"],
+                        symbol=position["symbol"],
                     )
                 )
                 equity *= (1 + ret / 100)

@@ -27,6 +27,7 @@ class Trade:
     duration_candles: int
     exit_reason: str  # take_profit / stop_loss / timeout / signal_reverse
     confidence: int
+    symbol: str = ""  # برای multi-symbol backtest
 
 
 @dataclass(slots=True)
