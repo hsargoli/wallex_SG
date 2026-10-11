@@ -173,6 +173,7 @@ async def main() -> None:
     parser.add_argument("--daily-loss-limit", type=float, default=100.0)
     parser.add_argument("--max-positions", type=int, default=1)
     parser.add_argument("--partial", action="store_true")
+    parser.add_argument("--confirm-4h", action="store_true")
     parser.add_argument("--stale-hours", type=int, default=0)
     parser.add_argument("--stale-profit", type=float, default=0.5)
     parser.add_argument("--tp2-mult", type=float, default=5.0)
@@ -305,6 +306,7 @@ async def main() -> None:
         daily_loss_limit=args.daily_loss_limit,
         max_concurrent_positions=args.max_positions,
         use_partial_exit=args.partial,
+        use_4h_confirmation=args.confirm_4h,
         tp2_atr_mult=args.tp2_mult,
         partial_fraction=args.partial_fraction,
         stale_exit_hours=args.stale_hours,

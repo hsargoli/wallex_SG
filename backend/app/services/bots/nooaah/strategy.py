@@ -87,6 +87,26 @@ def _recent_trending_up_ratio(
     return tu / total if total > 0 else 0.0
 
 
+def _aggregate_to_4h(candles: Sequence[Candle]) -> list[Candle]:
+    """هر ۴ کندل 1h → ۱ کندل 4h (exact)."""
+    out: list[Candle] = []
+    n = len(candles)
+    # از آخر به عقب که همیشه ۴تایی کامل داشته باشیم
+    for i in range(0, n - 3, 4):
+        chunk = candles[i : i + 4]
+        out.append(
+            Candle(
+                time=chunk[0].time,
+                open=chunk[0].open,
+                high=max(c.high for c in chunk),
+                low=min(c.low for c in chunk),
+                close=chunk[-1].close,
+                volume=sum(c.volume for c in chunk),
+            )
+        )
+    return out
+
+
 def propose_trade(
     symbol: str,
     candles: Sequence[Candle],
@@ -128,6 +148,18 @@ def propose_trade(
         if current_rsi > config.rsi_entry_max:
             return None
         if current_rsi < config.rsi_entry_min:
+            return None
+
+    # A3: 4h confirmation
+    if config.use_4h_confirmation:
+        candles_4h = _aggregate_to_4h(candles)
+        ctx_4h = max(config.context_candles // 4, 50)
+        if len(candles_4h) < ctx_4h:
+            return None
+        r_4h = classifier.classify(candles_4h[-ctx_4h:])
+        if r_4h.regime != RegimeType.TRENDING_UP:
+            return None
+        if not r_4h.is_tradeable:
             return None
 
     entry = float(candles[-1].close)
