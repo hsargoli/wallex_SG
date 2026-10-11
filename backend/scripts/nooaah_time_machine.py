@@ -171,6 +171,7 @@ async def main() -> None:
     parser.add_argument("--vol-z-min", type=float, default=-10.0)
     parser.add_argument("--cooldown", type=int, default=0)
     parser.add_argument("--daily-loss-limit", type=float, default=100.0)
+    parser.add_argument("--max-positions", type=int, default=1)
     parser.add_argument("--conf-sizing", action="store_true")
     parser.add_argument("--mult-low", type=float, default=0.7)
     parser.add_argument("--mult-high", type=float, default=1.5)
@@ -297,6 +298,7 @@ async def main() -> None:
         volume_z_min=args.vol_z_min,
         cooldown_after_sl=args.cooldown,
         daily_loss_limit=args.daily_loss_limit,
+        max_concurrent_positions=args.max_positions,
         use_confidence_sizing=args.conf_sizing,
         size_mult_low=args.mult_low,
         size_mult_high=args.mult_high,

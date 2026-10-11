@@ -57,7 +57,7 @@ def run_nooaah_backtest(
     first_symbol = next(iter(candles_by_symbol))
 
     signals_generated = 0
-    position: dict | None = None
+    positions: list[dict] = []
     trades: list[Trade] = []
     last_sl_idx: dict[str, int] = {}  # B3: آخرین ایندکس SL برای هر نماد
 
@@ -102,8 +102,9 @@ def run_nooaah_backtest(
         ) / len(start_closes)
         buy_hold_curve.append(round(avg, 4))
 
-        # ---- اگر پوزیشن باز هست، چک خروج ----
-        if position is not None:
+        # ---- چک خروج همه‌ی پوزیشن‌های باز ----
+        closed_any = False
+        for position in list(positions):
             sym = position["symbol"]
             current = candles_by_symbol[sym][i]
             exit_price: Decimal | None = None
@@ -192,18 +193,36 @@ def run_nooaah_backtest(
                 # C1: به‌روزرسانی daily pnl
                 daily_pnl_pct += weighted_ret
 
-                equity *= (1 + weighted_ret / 100)
+                # با max_concurrent > 1، پوزیشن به سهم مساوی باز می‌شود
+                capital_fraction = 1.0 / max(config.max_concurrent_positions, 1)
+                equity *= (1 + weighted_ret * capital_fraction / 100)
                 equity_curve.append(round(equity, 4))
-                position = None
+                positions.remove(position)
+                closed_any = True
+
+        equity_curve_full.append(round(equity, 4))
+
+        # اگه هر پوزیشنی این کندل بسته شد → entry نکن (backward-compat با تک‌پوزیشن)
+        if closed_any:
+            continue
+
+        # ---- تصمیم جدید (فقط اگه جا هست) ----
+        signals_generated += 1
+
+        # B2: چک space
+        if len(positions) >= config.max_concurrent_positions:
             equity_curve_full.append(round(equity, 4))
             continue
 
-        # ---- تصمیم جدید ----
         windows = {
             sym: c[i - warmup : i] for sym, c in candles_by_symbol.items()
         }
-        signals_generated += 1
         proposal = decide(windows, config)
+
+        # B2: skip symbols already held
+        held = {p["symbol"] for p in positions}
+        if proposal is not None and proposal.symbol in held:
+            proposal = None
 
         # B3: cooldown filter
         if proposal is not None and config.cooldown_after_sl > 0:
@@ -223,7 +242,7 @@ def run_nooaah_backtest(
         current = candles_by_symbol[proposal.symbol][i]
         # atr_abs از فاصله‌ی entry→SL استخراج می‌شه
         atr_abs = (proposal.entry - proposal.stop_loss) / max(config.sl_atr_mult, 0.01)
-        position = {
+        positions.append({
             "symbol": proposal.symbol,
             "entry_idx": i,
             "entry_time": current.time,
@@ -234,7 +253,7 @@ def run_nooaah_backtest(
             "atr_abs": atr_abs,
             "peak_high": proposal.entry,
             "size_mult": proposal.size_mult,
-        }
+        })
         equity_curve_full.append(round(equity, 4))
 
     # ---- آمار ----
