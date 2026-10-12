@@ -15,6 +15,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.domain.ports.exchange import ExchangePort
 from app.services.bots.nooaah.config import NooaahConfig
 from app.services.bots.nooaah.runner import NooaahRunner
+from app.services.bots.nooaah.state import NooaahState
 
 log = structlog.get_logger("nooaah.scheduler")
 
@@ -62,11 +63,18 @@ class NooaahScheduler:
     async def _job(self) -> None:
         """هر بار اجرای runner."""
         try:
+            # از runtime_config موجود در state بخون (ADR-0012)
+            state = NooaahState.load()
+            rc = state.get_runtime_config()
+
             cfg = NooaahConfig(
-                top_n=5,
-                min_confidence=85,
-                confirmation_candles=2,
-                volume_z_min=-0.5,
+                top_n=int(rc.get("top_n", 5)),
+                min_confidence=int(rc.get("min_confidence", 85)),
+                confirmation_candles=int(rc.get("confirmation_candles", 2)),
+                tp_atr_mult=float(rc.get("tp_atr_mult", 3.0)),
+                sl_atr_mult=float(rc.get("sl_atr_mult", 1.5)),
+                volume_z_min=float(rc.get("volume_z_min", -0.5)),
+                max_concurrent_positions=int(rc.get("max_concurrent_positions", 1)),
             )
             runner = NooaahRunner(exchange=self._exchange, config=cfg)
             result = await runner.run_cycle()

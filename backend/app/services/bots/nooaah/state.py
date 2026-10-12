@@ -9,7 +9,7 @@ import json
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 STATE_DIR = Path("data/nooaah")
 STATE_FILE = STATE_DIR / "state.json"
@@ -90,6 +90,12 @@ class NooaahState:
     kill_activations_7d: int = 0    # برای condition
     daily_loss_hits_7d: int = 0     # برای condition
 
+    # --- Runtime config (ADR-0012) ---
+    # پارامترهای استراتژی + مدیریت — scheduler از این می‌خونه
+    runtime_config: dict[str, Any] = field(default_factory=dict)
+    # draft برای wizard فعال‌سازی (partial save بین مراحل)
+    draft_config: dict[str, Any] = field(default_factory=dict)
+
     # ============================================================
     # Persistence
     # ============================================================
@@ -119,6 +125,9 @@ class NooaahState:
             "pause_reason": self.pause_reason,
             "kill_activations_7d": self.kill_activations_7d,
             "daily_loss_hits_7d": self.daily_loss_hits_7d,
+            # ADR-0012
+            "runtime_config": self.runtime_config,
+            "draft_config": self.draft_config,
         }
         tmp = p.with_suffix(".json.tmp")
         tmp.write_text(
@@ -173,6 +182,9 @@ class NooaahState:
             pause_reason=raw.get("pause_reason", ""),
             kill_activations_7d=raw.get("kill_activations_7d", 0),
             daily_loss_hits_7d=raw.get("daily_loss_hits_7d", 0),
+            # ADR-0012
+            runtime_config=raw.get("runtime_config", {}),
+            draft_config=raw.get("draft_config", {}),
         )
 
     # ============================================================
@@ -296,3 +308,33 @@ class NooaahState:
 
     def has_position_for(self, symbol: str) -> bool:
         return any(p.symbol == symbol for p in self.open_positions)
+
+    # ============================================================
+    # Runtime config (ADR-0012)
+    # ============================================================
+    DEFAULT_RUNTIME_CONFIG: ClassVar[dict[str, Any]] = {
+        "min_confidence": 85,
+        "confirmation_candles": 2,
+        "tp_atr_mult": 3.0,
+        "sl_atr_mult": 1.5,
+        "volume_z_min": -0.5,
+        "max_concurrent_positions": 1,
+        "top_n": 5,
+        "capital_total": 0.0,
+        "daily_loss_limit_pct": 2.0,
+    }
+
+    def get_runtime_config(self) -> dict[str, Any]:
+        """پارامترهای نهایی برای scheduler (پیش‌فرض + ذخیره‌شده)."""
+        merged = dict(self.DEFAULT_RUNTIME_CONFIG)
+        merged.update(self.runtime_config)
+        # سرمایه از state بیاد (نه از runtime) — تنها منبع
+        merged["capital_total"] = self.capital_total
+        merged["daily_loss_limit_pct"] = self.daily_loss_limit_pct
+        return merged
+
+    def finalize_draft(self) -> dict[str, Any]:
+        """draft رو نهایی کن (merge با defaults) و برگردون."""
+        merged = dict(self.DEFAULT_RUNTIME_CONFIG)
+        merged.update(self.draft_config)
+        return merged

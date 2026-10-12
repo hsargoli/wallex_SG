@@ -70,6 +70,13 @@ class ActivateIn(BaseModel):
     confirmation_phrase: str
 
 
+class DraftOut(BaseModel):
+    draft: dict
+    defaults: dict
+    merged: dict
+    step_completed: dict  # کدوم stepها کاملن
+
+
 class ProposalOut(BaseModel):
     symbol: str
     action: str
@@ -224,6 +231,71 @@ async def get_readiness() -> ReadinessOut:
     )
 
 
+def _compute_steps_completed(draft: dict, defaults: dict) -> dict:
+    """کدوم از ۶ مرحله توسط کاربر پر شده؟
+
+    چک می‌کنیم k in draft (نه merged) — یعنی کاربر خودش مقدار داده.
+    """
+    return {
+        "step2_strategy": all(
+            k in draft for k in ("min_confidence", "confirmation_candles",
+                                  "tp_atr_mult", "sl_atr_mult", "volume_z_min")
+        ),
+        "step3_position": all(
+            k in draft for k in ("max_concurrent_positions", "top_n")
+        ),
+        "step4_capital": draft.get("capital_total", 0) > 0,
+        "step5_risk": "daily_loss_limit_pct" in draft,
+    }
+
+
+@router.get("/live/draft", response_model=DraftOut)
+async def get_live_draft() -> DraftOut:
+    """draft فعلی + پیش‌فرض‌ها."""
+    state = NooaahState.load()
+    defaults = dict(NooaahState.DEFAULT_RUNTIME_CONFIG)
+    merged = state.finalize_draft()
+    return DraftOut(
+        draft=state.draft_config,
+        defaults=defaults,
+        merged=merged,
+        step_completed=_compute_steps_completed(state.draft_config, defaults),
+    )
+
+
+@router.put("/live/draft", response_model=DraftOut)
+async def update_live_draft(body: dict) -> DraftOut:
+    """ذخیره‌ی یه مرحله از draft (merge با قبلی)."""
+    state = NooaahState.load()
+    # merge با draft قبلی (partial save)
+    for k, v in body.items():
+        state.draft_config[k] = v
+    state.save()
+    defaults = dict(NooaahState.DEFAULT_RUNTIME_CONFIG)
+    merged = state.finalize_draft()
+    return DraftOut(
+        draft=state.draft_config,
+        defaults=defaults,
+        merged=merged,
+        step_completed=_compute_steps_completed(state.draft_config, defaults),
+    )
+
+
+@router.delete("/live/draft", response_model=DraftOut)
+async def clear_live_draft() -> DraftOut:
+    """پاک کردن draft."""
+    state = NooaahState.load()
+    state.draft_config = {}
+    state.save()
+    defaults = dict(NooaahState.DEFAULT_RUNTIME_CONFIG)
+    return DraftOut(
+        draft={},
+        defaults=defaults,
+        merged=defaults,
+        step_completed=_compute_steps_completed({}, defaults),
+    )
+
+
 @router.post("/live/activate", response_model=NooaahConfigOut)
 async def activate_live(body: ActivateIn) -> NooaahConfigOut:
     """فعال‌سازی live. نیاز: شرایط آماده + عبارت تأیید."""
@@ -254,12 +326,24 @@ async def activate_live(body: ActivateIn) -> NooaahConfigOut:
             "شرایط آماده نیست: " + "، ".join(unmet),
         )
 
+    # نهایی‌سازی draft → runtime_config
+    final_config = state.finalize_draft()
+
+    # اعمال سرمایه + daily limit
+    state.capital_total = float(final_config.get("capital_total", state.capital_total))
+    state.capital_available = state.capital_total
+    state.daily_loss_limit_pct = float(
+        final_config.get("daily_loss_limit_pct", state.daily_loss_limit_pct)
+    )
+    state.runtime_config = final_config
+
     # انتقال
     state.mode = "live-active"
     state.activated_live_at = int(_time.time())
-    state.live_stage = 1  # شروع از stage 1
+    state.live_stage = 1
     state.pause_reason = ""
     state.consecutive_losses = 0
+    state.draft_config = {}  # پاک‌سازی draft بعد از activate
     state.save()
     return await get_nooaah_config()
 
