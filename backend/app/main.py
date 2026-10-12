@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     ticker_client.start()
 
     # Nooaah scheduler (hourly paper cycle)
-    nooaah_sched = NooaahScheduler(exchange=exchange, interval_minutes=60)
+    nooaah_sched = NooaahScheduler(exchange=exchange, interval_minutes=30)
     nooaah_sched.start()
     app.state.nooaah_scheduler = nooaah_sched
     set_scheduler(nooaah_sched)

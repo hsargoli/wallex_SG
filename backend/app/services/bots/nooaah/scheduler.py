@@ -26,7 +26,7 @@ class NooaahScheduler:
     def __init__(
         self,
         exchange: ExchangePort,
-        interval_minutes: int = 60,
+        interval_minutes: int = 30,
     ) -> None:
         self._exchange = exchange
         self._interval = interval_minutes

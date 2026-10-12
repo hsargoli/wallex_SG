@@ -81,7 +81,15 @@ class NooaahRunner:
             return self._summary(t0, status="killed")
 
         if self._state.daily_loss_hit:
-            return self._summary(t0, status="daily_loss_hit")
+            # ممکنه cooldown فعال یا تموم شده
+            if self._state.cooldown_remaining_seconds > 0:
+                return self._summary(
+                    t0, status="cooldown",
+                    error=f"cooldown: {self._state.cooldown_remaining_seconds}s remaining",
+                )
+            # cooldown تموم شد → پاک‌سازی
+            self._state.daily_loss_hit = False
+            self._state.cooldown_until = 0
 
         if self._state.capital_total <= 0:
             return self._summary(
@@ -179,14 +187,15 @@ class NooaahRunner:
 
         self._state.open_positions = still_open
 
-        # چک daily loss
+        # چک daily loss → cooldown ۶ ساعته (ADR-0013)
         if self._state.daily_pnl_pct <= -self._state.daily_loss_limit_pct:
             if not self._state.daily_loss_hit:
-                self._state.daily_loss_hit = True
+                self._state.enter_cooldown(hours=6)
                 log.warning(
-                    "nooaah.daily_loss_hit",
+                    "nooaah.daily_loss_hit_cooldown",
                     pnl_pct=round(self._state.daily_pnl_pct, 2),
                     limit=self._state.daily_loss_limit_pct,
+                    cooldown_until=self._state.cooldown_until,
                 )
 
         return closed
