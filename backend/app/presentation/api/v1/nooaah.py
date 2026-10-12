@@ -12,11 +12,35 @@ from app.presentation.api.deps import ExchangeDep
 from app.services.bots.nooaah.backtest import run_nooaah_backtest
 from app.services.bots.nooaah.bot import NooaahBot
 from app.services.bots.nooaah.config import NooaahConfig
+from app.services.bots.nooaah.scheduler import get_scheduler
+from app.services.bots.nooaah.state import NooaahState
 
 router = APIRouter(prefix="/nooaah", tags=["Nooaah"])
 
 
 # ---------- Schemas ----------
+
+class NooaahConfigOut(BaseModel):
+    mode: str
+    capital_total: float
+    capital_available: float
+    capital_in_use: float
+    daily_loss_limit_pct: float
+    daily_pnl_pct: float
+    daily_loss_hit: bool
+    killed: bool
+    open_positions_count: int
+    closed_trades_count: int
+    last_run: int
+    scheduler_running: bool
+    scheduler_last_status: str | None
+
+
+class NooaahConfigIn(BaseModel):
+    mode: str | None = None
+    capital_total: float | None = None
+    daily_loss_limit_pct: float | None = None
+
 
 class ProposalOut(BaseModel):
     symbol: str
@@ -65,6 +89,79 @@ class BacktestOut(BaseModel):
 
 
 # ---------- Endpoints ----------
+
+@router.get("/config", response_model=NooaahConfigOut)
+async def get_nooaah_config() -> NooaahConfigOut:
+    """وضعیت config فعلی Nooaah."""
+    state = NooaahState.load()
+    sched = get_scheduler()
+    return NooaahConfigOut(
+        mode=state.mode,
+        capital_total=state.capital_total,
+        capital_available=state.capital_available,
+        capital_in_use=state.capital_in_use,
+        daily_loss_limit_pct=state.daily_loss_limit_pct,
+        daily_pnl_pct=state.daily_pnl_pct,
+        daily_loss_hit=state.daily_loss_hit,
+        killed=state.killed,
+        open_positions_count=len(state.open_positions),
+        closed_trades_count=len(state.closed_trades),
+        last_run=state.last_run,
+        scheduler_running=sched.running if sched else False,
+        scheduler_last_status=(
+            sched.last_result.get("status") if sched and sched.last_result else None
+        ),
+    )
+
+
+@router.post("/config", response_model=NooaahConfigOut)
+async def update_nooaah_config(body: NooaahConfigIn) -> NooaahConfigOut:
+    """تغییر config — capital, mode, daily limit."""
+    state = NooaahState.load()
+
+    if body.mode is not None:
+        if body.mode not in ("paper", "live"):
+            raise HTTPException(400, "mode must be 'paper' or 'live'")
+        state.mode = body.mode
+
+    if body.capital_total is not None:
+        if body.capital_total < 0:
+            raise HTTPException(400, "capital_total must be >= 0")
+        delta = body.capital_total - state.capital_total
+        state.capital_total = body.capital_total
+        state.capital_available = max(0, state.capital_available + delta)
+
+    if body.daily_loss_limit_pct is not None:
+        if body.daily_loss_limit_pct < 0 or body.daily_loss_limit_pct > 100:
+            raise HTTPException(400, "daily_loss_limit_pct must be 0-100")
+        state.daily_loss_limit_pct = body.daily_loss_limit_pct
+
+    state.save()
+    return await get_nooaah_config()
+
+
+@router.post("/kill", response_model=NooaahConfigOut)
+async def kill_nooaah() -> NooaahConfigOut:
+    """kill-switch: قفل فوری. نیاز به /resume برای ادامه."""
+    import time as _time
+    state = NooaahState.load()
+    state.killed = True
+    state.killed_at = int(_time.time())
+    state.save()
+    return await get_nooaah_config()
+
+
+@router.post("/resume", response_model=NooaahConfigOut)
+async def resume_nooaah() -> NooaahConfigOut:
+    """برداشتن kill-switch."""
+    state = NooaahState.load()
+    state.killed = False
+    state.killed_at = 0
+    state.daily_loss_hit = False
+    state.daily_pnl_pct = 0.0
+    state.save()
+    return await get_nooaah_config()
+
 
 @router.get("/status", response_model=StatusOut)
 async def status_now(exchange: ExchangeDep, top: int = 5) -> StatusOut:
