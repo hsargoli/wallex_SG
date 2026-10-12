@@ -582,6 +582,10 @@ export const api = {
     client.put<NooaahDraftResponse>("/v1/nooaah/live/draft", body).then((r) => r.data),
   clearNooaahLiveDraft: () =>
     client.delete<NooaahDraftResponse>("/v1/nooaah/live/draft").then((r) => r.data),
+  getNooaahStopPreview: () =>
+    client.get<NooaahStopPreviewResponse>("/v1/nooaah/live/stop/preview").then((r) => r.data),
+  stopNooaahLive: (action: "sell" | "pause" | "kill") =>
+    client.post<NooaahStopResultResponse>("/v1/nooaah/live/stop", { action }).then((r) => r.data),
   getNooaahBacktest: (params: {
     top?: number;
     limit?: number;
@@ -1446,5 +1450,52 @@ export interface NooaahReadinessResponse {
   recent_trades_count: number;
   recent_win_rate: number;
   recent_return: number;
+}
+
+// ---------- Nooaah Draft type ----------
+
+export interface NooaahDraftResponse {
+  draft: Record<string, unknown>;
+  defaults: Record<string, unknown>;
+  merged: Record<string, unknown>;
+  step_completed: {
+    step2_strategy: boolean;
+    step3_position: boolean;
+    step4_capital: boolean;
+    step5_risk: boolean;
+  };
+}
+
+// ---------- Nooaah Stop types ----------
+
+export interface NooaahStopPosition {
+  client_id: string;
+  symbol: string;
+  entry_price: number;
+  entry_time: number;
+  quantity: number;
+  capital_used: number;
+  best_bid: number;
+  last_price: number;
+  pnl_pct: number;
+  pnl_abs: number;
+  confidence: number;
+}
+
+export interface NooaahStopPreviewResponse {
+  mode: string;
+  open_positions: NooaahStopPosition[];
+  count: number;
+  total_pnl_abs: number;
+  capital_in_use: number;
+}
+
+export interface NooaahStopResultResponse {
+  action: string;
+  mode: string;
+  killed: boolean;
+  open_positions: number;
+  capital_available: number;
+  capital_in_use: number;
 }
 

@@ -27,6 +27,7 @@ import { CheckCircle2, XCircle, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EquityChart } from "@/components/charts/equity-chart";
+import { NooaahStopModal } from "@/components/dashboard/nooaah-stop-modal";
 
 const formatThousands = (s: string): string => {
   // حذف همه‌ی غیر رقم‌ها
@@ -81,6 +82,7 @@ export default function NooaahPage() {
   const killMut = useKillNooaah();
   const resumeMut = useResumeNooaah();
   const readiness = useNooaahReadiness();
+  const [stopModalOpen, setStopModalOpen] = useState(false);
 
   const [capitalInput, setCapitalInput] = useState<string>("");
   const [limitInput, setLimitInput] = useState<string>("");
@@ -387,18 +389,14 @@ export default function NooaahPage() {
               </div>
 
               {/* kill button */}
-              {!cfg.killed && (
+              {!cfg.killed && cfg.mode !== "live-paused" && (
                 <Button
                   variant="destructive"
-                  onClick={() => killMut.mutate()}
-                  disabled={killMut.isPending}
+                  onClick={() => setStopModalOpen(true)}
                   className="w-full"
-                  title="توقف فوری — بدون تأیید"
                 >
                   <ShieldAlert className="h-4 w-4" />
-                  <span className="mr-2">
-                    {killMut.isPending ? "در حال توقف..." : "🛑 توقف فوری"}
-                  </span>
+                  <span className="mr-2">🛑 توقف ربات</span>
                 </Button>
               )}
             </>
@@ -695,6 +693,11 @@ export default function NooaahPage() {
           )}
         </CardContent>
       </Card>
+      <NooaahStopModal
+        open={stopModalOpen}
+        onClose={() => setStopModalOpen(false)}
+        onDone={() => setStopModalOpen(false)}
+      />
     </div>
   );
 }

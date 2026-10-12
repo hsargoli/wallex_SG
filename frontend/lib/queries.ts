@@ -752,3 +752,25 @@ export function useClearNooaahLiveDraft() {
   });
 }
 
+export function useNooaahStopPreview(enabled: boolean) {
+  return useQuery({
+    queryKey: ["nooaah-stop-preview"],
+    queryFn: () => api.getNooaahStopPreview(),
+    enabled,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useStopNooaahLive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (action: "sell" | "pause" | "kill") =>
+      api.stopNooaahLive(action),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+      qc.invalidateQueries({ queryKey: ["nooaah-readiness"] });
+    },
+  });
+}
+
