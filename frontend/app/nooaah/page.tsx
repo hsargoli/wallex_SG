@@ -20,7 +20,10 @@ import {
   useUpdateNooaahConfig,
   useKillNooaah,
   useResumeNooaah,
+  useNooaahReadiness,
 } from "@/lib/queries";
+import Link from "next/link";
+import { CheckCircle2, XCircle, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EquityChart } from "@/components/charts/equity-chart";
@@ -77,18 +80,29 @@ export default function NooaahPage() {
   const updateConfig = useUpdateNooaahConfig();
   const killMut = useKillNooaah();
   const resumeMut = useResumeNooaah();
+  const readiness = useNooaahReadiness();
 
   const [capitalInput, setCapitalInput] = useState<string>("");
   const [limitInput, setLimitInput] = useState<string>("");
 
   // وقتی config لود شد، inputها رو پر کن (یک بار)
   const cfg = nooaahConfig.data;
+  // Sync inputs از config — فقط وقتی user دست نزده
+  const [lastSyncedCapital, setLastSyncedCapital] = useState<number | null>(null);
   useEffect(() => {
-    if (cfg && capitalInput === "" && limitInput === "") {
+    if (!cfg) return;
+    // اگه مقدار ذخیره‌شده با state فرق کرده (مثلاً از جای دیگه عوض شده)
+    if (lastSyncedCapital !== cfg.capital_total) {
       setCapitalInput(formatThousands(String(cfg.capital_total)));
+      setLastSyncedCapital(cfg.capital_total);
+    }
+  }, [cfg, lastSyncedCapital]);
+
+  useEffect(() => {
+    if (cfg && limitInput === "") {
       setLimitInput(String(cfg.daily_loss_limit_pct));
     }
-  }, [cfg, capitalInput, limitInput]);
+  }, [cfg, limitInput]);
 
   const applyPreset = (key: PresetKey) => {
     setPreset(key);
@@ -104,7 +118,6 @@ export default function NooaahPage() {
     const params = useCustom
       ? { top, start, end, conf, cc, tp, sl, vol_z_min: volZMin }
       : { top, start, end, ...PRESETS[preset] };
-    // @ts-expect-error: PRESETS includes label which API ignores
     backtest.mutate(params);
   };
 
@@ -129,6 +142,92 @@ export default function NooaahPage() {
           </select>
         </div>
       </div>
+
+      {/* Readiness Section */}
+      {readiness.data && cfg && cfg.mode === "paper-testing" && (
+        <Card className={
+          readiness.data.all_met
+            ? "border-emerald-500/40 bg-emerald-500/5"
+            : "border-amber-500/40 bg-amber-500/5"
+        }>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-base">
+              <span className="flex items-center gap-2">
+                {readiness.data.all_met ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <span className="text-emerald-500">آماده برای Live</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 text-amber-500" />
+                    <span className="text-amber-500">در حال آماده‌سازی</span>
+                  </>
+                )}
+              </span>
+              {readiness.data.all_met && (
+                <Link
+                  href="/nooaah/live/activate"
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600"
+                >
+                  فعال‌سازی Live
+                  <ChevronLeft className="h-3 w-3" />
+                </Link>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              {readiness.data.conditions.map((c: import("@/lib/api").NooaahReadinessCondition) => (
+                <div
+                  key={c.key}
+                  className={`flex items-center justify-between gap-3 rounded-lg border p-2 text-xs ${
+                    c.met ? "border-emerald-500/30 bg-emerald-500/5" : "border-border/40"
+                  }`}
+                >
+                  <span className="flex flex-1 items-center gap-2">
+                    {c.met ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    ) : (
+                      <XCircle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="truncate">{c.label}</span>
+                  </span>
+                  <span
+                    className="whitespace-nowrap font-mono text-xs"
+                    dir="ltr"
+                  >
+                    {c.current.toLocaleString("en-US")} / {c.target.toLocaleString("en-US")}
+                    {c.unit ? ` ${c.unit}` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              آخرین ۷ روز:{" "}
+              <span dir="ltr" className="font-mono">
+                {readiness.data.recent_trades_count}
+              </span>{" "}
+              معامله، نرخ برد{" "}
+              <span dir="ltr" className="font-mono">
+                {readiness.data.recent_win_rate.toFixed(1)}٪
+              </span>
+              ، بازده{" "}
+              <span
+                dir="ltr"
+                className={`font-mono ${
+                  readiness.data.recent_return >= 0
+                    ? "text-emerald-500"
+                    : "text-red-500"
+                }`}
+              >
+                {readiness.data.recent_return >= 0 ? "+" : ""}
+                {readiness.data.recent_return.toFixed(2)}٪
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Config & Kill Section */}
       <Card>
@@ -265,14 +364,14 @@ export default function NooaahPage() {
               <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
                 <div className="rounded-lg border border-border/40 p-2">
                   <div className="text-muted-foreground">آزاد</div>
-                  <div className="font-mono font-bold">
-                    {cfg.capital_available.toLocaleString()}
+                  <div className="font-mono font-bold" dir="ltr">
+                    {cfg.capital_available.toLocaleString("en-US")}
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/40 p-2">
                   <div className="text-muted-foreground">در پوزیشن</div>
-                  <div className="font-mono font-bold">
-                    {cfg.capital_in_use.toLocaleString()}
+                  <div className="font-mono font-bold" dir="ltr">
+                    {cfg.capital_in_use.toLocaleString("en-US")}
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/40 p-2">
@@ -291,16 +390,15 @@ export default function NooaahPage() {
               {!cfg.killed && (
                 <Button
                   variant="destructive"
-                  onClick={() => {
-                    if (confirm("مطمئنی؟ این کار همه‌ی پوزیشن‌های باز رو متوقف می‌کنه.")) {
-                      killMut.mutate();
-                    }
-                  }}
+                  onClick={() => killMut.mutate()}
                   disabled={killMut.isPending}
                   className="w-full"
+                  title="توقف فوری — بدون تأیید"
                 >
                   <ShieldAlert className="h-4 w-4" />
-                  <span className="mr-2">توقف اضطراری (Kill-Switch)</span>
+                  <span className="mr-2">
+                    {killMut.isPending ? "در حال توقف..." : "🛑 توقف فوری"}
+                  </span>
                 </Button>
               )}
             </>
