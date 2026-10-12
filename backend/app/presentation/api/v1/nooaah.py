@@ -34,12 +34,40 @@ class NooaahConfigOut(BaseModel):
     last_run: int
     scheduler_running: bool
     scheduler_last_status: str | None
+    # ADR-0011
+    live_stage: int
+    consecutive_losses: int
+    pause_reason: str
+    activated_live_at: int
+    paper_started_at: int
 
 
 class NooaahConfigIn(BaseModel):
-    mode: str | None = None
     capital_total: float | None = None
     daily_loss_limit_pct: float | None = None
+
+
+class ReadinessCondition(BaseModel):
+    key: str
+    label: str
+    current: float
+    target: float
+    unit: str
+    met: bool
+
+
+class ReadinessOut(BaseModel):
+    mode: str
+    all_met: bool
+    conditions: list[ReadinessCondition]
+    days_in_paper: int
+    recent_trades_count: int
+    recent_win_rate: float
+    recent_return: float
+
+
+class ActivateIn(BaseModel):
+    confirmation_phrase: str
 
 
 class ProposalOut(BaseModel):
@@ -111,6 +139,11 @@ async def get_nooaah_config() -> NooaahConfigOut:
         scheduler_last_status=(
             sched.last_result.get("status") if sched and sched.last_result else None
         ),
+        live_stage=state.live_stage,
+        consecutive_losses=state.consecutive_losses,
+        pause_reason=state.pause_reason,
+        activated_live_at=state.activated_live_at,
+        paper_started_at=state.paper_started_at,
     )
 
 
@@ -118,11 +151,6 @@ async def get_nooaah_config() -> NooaahConfigOut:
 async def update_nooaah_config(body: NooaahConfigIn) -> NooaahConfigOut:
     """تغییر config — capital, mode, daily limit."""
     state = NooaahState.load()
-
-    if body.mode is not None:
-        if body.mode not in ("paper", "live"):
-            raise HTTPException(400, "mode must be 'paper' or 'live'")
-        state.mode = body.mode
 
     if body.capital_total is not None:
         if body.capital_total < 0:
@@ -147,18 +175,126 @@ async def kill_nooaah() -> NooaahConfigOut:
     state = NooaahState.load()
     state.killed = True
     state.killed_at = int(_time.time())
+    state.kill_activations_7d += 1
+    # اگه در live بود → live-paused
+    if state.mode == "live-active":
+        state.mode = "live-paused"
+        state.pause_reason = "kill-switch توسط کاربر"
     state.save()
     return await get_nooaah_config()
 
 
 @router.post("/resume", response_model=NooaahConfigOut)
 async def resume_nooaah() -> NooaahConfigOut:
-    """برداشتن kill-switch."""
+    """برداشتن kill-switch / live-paused."""
     state = NooaahState.load()
     state.killed = False
     state.killed_at = 0
     state.daily_loss_hit = False
     state.daily_pnl_pct = 0.0
+    # اگه live-paused بود → برگرد به live-active
+    if state.mode == "live-paused":
+        state.mode = "live-active"
+        state.pause_reason = ""
+        state.consecutive_losses = 0
+    state.save()
+    return await get_nooaah_config()
+
+
+# ---------- Live Activation (ADR-0011) ----------
+
+CONFIRMATION_PHRASE = "با مسئولیت خودم"
+
+
+@router.get("/readiness", response_model=ReadinessOut)
+async def get_readiness() -> ReadinessOut:
+    """چک‌لیست شرایط برای عبور از paper به ready-for-live."""
+    state = NooaahState.load()
+    r = state.readiness_checklist()
+    return ReadinessOut(
+        mode=state.mode,
+        all_met=r["all_met"],
+        conditions=[
+            ReadinessCondition(**c) for c in r["conditions"]
+        ],
+        days_in_paper=r["days_in_paper"],
+        recent_trades_count=r["recent_trades_count"],
+        recent_win_rate=r["recent_win_rate"],
+        recent_return=r["recent_return"],
+    )
+
+
+@router.post("/live/activate", response_model=NooaahConfigOut)
+async def activate_live(body: ActivateIn) -> NooaahConfigOut:
+    """فعال‌سازی live. نیاز: شرایط آماده + عبارت تأیید."""
+    import time as _time
+    state = NooaahState.load()
+
+    # چک state
+    if state.mode == "live-active":
+        raise HTTPException(400, "already live")
+    if state.mode == "live-paused":
+        raise HTTPException(400, "paused — use /resume instead")
+    if state.mode != "paper-testing" and state.mode != "ready-for-live":
+        raise HTTPException(400, f"invalid mode for activation: {state.mode}")
+
+    # چک عبارت
+    if body.confirmation_phrase.strip() != CONFIRMATION_PHRASE:
+        raise HTTPException(
+            400,
+            f"عبارت تأیید اشتباه. باید بنویسی: «{CONFIRMATION_PHRASE}»",
+        )
+
+    # چک شرایط
+    r = state.readiness_checklist()
+    if not r["all_met"]:
+        unmet = [c["label"] for c in r["conditions"] if not c["met"]]
+        raise HTTPException(
+            400,
+            "شرایط آماده نیست: " + "، ".join(unmet),
+        )
+
+    # انتقال
+    state.mode = "live-active"
+    state.activated_live_at = int(_time.time())
+    state.live_stage = 1  # شروع از stage 1
+    state.pause_reason = ""
+    state.consecutive_losses = 0
+    state.save()
+    return await get_nooaah_config()
+
+
+@router.post("/live/pause", response_model=NooaahConfigOut)
+async def pause_live(reason: str = "auto") -> NooaahConfigOut:
+    """توقف live — یا auto یا دستی. نیاز به /resume."""
+    state = NooaahState.load()
+    if state.mode != "live-active":
+        raise HTTPException(400, f"not live-active (mode={state.mode})")
+    state.mode = "live-paused"
+    state.pause_reason = reason
+    state.save()
+    return await get_nooaah_config()
+
+
+@router.post("/live/stage/advance", response_model=NooaahConfigOut)
+async def advance_stage() -> NooaahConfigOut:
+    """ارتقای stage (1 → 2 → 3) بر اساس شرایط."""
+    state = NooaahState.load()
+    if state.mode != "live-active":
+        raise HTTPException(400, "not live-active")
+
+    # شمارش tradeهای live
+    live_trades = [t for t in state.closed_trades if t.mode == "live-active" or t.mode == "live"]
+    win_count = len([t for t in live_trades if t.return_pct > 0])
+
+    if state.live_stage == 1 and win_count < 5:
+        raise HTTPException(400, f"need 5 winning live trades (have {win_count})")
+    if state.live_stage == 2 and win_count < 10:
+        raise HTTPException(400, f"need 10 winning live trades (have {win_count})")
+    if state.live_stage >= 3:
+        raise HTTPException(400, "already at full stage")
+
+    state.live_stage += 1
     state.save()
     return await get_nooaah_config()
 
