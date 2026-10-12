@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status
@@ -90,6 +91,17 @@ class StopResultOut(BaseModel):
     open_positions: int
     capital_available: float
     capital_in_use: float
+
+
+class CycleLogOut(BaseModel):
+    timestamp: int
+    status: str
+    action: str
+    reason_fa: str
+    symbols_analyzed: list[str]
+    opened_symbol: str | None
+    opened_confidence: int | None
+    closed_count: int
 
 
 class DraftOut(BaseModel):
@@ -430,6 +442,14 @@ async def advance_stage() -> NooaahConfigOut:
     state.live_stage += 1
     state.save()
     return await get_nooaah_config()
+
+
+@router.get("/cycles", response_model=list[CycleLogOut])
+async def get_cycles(limit: int = 30) -> list[CycleLogOut]:
+    """آخرین cycleهای scheduler."""
+    state = NooaahState.load()
+    logs = list(reversed(state.cycle_logs))[:max(1, min(limit, 100))]
+    return [CycleLogOut(**asdict(c)) for c in logs]
 
 
 @router.get("/status", response_model=StatusOut)

@@ -774,3 +774,12 @@ export function useStopNooaahLive() {
   });
 }
 
+export function useNooaahCycles(limit: number = 30) {
+  return useQuery({
+    queryKey: ["nooaah-cycles", limit],
+    queryFn: () => api.getNooaahCycles(limit),
+    refetchInterval: 60_000,  // هر دقیقه
+    staleTime: 30_000,
+  });
+}
+

@@ -28,6 +28,7 @@ from app.services.bots.nooaah.executor import (
 from app.services.bots.nooaah.state import (
     STATE_FILE,
     NooaahClosedTrade,
+    NooaahCycleLog,
     NooaahPosition,
     NooaahState,
 )
@@ -78,23 +79,30 @@ class NooaahRunner:
         self._state.reset_daily_if_needed()
 
         if self._state.killed:
-            return self._summary(t0, status="killed")
+            return self._log_and_summarize(
+                t0, status="killed", action="killed",
+                reason_fa="ربات در حالت kill است — غیرفعال",
+            )
 
         if self._state.daily_loss_hit:
-            # ممکنه cooldown فعال یا تموم شده
-            if self._state.cooldown_remaining_seconds > 0:
-                return self._summary(
-                    t0, status="cooldown",
-                    error=f"cooldown: {self._state.cooldown_remaining_seconds}s remaining",
+            remaining = self._state.cooldown_remaining_seconds
+            if remaining > 0:
+                hrs = remaining // 3600
+                mins = (remaining % 3600) // 60
+                return self._log_and_summarize(
+                    t0, status="cooldown", action="cooldown",
+                    reason_fa=f"در cooldown — {hrs}ساعت و {mins}دقیقه تا فعال شدن",
+                    error=f"cooldown_remaining={remaining}s",
                 )
-            # cooldown تموم شد → پاک‌سازی
+            # cooldown تموم شد
             self._state.daily_loss_hit = False
             self._state.cooldown_until = 0
 
         if self._state.capital_total <= 0:
-            return self._summary(
-                t0, status="no_capital",
-                error="capital_total=0 — allocate from wallet first",
+            return self._log_and_summarize(
+                t0, status="no_capital", action="no_capital",
+                reason_fa="سرمایه‌ای تخصیص داده نشده",
+                error="capital_total=0",
             )
 
         # ۱. مدیریت پوزیشن‌های باز
@@ -102,15 +110,48 @@ class NooaahRunner:
 
         # ۲. اگه جا هست → proposal جدید
         opened = None
-        if len(self._state.open_positions) < self._config.max_concurrent_positions:
-            opened = await self._try_open_new()
+        symbols = []
+        action = "no_signal"
+        reason_fa = "هیچ سیگنال trending_up با اطمینان کافی نبود"
 
+        if len(self._state.open_positions) < self._config.max_concurrent_positions:
+            opened, symbols, action, reason_fa = await self._try_open_new()
+        else:
+            action = "position_held"
+            reason_fa = f"{len(self._state.open_positions)} پوزیشن باز — فضای جدید نیست"
+
+        return self._log_and_summarize(
+            t0, status="ok", action=action, reason_fa=reason_fa,
+            symbols=symbols, closed=closed, opened=opened,
+        )
+
+    def _log_and_summarize(
+        self,
+        t0: float,
+        status: str,
+        action: str,
+        reason_fa: str,
+        symbols: list[str] | None = None,
+        closed: list[dict] | None = None,
+        opened: dict | None = None,
+        error: str | None = None,
+    ) -> dict:
+        """cycle log ثبت کن + خلاصه برگردون."""
+        log_entry = NooaahCycleLog(
+            timestamp=int(time.time()),
+            status=status,
+            action=action,
+            reason_fa=reason_fa,
+            symbols_analyzed=list(symbols or []),
+            opened_symbol=opened["symbol"] if opened else None,
+            opened_confidence=opened["confidence"] if opened else None,
+            closed_count=len(closed) if closed else 0,
+        )
+        self._state.cycle_logs.append(log_entry)
+        self._state.cycle_logs = self._state.cycle_logs[-100:]
         self._state.last_run = int(time.time())
         self._state.save(self._state_path)
-
-        return self._summary(
-            t0, status="ok", closed=closed, opened=opened,
-        )
+        return self._summary(t0, status=status, closed=closed, opened=opened, error=error)
 
     # ============================================================
     # Position management
@@ -203,26 +244,32 @@ class NooaahRunner:
     # ============================================================
     # New position
     # ============================================================
-    async def _try_open_new(self) -> dict | None:
-        """اگه proposal هست و شرایط OK، پوزیشن جدید باز کن."""
+    async def _try_open_new(self) -> tuple[dict | None, list[str], str, str]:
+        """اگه proposal هست و شرایط OK، پوزیشن جدید باز کن.
+
+        Return: (opened_dict | None, symbols, action, reason_fa)
+        """
         result = await self._bot.run_once()
+        symbols = list(result.symbols_analyzed)
+
         if result.proposal is None:
-            return None
+            return None, symbols, "no_signal", f"{len(symbols)} نماد چک شد — هیچ سیگنال trending_up با conf≥۸۵ نبود"
 
         p = result.proposal
 
-        # skip نماد تکراری
         if self._state.has_position_for(p.symbol):
-            return None
+            return (
+                None, symbols, "duplicate_symbol",
+                f"سیگنال {p.symbol} بود ولی پوزیشن باز داریم",
+            )
 
-        # محاسبه‌ی حجم
-        capital_to_use = self._state.capital_available * 0.95  # ۵٪ buffer
+        capital_to_use = self._state.capital_available * 0.95
         if capital_to_use <= 0:
-            return None
+            return None, symbols, "no_capital", "سرمایه‌ی آزاد صفر"
 
         entry_price = p.entry
         if entry_price <= 0:
-            return None
+            return None, symbols, "bad_price", "قیمت نامعتبر"
 
         quantity = capital_to_use / entry_price
 
@@ -244,7 +291,7 @@ class NooaahRunner:
                 "nooaah.execute_failed",
                 symbol=p.symbol, error=str(exc),
             )
-            return None
+            return None, symbols, "execute_failed", f"خطا در اجرا: {str(exc)[:60]}"
 
         # ثبت در state
         pos = NooaahPosition(
@@ -274,7 +321,10 @@ class NooaahRunner:
             mode=self._state.mode,
             order_status=order.status.value if hasattr(order, "status") else "?",
         )
-        return asdict(pos)
+        return (
+            asdict(pos), symbols, "opened",
+            f"پوزیشن جدید: {p.symbol} conf={p.confidence}٪",
+        )
 
     # ============================================================
     # Stop logic (ADR-0013)

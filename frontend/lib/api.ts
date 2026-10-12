@@ -586,6 +586,8 @@ export const api = {
     client.get<NooaahStopPreviewResponse>("/v1/nooaah/live/stop/preview").then((r) => r.data),
   stopNooaahLive: (action: "sell" | "pause" | "kill") =>
     client.post<NooaahStopResultResponse>("/v1/nooaah/live/stop", { action }).then((r) => r.data),
+  getNooaahCycles: (limit: number = 30) =>
+    client.get<NooaahCycleLogResponse[]>(`/v1/nooaah/cycles?limit=${limit}`).then((r) => r.data),
   getNooaahBacktest: (params: {
     top?: number;
     limit?: number;
@@ -1497,5 +1499,18 @@ export interface NooaahStopResultResponse {
   open_positions: number;
   capital_available: number;
   capital_in_use: number;
+}
+
+// ---------- Nooaah Cycle Log ----------
+
+export interface NooaahCycleLogResponse {
+  timestamp: number;
+  status: string;
+  action: string;
+  reason_fa: string;
+  symbols_analyzed: string[];
+  opened_symbol: string | null;
+  opened_confidence: number | null;
+  closed_count: number;
 }
 

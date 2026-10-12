@@ -12,6 +12,8 @@ import {
   ShieldAlert,
   Power,
   Save,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   useNooaahStatus,
@@ -28,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EquityChart } from "@/components/charts/equity-chart";
 import { NooaahStopModal } from "@/components/dashboard/nooaah-stop-modal";
+import { NooaahCycleLog } from "@/components/dashboard/nooaah-cycle-log";
 
 const formatThousands = (s: string): string => {
   // حذف همه‌ی غیر رقم‌ها
@@ -83,6 +86,7 @@ export default function NooaahPage() {
   const resumeMut = useResumeNooaah();
   const readiness = useNooaahReadiness();
   const [stopModalOpen, setStopModalOpen] = useState(false);
+  const [backtestOpen, setBacktestOpen] = useState(false);
 
   const [capitalInput, setCapitalInput] = useState<string>("");
   const [limitInput, setLimitInput] = useState<string>("");
@@ -244,14 +248,18 @@ export default function NooaahPage() {
                 className={`rounded-full px-3 py-1 text-xs font-bold ${
                   cfg.killed
                     ? "bg-red-500/15 text-red-500"
-                    : cfg.mode === "live"
+                    : cfg.mode === "live-paused"
+                    ? "bg-amber-500/15 text-amber-500"
+                    : cfg.mode === "live-active"
                     ? "bg-emerald-500/15 text-emerald-500"
                     : "bg-sky-500/15 text-sky-500"
                 }`}
               >
                 {cfg.killed
-                  ? "🛑 متوقف"
-                  : cfg.mode === "live"
+                  ? "🛑 متوقف کامل"
+                  : cfg.mode === "live-paused"
+                  ? "⏸ توقف موقت"
+                  : cfg.mode === "live-active"
                   ? "🔴 زنده"
                   : "🟦 Paper"}
               </span>
@@ -403,6 +411,9 @@ export default function NooaahPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Cycle Log */}
+      <NooaahCycleLog />
 
       {/* Settings Section */}
       <Card>
@@ -589,8 +600,22 @@ export default function NooaahPage() {
       {/* Backtest Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">نتایج بک‌تست</CardTitle>
+          <CardTitle className="flex items-center justify-between text-base">
+            <span>نتایج بک‌تست</span>
+            <button
+              onClick={() => setBacktestOpen(!backtestOpen)}
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+              aria-label={backtestOpen ? "بستن" : "باز کردن"}
+            >
+              {backtestOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+          </CardTitle>
         </CardHeader>
+        {backtestOpen && (
         <CardContent>
           {backtest.error && (
             <div className="text-sm text-red-500">
@@ -692,6 +717,7 @@ export default function NooaahPage() {
             </div>
           )}
         </CardContent>
+        )}
       </Card>
       <NooaahStopModal
         open={stopModalOpen}

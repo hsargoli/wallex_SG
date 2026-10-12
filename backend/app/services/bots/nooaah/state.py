@@ -52,6 +52,20 @@ class NooaahClosedTrade:
 
 
 @dataclass(slots=True)
+class NooaahCycleLog:
+    """ثبت یک cycle اجرای ربات."""
+
+    timestamp: int
+    status: str  # ok | killed | cooldown | no_capital | error
+    action: str  # no_signal | opened | position_held | cooldown | killed | no_capital
+    reason_fa: str
+    symbols_analyzed: list[str] = field(default_factory=list)
+    opened_symbol: str | None = None
+    opened_confidence: int | None = None
+    closed_count: int = 0
+
+
+@dataclass(slots=True)
 class NooaahState:
     """وضعیت کامل Nooaah."""
 
@@ -83,6 +97,9 @@ class NooaahState:
 
     # --- Cooldown (ADR-0013 live stop) ---
     cooldown_until: int = 0         # تا این timestamp هیچ معامله‌ی جدیدی نه
+
+    # --- Cycle logs ---
+    cycle_logs: list[NooaahCycleLog] = field(default_factory=list)
 
     # --- Live activation (ADR-0011) ---
     paper_started_at: int = 0       # شروع دوره‌ی paper-testing
@@ -132,6 +149,7 @@ class NooaahState:
             "runtime_config": self.runtime_config,
             "draft_config": self.draft_config,
             "cooldown_until": self.cooldown_until,
+            "cycle_logs": [asdict(c) for c in self.cycle_logs[-100:]],
         }
         tmp = p.with_suffix(".json.tmp")
         tmp.write_text(
@@ -190,6 +208,9 @@ class NooaahState:
             runtime_config=raw.get("runtime_config", {}),
             draft_config=raw.get("draft_config", {}),
             cooldown_until=raw.get("cooldown_until", 0),
+            cycle_logs=[
+                NooaahCycleLog(**c) for c in raw.get("cycle_logs", [])
+            ],
         )
 
     # ============================================================
