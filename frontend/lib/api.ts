@@ -554,6 +554,18 @@ export const api = {
     client.get<AnalysisResult>(`/v1/analysis/${symbol}?timeframe=${timeframe}`).then((r) => r.data),
   getNooaahStatus: (top: number = 5) =>
     client.get<NooaahStatusResponse>(`/v1/nooaah/status?top=${top}`).then((r) => r.data),
+  getNooaahConfig: () =>
+    client.get<NooaahConfigResponse>("/v1/nooaah/config").then((r) => r.data),
+  updateNooaahConfig: (body: {
+    mode?: string;
+    capital_total?: number;
+    daily_loss_limit_pct?: number;
+  }) =>
+    client.post<NooaahConfigResponse>("/v1/nooaah/config", body).then((r) => r.data),
+  killNooaah: () =>
+    client.post<NooaahConfigResponse>("/v1/nooaah/kill").then((r) => r.data),
+  resumeNooaah: () =>
+    client.post<NooaahConfigResponse>("/v1/nooaah/resume").then((r) => r.data),
   getNooaahBacktest: (params: {
     top?: number;
     limit?: number;

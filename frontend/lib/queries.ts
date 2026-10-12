@@ -641,3 +641,46 @@ export function useNooaahBacktest() {
   });
 }
 
+export function useNooaahConfig() {
+  return useQuery({
+    queryKey: ["nooaah-config"],
+    queryFn: () => api.getNooaahConfig(),
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+  });
+}
+
+export function useUpdateNooaahConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      mode?: string;
+      capital_total?: number;
+      daily_loss_limit_pct?: number;
+    }) => api.updateNooaahConfig(body),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+    },
+  });
+}
+
+export function useKillNooaah() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.killNooaah(),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+    },
+  });
+}
+
+export function useResumeNooaah() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resumeNooaah(),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+    },
+  });
+}
+

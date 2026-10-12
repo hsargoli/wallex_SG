@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Brain,
   Loader2,
@@ -9,11 +9,34 @@ import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
+  ShieldAlert,
+  Power,
+  Save,
 } from "lucide-react";
-import { useNooaahStatus, useNooaahBacktest } from "@/lib/queries";
+import {
+  useNooaahStatus,
+  useNooaahBacktest,
+  useNooaahConfig,
+  useUpdateNooaahConfig,
+  useKillNooaah,
+  useResumeNooaah,
+} from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EquityChart } from "@/components/charts/equity-chart";
+
+const formatThousands = (s: string): string => {
+  // حذف همه‌ی غیر رقم‌ها
+  const digits = s.replace(/\D/g, "");
+  if (!digits) return "";
+  return Number(digits).toLocaleString("en-US");
+};
+
+const parseThousands = (s: string): number => {
+  const digits = s.replace(/\D/g, "");
+  return digits ? Number(digits) : 0;
+};
+
 
 const pnlColor = (v: number) =>
   v > 0 ? "text-emerald-500" : v < 0 ? "text-red-500" : "text-muted-foreground";
@@ -50,6 +73,22 @@ export default function NooaahPage() {
 
   const status = useNooaahStatus(top);
   const backtest = useNooaahBacktest();
+  const nooaahConfig = useNooaahConfig();
+  const updateConfig = useUpdateNooaahConfig();
+  const killMut = useKillNooaah();
+  const resumeMut = useResumeNooaah();
+
+  const [capitalInput, setCapitalInput] = useState<string>("");
+  const [limitInput, setLimitInput] = useState<string>("");
+
+  // وقتی config لود شد، inputها رو پر کن (یک بار)
+  const cfg = nooaahConfig.data;
+  useEffect(() => {
+    if (cfg && capitalInput === "" && limitInput === "") {
+      setCapitalInput(formatThousands(String(cfg.capital_total)));
+      setLimitInput(String(cfg.daily_loss_limit_pct));
+    }
+  }, [cfg, capitalInput, limitInput]);
 
   const applyPreset = (key: PresetKey) => {
     setPreset(key);
@@ -90,6 +129,184 @@ export default function NooaahPage() {
           </select>
         </div>
       </div>
+
+      {/* Config & Kill Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <Power className="h-4 w-4" />
+              پیکربندی و کنترل
+            </span>
+            {cfg && (
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  cfg.killed
+                    ? "bg-red-500/15 text-red-500"
+                    : cfg.mode === "live"
+                    ? "bg-emerald-500/15 text-emerald-500"
+                    : "bg-sky-500/15 text-sky-500"
+                }`}
+              >
+                {cfg.killed
+                  ? "🛑 متوقف"
+                  : cfg.mode === "live"
+                  ? "🔴 زنده"
+                  : "🟦 Paper"}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {nooaahConfig.isLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              در حال بارگذاری...
+            </div>
+          )}
+
+          {nooaahConfig.isError && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/5 p-3 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4" />
+              خطا در دریافت پیکربندی — آیا backend اجراست؟
+              <button
+                onClick={() => nooaahConfig.refetch()}
+                className="mr-auto rounded border border-red-500/40 px-2 py-1 text-xs hover:bg-red-500/10"
+              >
+                تلاش مجدد
+              </button>
+            </div>
+          )}
+
+          {cfg && (
+            <>
+              {/* kill banner */}
+              {cfg.killed && (
+                <div className="flex items-center justify-between rounded-xl border border-red-500/40 bg-red-500/5 p-3">
+                  <div className="flex items-center gap-2 text-sm text-red-500">
+                    <ShieldAlert className="h-4 w-4" />
+                    ربات متوقف شده — هیچ سفارش جدیدی پذیرفته نمی‌شود.
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => resumeMut.mutate()}
+                    disabled={resumeMut.isPending}
+                  >
+                    ادامه
+                  </Button>
+                </div>
+              )}
+
+              {/* daily loss banner */}
+              {!cfg.killed && cfg.daily_loss_hit && (
+                <div className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-500">
+                  <AlertCircle className="h-4 w-4" />
+                  سقف ضرر روزانه پر شده ({cfg.daily_pnl_pct.toFixed(2)}٪). ربات تا فردا می‌خوابد.
+                </div>
+              )}
+
+              {/* capital + limit grid */}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  سرمایه‌ی کل (تومان)
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={capitalInput}
+                      onChange={(e) =>
+                        setCapitalInput(formatThousands(e.target.value))
+                      }
+                      className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm font-mono text-left"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        updateConfig.mutate({
+                          capital_total: parseThousands(capitalInput),
+                        })
+                      }
+                      disabled={updateConfig.isPending}
+                    >
+                      <Save className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  سقف ضرر روزانه (٪)
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={limitInput}
+                      onChange={(e) => setLimitInput(e.target.value)}
+                      step={0.1}
+                      className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        updateConfig.mutate({
+                          daily_loss_limit_pct: Number(limitInput),
+                        })
+                      }
+                      disabled={updateConfig.isPending}
+                    >
+                      <Save className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </label>
+              </div>
+
+              {/* stats */}
+              <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
+                <div className="rounded-lg border border-border/40 p-2">
+                  <div className="text-muted-foreground">آزاد</div>
+                  <div className="font-mono font-bold">
+                    {cfg.capital_available.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-2">
+                  <div className="text-muted-foreground">در پوزیشن</div>
+                  <div className="font-mono font-bold">
+                    {cfg.capital_in_use.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-2">
+                  <div className="text-muted-foreground">پوزیشن باز</div>
+                  <div className="font-mono font-bold">{cfg.open_positions_count}</div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-2">
+                  <div className="text-muted-foreground">Scheduler</div>
+                  <div className="font-mono font-bold">
+                    {cfg.scheduler_running ? "🟢 فعال" : "⚪ خاموش"}
+                  </div>
+                </div>
+              </div>
+
+              {/* kill button */}
+              {!cfg.killed && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm("مطمئنی؟ این کار همه‌ی پوزیشن‌های باز رو متوقف می‌کنه.")) {
+                      killMut.mutate();
+                    }
+                  }}
+                  disabled={killMut.isPending}
+                  className="w-full"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  <span className="mr-2">توقف اضطراری (Kill-Switch)</span>
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Settings Section */}
       <Card>
