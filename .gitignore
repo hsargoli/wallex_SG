@@ -98,3 +98,5 @@ backend/data/candles/*_1m.csv
 # Nooaah ML models (regenerable via train_*)
 backend/data/models/nooaah_lgbm_*.txt
 
+# Nooaah runtime state (positions, capital)
+backend/data/nooaah/

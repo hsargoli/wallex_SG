@@ -11,6 +11,10 @@ from app.core.logging import configure_logging
 from app.core.rate_limit import limiter
 from app.infrastructure.exchange.wallex.client import WallexExchange
 from app.infrastructure.exchange.wallex.ticker_ws import WallexTickerClient
+from app.services.bots.nooaah.scheduler import (
+    NooaahScheduler,
+    set_scheduler,
+)
 from app.presentation.api.v1.realtime import TickerFanout, router as realtime_router
 from app.presentation.api.v1.router import router as v1_router
 
@@ -33,6 +37,12 @@ async def lifespan(app: FastAPI):
     app.state.ticker_client = ticker_client
     ticker_client.start()
 
+    # Nooaah scheduler (hourly paper cycle)
+    nooaah_sched = NooaahScheduler(exchange=exchange, interval_minutes=60)
+    nooaah_sched.start()
+    app.state.nooaah_scheduler = nooaah_sched
+    set_scheduler(nooaah_sched)
+
     try:
         yield
     finally:
@@ -41,6 +51,7 @@ async def lifespan(app: FastAPI):
 
         await chase_manager.stop_all()
         ticker_client.stop()
+        nooaah_sched.stop()
         await exchange.aclose()
 
 
