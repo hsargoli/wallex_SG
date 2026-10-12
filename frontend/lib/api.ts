@@ -566,6 +566,22 @@ export const api = {
     client.post<NooaahConfigResponse>("/v1/nooaah/kill").then((r) => r.data),
   resumeNooaah: () =>
     client.post<NooaahConfigResponse>("/v1/nooaah/resume").then((r) => r.data),
+  getNooaahReadiness: () =>
+    client.get<NooaahReadinessResponse>("/v1/nooaah/readiness").then((r) => r.data),
+  activateNooaahLive: (phrase: string) =>
+    client.post<NooaahConfigResponse>("/v1/nooaah/live/activate", {
+      confirmation_phrase: phrase,
+    }).then((r) => r.data),
+  pauseNooaahLive: (reason: string = "manual") =>
+    client.post<NooaahConfigResponse>(`/v1/nooaah/live/pause?reason=${reason}`).then((r) => r.data),
+  advanceNooaahStage: () =>
+    client.post<NooaahConfigResponse>("/v1/nooaah/live/stage/advance").then((r) => r.data),
+  getNooaahLiveDraft: () =>
+    client.get<NooaahDraftResponse>("/v1/nooaah/live/draft").then((r) => r.data),
+  updateNooaahLiveDraft: (body: Record<string, unknown>) =>
+    client.put<NooaahDraftResponse>("/v1/nooaah/live/draft", body).then((r) => r.data),
+  clearNooaahLiveDraft: () =>
+    client.delete<NooaahDraftResponse>("/v1/nooaah/live/draft").then((r) => r.data),
   getNooaahBacktest: (params: {
     top?: number;
     limit?: number;
@@ -1383,6 +1399,52 @@ export interface NooaahBacktestResponse {
   profit_factor: number;
   sharpe_ratio: number;
   avg_duration_candles: number;
+  equity_curve_full: number[];
+  buy_hold_curve: number[];
   recent_trades: NooaahTrade[];
+}
+
+// ---------- Nooaah Config type ----------
+
+export interface NooaahConfigResponse {
+  mode: string;
+  capital_total: number;
+  capital_available: number;
+  capital_in_use: number;
+  daily_loss_limit_pct: number;
+  daily_pnl_pct: number;
+  daily_loss_hit: boolean;
+  killed: boolean;
+  open_positions_count: number;
+  closed_trades_count: number;
+  last_run: number;
+  scheduler_running: boolean;
+  scheduler_last_status: string | null;
+  live_stage: number;
+  consecutive_losses: number;
+  pause_reason: string;
+  activated_live_at: number;
+  paper_started_at: number;
+}
+
+// ---------- Nooaah Readiness type ----------
+
+export interface NooaahReadinessCondition {
+  key: string;
+  label: string;
+  current: number;
+  target: number;
+  unit: string;
+  met: boolean;
+}
+
+export interface NooaahReadinessResponse {
+  mode: string;
+  all_met: boolean;
+  conditions: NooaahReadinessCondition[];
+  days_in_paper: number;
+  recent_trades_count: number;
+  recent_win_rate: number;
+  recent_return: number;
 }
 

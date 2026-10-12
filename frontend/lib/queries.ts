@@ -684,3 +684,71 @@ export function useResumeNooaah() {
   });
 }
 
+export function useNooaahReadiness() {
+  return useQuery({
+    queryKey: ["nooaah-readiness"],
+    queryFn: () => api.getNooaahReadiness(),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useActivateNooaahLive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (phrase: string) => api.activateNooaahLive(phrase),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+      qc.invalidateQueries({ queryKey: ["nooaah-readiness"] });
+    },
+  });
+}
+
+export function usePauseNooaahLive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string = "manual") => api.pauseNooaahLive(reason),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+    },
+  });
+}
+
+export function useAdvanceNooaahStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.advanceNooaahStage(),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-config"], data);
+    },
+  });
+}
+
+export function useNooaahLiveDraft() {
+  return useQuery({
+    queryKey: ["nooaah-draft"],
+    queryFn: () => api.getNooaahLiveDraft(),
+    staleTime: 0,
+  });
+}
+
+export function useUpdateNooaahLiveDraft() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.updateNooaahLiveDraft(body),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-draft"], data);
+    },
+  });
+}
+
+export function useClearNooaahLiveDraft() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.clearNooaahLiveDraft(),
+    onSuccess: (data) => {
+      qc.setQueryData(["nooaah-draft"], data);
+    },
+  });
+}
+
