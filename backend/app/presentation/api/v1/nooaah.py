@@ -12,6 +12,7 @@ from app.presentation.api.deps import ExchangeDep
 from app.services.bots.nooaah.backtest import run_nooaah_backtest
 from app.services.bots.nooaah.bot import NooaahBot
 from app.services.bots.nooaah.config import NooaahConfig
+from app.services.bots.nooaah.runner import NooaahRunner
 from app.services.bots.nooaah.scheduler import get_scheduler
 from app.services.bots.nooaah.state import NooaahState
 
@@ -68,6 +69,27 @@ class ReadinessOut(BaseModel):
 
 class ActivateIn(BaseModel):
     confirmation_phrase: str
+
+
+class StopIn(BaseModel):
+    action: str  # sell | pause | kill
+
+
+class StopPreviewOut(BaseModel):
+    mode: str
+    open_positions: list[dict]
+    count: int
+    total_pnl_abs: float
+    capital_in_use: float
+
+
+class StopResultOut(BaseModel):
+    action: str
+    mode: str
+    killed: bool
+    open_positions: int
+    capital_available: float
+    capital_in_use: float
 
 
 class DraftOut(BaseModel):
@@ -173,6 +195,33 @@ async def update_nooaah_config(body: NooaahConfigIn) -> NooaahConfigOut:
 
     state.save()
     return await get_nooaah_config()
+
+
+@router.get("/live/stop/preview", response_model=StopPreviewOut)
+async def preview_stop(exchange: ExchangeDep) -> StopPreviewOut:
+    """پیش‌نمایش توقف: پوزیشن‌های باز + PnL. هیچ تغییری در state نمی‌ده."""
+    runner = NooaahRunner(exchange=exchange)
+    data = await runner.preview_stop()
+    return StopPreviewOut(**data)
+
+
+@router.post("/live/stop", response_model=StopResultOut)
+async def stop_live(body: StopIn, exchange: ExchangeDep) -> StopResultOut:
+    """توقف ربات با یکی از سه action:
+
+    - sell: فروش بازار همه‌ی پوزیشن‌ها + توقف (قابل resume)
+    - pause: پوزیشن‌ها باز بمونن + توقف (قابل resume)
+    - kill: پوزیشن‌ها باز بمونن + توقف کامل (غیرقابل resume)
+    """
+    if body.action not in ("sell", "pause", "kill"):
+        raise HTTPException(400, f"invalid action: {body.action}")
+
+    runner = NooaahRunner(exchange=exchange)
+    try:
+        result = await runner.stop_with_action(body.action)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    return StopResultOut(**result)
 
 
 @router.post("/kill", response_model=NooaahConfigOut)

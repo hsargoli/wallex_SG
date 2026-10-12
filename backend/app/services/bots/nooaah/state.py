@@ -81,6 +81,9 @@ class NooaahState:
     # --- آخرین اجرا ---
     last_run: int = 0
 
+    # --- Cooldown (ADR-0013 live stop) ---
+    cooldown_until: int = 0         # تا این timestamp هیچ معامله‌ی جدیدی نه
+
     # --- Live activation (ADR-0011) ---
     paper_started_at: int = 0       # شروع دوره‌ی paper-testing
     activated_live_at: int = 0      # زمان live-active شدن
@@ -128,6 +131,7 @@ class NooaahState:
             # ADR-0012
             "runtime_config": self.runtime_config,
             "draft_config": self.draft_config,
+            "cooldown_until": self.cooldown_until,
         }
         tmp = p.with_suffix(".json.tmp")
         tmp.write_text(
@@ -185,20 +189,24 @@ class NooaahState:
             # ADR-0012
             runtime_config=raw.get("runtime_config", {}),
             draft_config=raw.get("draft_config", {}),
+            cooldown_until=raw.get("cooldown_until", 0),
         )
 
     # ============================================================
     # Helpers
     # ============================================================
     def reset_daily_if_needed(self) -> bool:
-        """اگه روز عوض شده → reset. Return True اگه reset شد."""
+        """اگه روز عوض شده → reset daily_pnl. cooldown جداست."""
         DAY = 86400
         now = int(time.time())
         today = now // DAY
         if self.day_start == 0 or (self.day_start // DAY) != today:
             self.day_start = now
             self.daily_pnl_pct = 0.0
-            self.daily_loss_hit = False
+            # daily_loss_hit رو اگه cooldown تموم شده، ریست کن
+            if self.cooldown_until and now >= self.cooldown_until:
+                self.daily_loss_hit = False
+                self.cooldown_until = 0
             return True
         return False
 
@@ -207,14 +215,27 @@ class NooaahState:
         """آیا ربات می‌تواند معامله کند؟"""
         if self.killed:
             return False
-        if self.daily_loss_hit:
-            return False
         if self.mode == "live-paused":
             return False
         if self.mode == "ready-for-live":
             return False  # هنوز فعال نشده
-        # paper-testing و live-active اجازه دارند
+        # cooldown ۶ ساعته بعد از daily loss
+        if self.cooldown_until and int(time.time()) < self.cooldown_until:
+            return False
         return self.mode in ("paper-testing", "live-active")
+
+    @property
+    def cooldown_remaining_seconds(self) -> int:
+        """چقدر مونده تا تموم شه cooldown (0 = تموم)."""
+        if not self.cooldown_until:
+            return 0
+        remaining = self.cooldown_until - int(time.time())
+        return max(0, remaining)
+
+    def enter_cooldown(self, hours: int = 6) -> None:
+        """شروع cooldown ۶ ساعته (بعد از daily loss)."""
+        self.cooldown_until = int(time.time()) + hours * 3600
+        self.daily_loss_hit = True  # برای گزارش
 
     # ============================================================
     # Live readiness (ADR-0011)

@@ -268,6 +268,151 @@ class NooaahRunner:
         return asdict(pos)
 
     # ============================================================
+    # Stop logic (ADR-0013)
+    # ============================================================
+    async def preview_stop(self) -> dict:
+        """پیش‌نمایش: پوزیشن‌های باز + قیمت فعلی + PnL. بدون تغییر state."""
+        executor = self._executor()
+        positions_info: list[dict] = []
+        for pos in self._state.open_positions:
+            try:
+                bid = await executor.get_best_bid(pos.symbol)
+                last = await executor.get_current_price(pos.symbol)
+            except Exception:
+                bid = last = pos.entry_price
+            pnl_pct = (bid / pos.entry_price - 1) * 100 if pos.entry_price else 0.0
+            pnl_abs = pos.capital_used * pnl_pct / 100.0
+            positions_info.append({
+                "client_id": pos.client_id,
+                "symbol": pos.symbol,
+                "entry_price": pos.entry_price,
+                "entry_time": pos.entry_time,
+                "quantity": pos.quantity,
+                "capital_used": pos.capital_used,
+                "best_bid": bid,
+                "last_price": last,
+                "pnl_pct": round(pnl_pct, 3),
+                "pnl_abs": round(pnl_abs, 2),
+                "confidence": pos.confidence,
+            })
+
+        total_pnl_abs = sum(p["pnl_abs"] for p in positions_info)
+        return {
+            "mode": self._state.mode,
+            "open_positions": positions_info,
+            "count": len(positions_info),
+            "total_pnl_abs": round(total_pnl_abs, 2),
+            "capital_in_use": round(self._state.capital_in_use, 2),
+        }
+
+    async def stop_with_action(self, action: str) -> dict:
+        """توقف با یکی از سه action:
+
+        - 'sell': MARKET SELL همه‌ی پوزیشن‌ها → برگرداندن پول → live-paused
+        - 'pause': پوزیشن‌ها باز بمونن → live-paused (قابل resume)
+        - 'kill': پوزیشن‌ها باز بمونن → killed (غیرقابل resume)
+        """
+        if action not in ("sell", "pause", "kill"):
+            raise ValueError(f"invalid action: {action}")
+
+        if action == "sell":
+            await self._sell_all_positions()
+
+        # state transition
+        if action == "kill":
+            self._state.killed = True
+            self._state.killed_at = int(time.time())
+            self._state.kill_activations_7d += 1
+            self._state.mode = "live-paused"
+            self._state.pause_reason = "kill توسط کاربر"
+        else:  # sell or pause
+            self._state.mode = "live-paused"
+            self._state.pause_reason = (
+                "فروش همه‌ی پوزیشن‌ها" if action == "sell" else "توقف موقت توسط کاربر"
+            )
+
+        self._state.last_run = int(time.time())
+        self._state.save(self._state_path)
+
+        return {
+            "action": action,
+            "mode": self._state.mode,
+            "killed": self._state.killed,
+            "open_positions": len(self._state.open_positions),
+            "capital_available": round(self._state.capital_available, 2),
+            "capital_in_use": round(self._state.capital_in_use, 2),
+        }
+
+    async def _sell_all_positions(self) -> None:
+        """فروش MARKET همه‌ی پوزیشن‌های باز با best_bid."""
+        executor = self._executor()
+        closed: list[dict] = []
+        still_open: list[NooaahPosition] = []
+
+        for pos in self._state.open_positions:
+            try:
+                bid = await executor.get_best_bid(pos.symbol)
+            except Exception as exc:
+                log.error(
+                    "nooaah.sell_bid_failed",
+                    symbol=pos.symbol, error=str(exc),
+                )
+                still_open.append(pos)
+                continue
+
+            try:
+                order = await executor.place_market_sell(
+                    symbol=pos.symbol,
+                    quantity=__import__("decimal").Decimal(str(pos.quantity)),
+                    client_id=f"{pos.client_id}_exit",
+                )
+            except Exception as exc:
+                log.error(
+                    "nooaah.sell_failed",
+                    symbol=pos.symbol, client_id=pos.client_id,
+                    error=str(exc),
+                )
+                still_open.append(pos)
+                continue
+
+            # ثبت trade بسته‌شده
+            exit_price = float(order.executed_price or bid)
+            ret_pct = (exit_price / pos.entry_price - 1) * 100 - FEE_PCT
+            pnl = pos.capital_used * ret_pct / 100.0
+
+            trade = NooaahClosedTrade(
+                client_id=pos.client_id,
+                symbol=pos.symbol,
+                entry_price=pos.entry_price,
+                exit_price=exit_price,
+                quantity=pos.quantity,
+                entry_time=pos.entry_time,
+                exit_time=int(time.time()),
+                exit_reason="manual_sell",
+                return_pct=round(ret_pct, 4),
+                pnl=round(pnl, 2),
+                duration_candles=max(0, int((time.time() - pos.entry_time) / 3600)),
+                confidence=pos.confidence,
+                mode=self._state.mode,
+            )
+            self._state.closed_trades.append(trade)
+            closed.append(asdict(trade))
+
+            # پول برمی‌گرده
+            self._state.capital_available += pos.capital_used + pnl
+            self._state.capital_in_use -= pos.capital_used
+
+            log.info(
+                "nooaah.position_sold",
+                symbol=pos.symbol, client_id=pos.client_id,
+                ret_pct=round(ret_pct, 2), pnl=round(pnl, 2),
+            )
+
+        self._state.open_positions = still_open
+        if closed:
+            self._state.consecutive_losses = 0  # reset (چون کاربر دخالت کرده)
+
+    # ============================================================
     # Summary
     # ============================================================
     def _summary(
