@@ -19,5 +19,6 @@ Each file: `NNNN-short-title.md`.
 | [0010](./0010-live-trading-architecture.md) | Live Trading Architecture | Proposed |
 | [0011](./0011-live-activation-process.md) | Live Activation Process | Proposed |
 | [0012](./0012-multistep-live-activation.md) | Multi-Step Live Activation | Proposed |
+| [0013](./0013-live-stop-actions.md) | Live Stop Actions | Proposed |
 
 Template: [template.md](./template.md)
