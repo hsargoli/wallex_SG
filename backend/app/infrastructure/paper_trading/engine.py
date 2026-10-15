@@ -39,11 +39,19 @@ class PaperEngine:
             if state_dir is not None
             else PaperRepository()
         )
+        # چک: state قبلاً ذخیره شده یا نه
+        state_exists = self.repo.state_file.exists()
         self.state = self.repo.load()
-        self.state.initial_capital = initial_capital
-        if self.state.capital == 0:
+        if not state_exists:
+            # state جدید — با initial_capital شروع کن
+            self.state.initial_capital = initial_capital
             self.state.capital = initial_capital
+            self.state.equity = initial_capital
             self.state.peak_capital = initial_capital
+            self.state.peak_equity = initial_capital
+        else:
+            # state قدیمی — فقط initial_capital رو آپدیت کن
+            self.state.initial_capital = initial_capital
 
         self._task: asyncio.Task | None = None
 
