@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from pathlib import Path
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.domain.ports.exchange import ExchangePort
@@ -23,6 +24,7 @@ class PaperEngine:
         check_interval_sec: int = 180,
         position_size_pct: float = 50.0,
         fee_pct: float = 0.2,
+        state_dir: Path | None = None,
     ):
         self.exchange = exchange
         self.bot_slug = bot_slug
@@ -32,7 +34,11 @@ class PaperEngine:
         self.fee_pct = fee_pct
         self.check_interval_sec = check_interval_sec
 
-        self.repo = PaperRepository()
+        self.repo = (
+            PaperRepository(state_dir=state_dir)
+            if state_dir is not None
+            else PaperRepository()
+        )
         self.state = self.repo.load()
         self.state.initial_capital = initial_capital
         if self.state.capital == 0:
