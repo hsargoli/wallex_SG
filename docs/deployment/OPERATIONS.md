@@ -196,6 +196,47 @@ htpasswd -D /etc/nginx/.htpasswd_wallex user2
 
 ---
 
+## 🌐 nginx — مسیرهای Public vs Protected
+
+**از 2026-10-15، nginx این‌طور تفکیک شده:**
+
+| مسیر | دسترسی | چرا |
+|------|--------|-----|
+| `/` (لندینگ) | 🌐 عمومی | دیده شدن |
+| `/demo` | 🌐 عمومی | نمایش قابلیت‌ها |
+| `/_next/*` (assets) | 🌐 عمومی | لندینگ/دمو بهشون نیاز دارن |
+| `/favicon.ico` | 🌐 عمومی | — |
+| `/api/backend/v1/guest/*` | 🌐 عمومی | مهمان‌ها بدون auth |
+| `/api/backend/v1/account/*` | 🔒 Basic Auth | حساب واقعی |
+| `/api/backend/v1/paper-v3/*` | 🔒 Basic Auth | paper کاربر |
+| `/dashboard` و بقیه | 🔒 Basic Auth | فقط صاحب حساب |
+
+**فایل config:**
+
+/etc/nginx/sites-available/wallex
+text
+
+
+**بکاپ:**
+```bash
+cp /etc/nginx/sites-available/wallex /etc/nginx/sites-available/wallex.bak.$(date +%Y%m%d_%H%M%S)
+
+بعد از هر تغییر:
+bash
+
+nginx -t && systemctl reload nginx
+
+تست سریع:
+bash
+
+curl -sI -H "Host: sarvbots.ir" http://127.0.0.1/ 2>&1 | head -1               # 200
+curl -sI -H "Host: sarvbots.ir" http://127.0.0.1/demo 2>&1 | head -1            # 200
+curl -sI -H "Host: sarvbots.ir" http://127.0.0.1/dashboard 2>&1 | head -1       # 401
+curl -s -X POST -H "Host: sarvbots.ir" \
+  http://127.0.0.1/api/backend/v1/guest/anonymous 2>&1 | head -1                # token
+curl -sI -H "Host: sarvbots.ir" \
+  http://127.0.0.1/api/backend/v1/account/balances 2>&1 | head -1               # 401
+
 ## 🚦 kill / resume Nooaah
 
 ### kill (متوقف کردن معاملات)
