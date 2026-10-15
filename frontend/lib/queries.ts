@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ProfitabilityRequest, type PlaceOrderRequest, type BatchSignalItem } from "./api";
 import { toast } from "sonner";
+import { hasGuestToken, setGuestToken } from "./guest";
 
 export function useBudget() {
   return useQuery({
@@ -783,3 +784,78 @@ export function useNooaahCycles(limit: number = 30) {
   });
 }
 
+
+// ═══════════════════════════════════════════
+// Guest Mode — hooks
+// ═══════════════════════════════════════════
+
+export function useGuest() {
+  return useQuery({
+    queryKey: ["guest-me"],
+    queryFn: async () => {
+      // اگه token نداریم، از سرور بگیر
+      if (!hasGuestToken()) {
+        const created = await api.createGuest();
+        setGuestToken(created.guest_token);
+      }
+      return api.getGuestMe();
+    },
+    retry: 1,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useGuestPaperV3Status() {
+  return useQuery({
+    queryKey: ["guest-paper-v3-status"],
+    queryFn: () => api.getGuestPaperV3Status(),
+    refetchInterval: 5_000,
+    enabled: hasGuestToken(),
+  });
+}
+
+export function useGuestPaperV3Live() {
+  return useQuery({
+    queryKey: ["guest-paper-v3-live"],
+    queryFn: () => api.getGuestPaperV3Live(),
+    refetchInterval: 5_000,
+    enabled: hasGuestToken(),
+  });
+}
+
+export function useStartGuestPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload?: unknown) => api.startGuestPaperV3(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-live"] });
+      toast.success("Paper مهمان شروع شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useStopGuestPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.stopGuestPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-live"] });
+      toast.success("متوقف شد");
+    },
+  });
+}
+
+export function useResetGuestPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resetGuestPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["guest-paper-v3-live"] });
+      toast.success("ریست شد");
+    },
+  });
+}

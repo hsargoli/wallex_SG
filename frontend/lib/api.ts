@@ -1,10 +1,21 @@
 import axios from "axios";
+import { getGuestToken } from "./guest";
 
 // استفاده از Next.js rewrite که توی next.config.ts تعریف کردیم
 // /api/backend/* → http://127.0.0.1:8000/*
 const client = axios.create({
   baseURL: "/api/backend",
   headers: { "Content-Type": "application/json" },
+});
+
+// Guest Mode — اگه guest-token توی localStorage بود، به همه‌ی درخواست‌ها اضافه کن
+client.interceptors.request.use((config) => {
+  const token = getGuestToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as Record<string, string>)["X-Guest-Token"] = token;
+  }
+  return config;
 });
 
 // ---------- Types ----------
@@ -788,6 +799,39 @@ export const api = {
         allocated: String(amount),
       })
       .then((r) => r.data),
+
+  // ---------- Guest Mode ----------
+  createGuest: () =>
+    client
+      .post<{ guest_token: string; capital_total: number; created_at: number }>(
+        "/v1/guest/anonymous",
+      )
+      .then((r) => r.data),
+
+  getGuestMe: () =>
+    client
+      .get<{
+        guest_token: string;
+        capital_total: number;
+        created_at: number;
+        last_seen_at: number;
+      }>("/v1/guest/me")
+      .then((r) => r.data),
+
+  getGuestPaperV3Status: () =>
+    client.get("/v1/guest/paper-v3/status").then((r) => r.data),
+
+  getGuestPaperV3Live: () =>
+    client.get("/v1/guest/paper-v3/live").then((r) => r.data),
+
+  startGuestPaperV3: (payload?: unknown) =>
+    client.post("/v1/guest/paper-v3/start", payload ?? {}).then((r) => r.data),
+
+  stopGuestPaperV3: () =>
+    client.post("/v1/guest/paper-v3/stop").then((r) => r.data),
+
+  resetGuestPaperV3: () =>
+    client.post("/v1/guest/paper-v3/reset").then((r) => r.data),
 };
 
 // --- Simulation API ---
