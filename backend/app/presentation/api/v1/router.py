@@ -9,6 +9,7 @@ from app.presentation.api.v1 import (
     backtest,
     bot,
     bots,
+    guest,
     markets,
     ml_bottom,
     orders,
@@ -39,6 +40,7 @@ router.include_router(ml_bottom.router)
 router.include_router(paper_trading.router)
 router.include_router(paper_v2.router)
 router.include_router(paper_v3.router)
+router.include_router(guest.router)
 router.include_router(replay.router)
 from app.presentation.api.v1 import order_chase  # noqa: E402
 router.include_router(order_chase.router)
