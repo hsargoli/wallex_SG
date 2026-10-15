@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Play, Square, RotateCcw, TrendingUp, TrendingDown, Wallet, Target, Activity, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BackgroundFX } from "@/components/landing/background-fx";
 import { SarvLogo } from "@/components/landing/sarv-logo";
-import { LiveChart } from "@/components/landing/live-chart";
 import { cn } from "@/lib/utils";
 import {
   useGuest,
@@ -16,14 +16,28 @@ import {
   useStartGuestPaperV3,
   useStopGuestPaperV3,
   useResetGuestPaperV3,
+  useCandlesV2,
 } from "@/lib/queries";
+import { CandlestickChart } from "@/components/charts/candlestick-chart";
+
+const SYMBOLS = [
+  { key: "BTCTMN",  fa: "بیت‌کوین" },
+  { key: "ETHTMN",  fa: "اتریوم" },
+  { key: "USDTTMN", fa: "تتر" },
+  { key: "SOLTMN",  fa: "سولانا" },
+  { key: "XRPTMN",  fa: "ریپل" },
+] as const;
 
 const fmt = (n: number | undefined | null, dec: number = 0) =>
   n == null ? "—" : Math.round(n).toLocaleString("fa-IR") + (dec > 0 ? "" : "");
 
 export default function GuestPage() {
+  const [symbol, setSymbol] = useState<string>("BTCTMN");
+  const [timeframe, setTimeframe] = useState<string>("1h");
+
   const guest = useGuest();
   const status = useGuestPaperV3Status();
+  const candles = useCandlesV2(symbol, timeframe, 200);
   const startPaper = useStartGuestPaperV3();
   const stopPaper = useStopGuestPaperV3();
   const resetPaper = useResetGuestPaperV3();
@@ -186,14 +200,62 @@ export default function GuestPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-5 w-5 text-violet-400" />
-              چارت زنده
+              چارت {SYMBOLS.find((s) => s.key === symbol)?.fa ?? symbol}
             </CardTitle>
-            <Badge variant="outline" className="border-violet-500/30 text-[10px] text-violet-300">
-              داده‌ی نمایشی
-            </Badge>
+            <div className="flex items-center gap-2">
+              {/* Timeframe */}
+              <div className="flex items-center gap-1 rounded-full border border-violet-500/30 bg-background/50 p-0.5">
+                {(["15m", "1h", "4h", "1D"] as const).map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-[10px] font-medium transition",
+                      tf === timeframe
+                        ? "bg-violet-600 text-white"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    type="button"
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+              {/* Symbol */}
+              <div className="flex items-center gap-1 rounded-full border border-violet-500/30 bg-background/50 p-0.5">
+                {SYMBOLS.map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => setSymbol(s.key)}
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-[10px] font-medium transition",
+                      s.key === symbol
+                        ? "bg-violet-600 text-white shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    type="button"
+                  >
+                    {s.fa}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="-mt-12">
-            <LiveChart className="w-full" />
+          <CardContent>
+            {candles.isLoading ? (
+              <Skeleton className="h-[400px] w-full" />
+            ) : candles.isError || !candles.data?.candles?.length ? (
+              <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
+                داده‌ای برای نمایش نیست
+              </div>
+            ) : (
+              <CandlestickChart
+                candles={candles.data.candles}
+                height={400}
+                showVolume
+                interactive
+              />
+            )}
           </CardContent>
         </Card>
       </section>
