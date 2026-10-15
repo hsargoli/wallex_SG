@@ -17,6 +17,7 @@ from app.services.bots.nooaah.scheduler import (
 )
 from app.presentation.api.v1.realtime import TickerFanout, router as realtime_router
 from app.presentation.api.v1.router import router as v1_router
+from app.services.guest import GuestScheduler
 
 
 @asynccontextmanager
@@ -43,6 +44,13 @@ async def lifespan(app: FastAPI):
     app.state.nooaah_scheduler = nooaah_sched
     set_scheduler(nooaah_sched)
 
+    # Guest Mode — paper engines + shared scheduler
+    app.state.guest_engines = {}
+    guest_sched = GuestScheduler(interval_sec=180)
+    guest_sched.set_engines_provider(lambda: app.state.guest_engines)
+    guest_sched.start()
+    app.state.guest_scheduler = guest_sched
+
     try:
         yield
     finally:
@@ -52,6 +60,7 @@ async def lifespan(app: FastAPI):
         await chase_manager.stop_all()
         ticker_client.stop()
         nooaah_sched.stop()
+        await guest_sched.stop()
         await exchange.aclose()
 
 

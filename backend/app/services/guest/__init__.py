@@ -8,6 +8,7 @@
 - docs/design/GUEST_MODE.md (v2.1)
 """
 
+from app.services.guest.scheduler import GuestScheduler
 from app.services.guest.storage import (
     GUEST_ROOT,
     delete_guest,
@@ -34,4 +35,5 @@ __all__ = [
     "ensure_guest_dir",
     "list_guests",
     "delete_guest",
+    "GuestScheduler",
 ]

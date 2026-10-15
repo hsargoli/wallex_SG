@@ -1,0 +1,90 @@
+"""Guest Scheduler — loop مشترک برای همه‌ی guest engineها.
+
+یه loop، هر N ثانیه، همه‌ی engineهای در حال اجرا رو check می‌کنه.
+(به‌جای per-guest task که منابع رو سرریز می‌کنه)
+
+منابع:
+- docs/design/GUEST_MODE.md (v2.1) — بخش ۵
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import TYPE_CHECKING, Callable
+
+import structlog
+
+if TYPE_CHECKING:
+    from app.infrastructure.paper_trading.engine import PaperEngine
+
+log = structlog.get_logger("guest.scheduler")
+
+
+class GuestScheduler:
+    """Scheduler مشترک برای همه‌ی Guest Paper Engineها."""
+
+    def __init__(self, interval_sec: int = 180):
+        self.interval_sec = interval_sec
+        self._task: asyncio.Task | None = None
+        self._engines_provider: Callable[[], dict[str, "PaperEngine"]] | None = None
+        self._running = False
+
+    def set_engines_provider(
+        self, provider: Callable[[], dict[str, "PaperEngine"]]
+    ) -> None:
+        """تابعی که dict engineها رو برمی‌گردونه."""
+        self._engines_provider = provider
+
+    def start(self) -> None:
+        """شروع loop."""
+        if self._running:
+            return
+        self._running = True
+        self._task = asyncio.create_task(self._loop())
+        log.info("guest.scheduler_started", interval_sec=self.interval_sec)
+
+    async def stop(self) -> None:
+        """توقف loop."""
+        self._running = False
+        if self._task and not self._task.done():
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+        log.info("guest.scheduler_stopped")
+
+    async def _loop(self) -> None:
+        """Loop اصلی."""
+        while self._running:
+            try:
+                await asyncio.sleep(self.interval_sec)
+                if not self._running:
+                    break
+                await self._tick()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                log.error("guest.scheduler_error", error=str(e))
+                await asyncio.sleep(30)
+
+    async def _tick(self) -> None:
+        """یه چرخه: همه‌ی engineهای در حال اجرا رو check کن."""
+        if self._engines_provider is None:
+            return
+        engines = self._engines_provider()
+        active = 0
+        for token, engine in engines.items():
+            if not engine.state.is_running:
+                continue
+            active += 1
+            try:
+                await engine._check()
+            except Exception as e:
+                log.error(
+                    "guest.check_failed",
+                    token=token[:8] + "...",
+                    error=str(e),
+                )
+        if active:
+            log.info("guest.scheduler_tick", active=active)
