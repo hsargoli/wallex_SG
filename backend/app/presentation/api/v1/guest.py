@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from app.infrastructure.paper_trading.engine import PaperEngine
@@ -45,7 +45,13 @@ DEFAULT_CHECK_INTERVAL = 180
 async def require_guest_token(
     x_guest_token: Annotated[str | None, Header(alias="X-Guest-Token")] = None,
 ) -> str:
-    """گرفتن و اعتبارسنجی guest-token از header."""
+    """گرفتن و اعتبارسنجی guest-token از header.
+
+    چک می‌کنه:
+    - header موجود باشه
+    - فرمت UUID v4 باشه
+    - توکن قبلاً ساخته شده باشه (پوشه‌ش وجود داره)
+    """
     if not x_guest_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,6 +64,13 @@ async def require_guest_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         ) from e
+
+    # توکن باید قبلاً ساخته شده باشه
+    if not guest_dir(x_guest_token).exists():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="guest-token ناشناخته است — ابتدا /v1/guest/anonymous را صدا بزن",
+        )
     return x_guest_token
 
 
@@ -92,8 +105,8 @@ class StartRequest(BaseModel):
 # ═══════════════════════════════════════════
 
 def _get_or_create_meta(token: str) -> dict:
-    """متادیتای مهمان رو بخون یا بساز."""
-    ensure_guest_dir(token)
+    """متادیتای مهمان رو بخون یا آپدیت کن (پوشه باید از قبل باشه)."""
+    # پوشه از قبل توسط /anonymous ساخته شده
     meta_path = guest_meta_path(token)
     if meta_path.exists():
         try:
@@ -178,7 +191,7 @@ async def create_anonymous() -> AnonymousResponse:
 @router.get("/me", response_model=GuestMeResponse)
 async def get_me(
     request: Request,
-    token: Annotated[str, Header(alias="X-Guest-Token")],
+    token: Annotated[str, Depends(require_guest_token)],
 ) -> GuestMeResponse:
     """اطلاعات مهمان."""
     meta = _get_or_create_meta(token)
@@ -191,7 +204,10 @@ async def get_me(
 
 
 @router.get("/paper-v3/status")
-async def get_paper_status(request: Request, token: str) -> dict:
+async def get_paper_status(
+    request: Request,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
     """وضعیت paper مهمان."""
     _get_or_create_meta(token)
     engine = _get_engine(request, token)
@@ -222,7 +238,10 @@ async def get_paper_status(request: Request, token: str) -> dict:
 
 
 @router.get("/paper-v3/live")
-async def get_paper_live(request: Request, token: str) -> dict:
+async def get_paper_live(
+    request: Request,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
     """وضعیت + قیمت لحظه‌ای (PnL شناور)."""
     _get_or_create_meta(token)
     engine = _get_engine(request, token)
@@ -241,7 +260,7 @@ async def get_paper_live(request: Request, token: str) -> dict:
 @router.post("/paper-v3/start")
 async def start_paper(
     request: Request,
-    token: str,
+    token: Annotated[str, Depends(require_guest_token)],
     payload: StartRequest | None = None,
 ) -> dict:
     """شروع paper trading مهمان."""
@@ -259,7 +278,10 @@ async def start_paper(
 
 
 @router.post("/paper-v3/stop")
-async def stop_paper(request: Request, token: str) -> dict:
+async def stop_paper(
+    request: Request,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
     """توقف paper مهمان."""
     engine = _get_engine(request, token)
     if engine is None:
@@ -270,7 +292,10 @@ async def stop_paper(request: Request, token: str) -> dict:
 
 
 @router.post("/paper-v3/reset")
-async def reset_paper(request: Request, token: str) -> dict:
+async def reset_paper(
+    request: Request,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
     """ریست paper مهمان."""
     _get_or_create_meta(token)
     engine = _get_engine(request, token)

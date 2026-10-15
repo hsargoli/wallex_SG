@@ -100,3 +100,6 @@ backend/data/models/nooaah_lgbm_*.txt
 
 # Nooaah runtime state (positions, capital)
 backend/data/nooaah/
+
+# Guest Mode — per-guest state (runtime)
+backend/data/guests/
