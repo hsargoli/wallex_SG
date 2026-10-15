@@ -25,7 +25,7 @@ const navGroups: NavGroup[] = [
   {
     label: "نمای کلی",
     items: [
-      { href: "/", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
+      { href: "/dashboard", label: "داشبورد", icon: LayoutDashboard, desc: "نمای کلی بازار و وضعیت ربات" },
     ],
   },
   {

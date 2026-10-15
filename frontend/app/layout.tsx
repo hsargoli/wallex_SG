@@ -4,12 +4,11 @@ import "@fontsource/vazirmatn/500.css";
 import "@fontsource/vazirmatn/700.css";
 import "./globals.css";
 import { Providers } from "./providers";
-import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Wallex Trading Bot",
-  description: "داشبورد مدیریت ربات معاملاتی والکس",
+  title: "SarvBots — پلتفرم معاملات الگوریتمی",
+  description: "SarvBots — ربات‌های معاملاتی هوشمند",
 };
 
 export default function RootLayout({
@@ -25,7 +24,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground">
         <Providers>
-          <AppShell>{children}</AppShell>
+          {children}
           <Toaster position="top-center" richColors />
         </Providers>
       </body>
