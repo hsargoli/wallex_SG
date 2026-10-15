@@ -1,10 +1,98 @@
-# Wallex — معماری حالت مهمان (Guest Mode) — v2.0
+# Wallex — معماری حالت مهمان (Guest Mode) — v2.1
 
 > این سند، طراحی حالت مهمان (Guest) برای پلتفرم Wallex رو توضیح می‌ده.
 > هدف: کاربران بدون توکن والکس، بتونن پلتفرم رو با پول مجازی تجربه کنن.
 > تاریخ: 2026-10-14
 > وضعیت: طراحی (پیاده‌سازی نشده)
 > نسخه‌ی قبلی: [`archive/GUEST_MODE_v1.md`](./archive/GUEST_MODE_v1.md)
+
+---
+
+## 📝 تغییرات v2.1 (2026-10-15)
+
+> این بخش، تصمیم‌های پیاده‌سازی رو بر اساس شناخت معماری فعلی کد می‌نویسه.
+> بدنه‌ی v2.0 (پایین) هنوز معتبرـه، ولی در جزئیات فنی به‌روزرسانی شده.
+
+### ۱. معماری Paper Engine — Multi-tenant (راه A)
+
+**تصمیم:** PaperEngine فعلی multi-tenant می‌شه (نه کلاس جدید).
+
+**دلیل:** PaperRepository از قبل state_dir param داره. فقط یه خط تغییر توی PaperEngine کافیه.
+
+~~~python
+# app/infrastructure/paper_trading/engine.py
+class PaperEngine:
+    def __init__(self, ..., state_dir: Path | None = None):
+        self.repo = PaperRepository(state_dir=state_dir) if state_dir else PaperRepository()
+~~~
+
+**نتیجه:**
+- /v1/paper-v3/* (برای کاربر) → state_dir=None → همون رفتار قبلی
+- /v1/guest/paper-v3/* (برای مهمان) → state_dir=Path(f"data/guests/{token}")
+
+### ۲. Storage — per-guest JSON
+
+~~~
+backend/data/
+├── paper_v3/state.json          ← کاربر (بدون تغییر)
+└── guests/{token}/state.json    ← مهمان
+~~~
+
+**چرا JSON نه DB؟** MVP سریع‌تر، PaperRepository از قبل JSON می‌نویسه.
+
+### ۳. Guest Token
+
+- UUID v4 (random)
+- ذخیره: localStorage مرورگر
+- اولین بار: POST /v1/guest/anonymous
+- بدون auth (session موقت)
+
+### ۴. Endpoints مهمان
+
+~~~
+POST /v1/guest/anonymous       → { guest_token, capital_total: 500000 }
+GET  /v1/guest/me              → اطلاعات مهمان
+GET  /v1/guest/paper-v3/status
+GET  /v1/guest/paper-v3/live
+POST /v1/guest/paper-v3/start
+POST /v1/guest/paper-v3/stop
+POST /v1/guest/paper-v3/reset
+~~~
+
+### ۵. Scheduler مشترک
+
+یه loop، هر ۱۸۰ ثانیه، همه‌ی guest engineها رو پردازش می‌کنه.
+(۱۰۰۰ مهمان × task جدا = منابع سرریز)
+
+### ۶. Nooaah Live — دست نمی‌خوره
+
+- services/bots/nooaah/ → بدون تغییر
+- PaperExecutor Nooaah → بدون تغییر
+- app.state.paper_v3_engine → بدون تغییر
+
+### ۷. Frontend Guest UX
+
+- تشخیص خودکار: چک localStorage برای guest_token
+- در هدر: «حالت مهمان» + دکمه‌ی «ثبت‌نام»
+- صفحات: داشبورد، Nooaah paper، portfolio مجازی
+
+### ۸. امنیت
+
+| مسیر | دسترسی |
+|------|--------|
+| / , /demo | عمومی |
+| /api/v1/guest/* | با guest-token (UUID) |
+| /api/v1/paper-v3/* | Basic Auth (فعلاً) |
+| /api/v1/account/* | Basic Auth (فعلاً) |
+| /ws/* | عمومی |
+
+### ۹. زنجیره‌ی ارتقا
+
+~~~
+مهمان (guest-token) → ثبت‌نام → کاربر (user-token) → اتصال والکس → live
+~~~
+
+---
 
 ---
 
@@ -327,10 +415,6 @@ POST /v1/user/wallex/disconnect   → قطع اتصال
 
 **به‌زودی اضافه می‌شه.**
 
----
-
-**آخرین آپدیت:** 2026-10-14
-**نسخه:** 2.0 (طراحی)
 ---
 
 ## 🏛️ بخش دوم: پیاده‌سازی
@@ -692,6 +776,6 @@ async def can_register(ip: str) -> bool:
 
 ---
 
-**آخرین آپدیت:** 2026-10-14
-**نسخه:** 2.0 (طراحی)
+**آخرین آپدیت:** 2026-10-15
+**نسخه:** 2.1 (طراحی)
 **وضعیت:** طراحی — پیاده‌سازی نشده
