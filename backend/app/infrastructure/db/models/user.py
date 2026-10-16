@@ -59,6 +59,15 @@ class User(Base):
         JSONB, default=list, server_default=text("'[]'::jsonb")
     )
 
+    # فاز ۱۷.۷.۲ — ۱۰ فیلد بی‌خونه‌ی PaperState (ADR 0015 + Addendum 1)
+    # منبع کامل: is_running, initial_capital, equity, peaks, dd, pnl,
+    # win_rate, started_at, last_check_at, check_count, events, radar
+    # ⚠️ ستون‌های بالا (capital_available, open_positions, ...) view آماری‌ان
+    #    — فقط از طریق repo.save() هم‌زمان آپدیت می‌شن
+    paper_meta: Mapped[dict] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+
     # آمار
     total_trades: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     wins: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
