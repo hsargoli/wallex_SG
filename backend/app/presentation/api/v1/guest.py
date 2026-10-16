@@ -101,10 +101,15 @@ class StartRequest(BaseModel):
 
 
 class ManualOrderRequest(BaseModel):
-    """سفارش دستی مهمان (شبیه‌سازی)."""
+    """سفارش دستی مهمان (شبیه‌سازی).
+
+    یا quantity (تعداد سکه) یا amount_tmn (مبلغ به تومان) باید داده بشه.
+    اگه amount_tmn داده بشه، backend خودش quantity رو حساب می‌کنه.
+    """
     side: str = Field(..., pattern="^(buy|sell)$")
     symbol: str = Field(..., min_length=3)
-    quantity: float = Field(..., gt=0)
+    quantity: float = Field(default=0.0, ge=0)
+    amount_tmn: float = Field(default=0.0, ge=0)
     tp_pct: float = Field(default=2.0, ge=0.1, le=50)
     sl_pct: float = Field(default=1.0, ge=0.1, le=50)
 
@@ -318,6 +323,7 @@ async def place_manual_order(
         side=payload.side,
         symbol=payload.symbol,
         quantity=payload.quantity,
+        amount_tmn=payload.amount_tmn,
         tp_pct=payload.tp_pct,
         sl_pct=payload.sl_pct,
     )

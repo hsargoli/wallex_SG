@@ -198,7 +198,8 @@ class PaperEngine:
         self,
         side: str,
         symbol: str,
-        quantity: float,
+        quantity: float = 0.0,
+        amount_tmn: float = 0.0,
         tp_pct: float = 2.0,
         sl_pct: float = 1.0,
     ) -> dict:
@@ -218,8 +219,8 @@ class PaperEngine:
         if side not in ("buy", "sell"):
             return {"status": "error", "error": "side باید buy یا sell باشه"}
 
-        if quantity <= 0:
-            return {"status": "error", "error": "quantity باید مثبت باشه"}
+        if quantity <= 0 and amount_tmn <= 0:
+            return {"status": "error", "error": "quantity یا amount_tmn لازم است"}
 
         if len(self.state.open_positions) >= 10:
             return {"status": "error", "error": "سقف ۱۰ پوزیشن باز"}
@@ -236,6 +237,13 @@ class PaperEngine:
             price = float(candles[-1].close)
         except Exception as e:
             return {"status": "error", "error": f"خطا: {e}"}
+
+        # ── محاسبه‌ی quantity از amount_tmn (اگه کاربر مبلغ داده) ──
+        if amount_tmn > 0 and quantity <= 0:
+            quantity = amount_tmn / price
+
+        if quantity <= 0:
+            return {"status": "error", "error": "quantity نامعتبر"}
 
         # ── محاسبه‌ی هزینه ──
         cost = price * quantity

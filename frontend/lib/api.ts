@@ -832,6 +832,21 @@ export const api = {
 
   resetGuestPaperV3: () =>
     client.post("/v1/guest/paper-v3/reset").then((r) => r.data),
+
+  placeGuestOrder: (payload: {
+    side: "buy" | "sell";
+    symbol: string;
+    quantity?: number;
+    amount_tmn?: number;
+    tp_pct?: number;
+    sl_pct?: number;
+  }) =>
+    client.post("/v1/guest/order", payload).then((r) => r.data),
+
+  closeGuestPosition: (symbol: string) =>
+    client
+      .post(`/v1/guest/position/${symbol}/close`)
+      .then((r) => r.data),
 };
 
 // --- Simulation API ---
