@@ -838,10 +838,18 @@ export const api = {
     symbol: string;
     quantity?: number;
     amount_tmn?: number;
+    limit_price?: number;
     tp_pct?: number;
     sl_pct?: number;
   }) =>
     client.post("/v1/guest/order", payload).then((r) => r.data),
+
+  getGuestPrice: (symbol: string) =>
+    client
+      .get<{ symbol: string; price: number | null; error?: string }>(
+        `/v1/guest/price/${symbol}`,
+      )
+      .then((r) => r.data),
 
   closeGuestPosition: (symbol: string) =>
     client

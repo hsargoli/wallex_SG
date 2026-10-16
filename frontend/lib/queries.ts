@@ -869,6 +869,7 @@ export function usePlaceGuestOrder() {
       symbol: string;
       quantity?: number;
       amount_tmn?: number;
+      limit_price?: number;
       tp_pct?: number;
       sl_pct?: number;
     }) => api.placeGuestOrder(payload),
@@ -899,5 +900,16 @@ export function useCloseGuestPosition() {
       }
     },
     onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+
+export function useGuestPrice(symbol: string | null, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["guest-price", symbol],
+    queryFn: () => api.getGuestPrice(symbol!),
+    enabled: !!symbol && enabled,
+    refetchInterval: 5000,
+    staleTime: 3000,
   });
 }

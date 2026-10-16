@@ -200,6 +200,7 @@ class PaperEngine:
         symbol: str,
         quantity: float = 0.0,
         amount_tmn: float = 0.0,
+        limit_price: float = 0.0,
         tp_pct: float = 2.0,
         sl_pct: float = 1.0,
     ) -> dict:
@@ -237,6 +238,25 @@ class PaperEngine:
             price = float(candles[-1].close)
         except Exception as e:
             return {"status": "error", "error": f"خطا: {e}"}
+
+        # ── چک limit_price (شبیه‌سازی Limit Order) ──
+        if limit_price > 0:
+            if side == "buy" and limit_price < price:
+                return {
+                    "status": "error",
+                    "error": (
+                        f"قیمت پیشنهادی شما ({limit_price:,.0f}) از قیمت بازار "
+                        f"({price:,.0f}) پایین‌تره. برای خرید، قیمت باید ≥ بازار باشه."
+                    ),
+                }
+            if side == "sell" and limit_price > price:
+                return {
+                    "status": "error",
+                    "error": (
+                        f"قیمت پیشنهادی شما ({limit_price:,.0f}) از قیمت بازار "
+                        f"({price:,.0f}) بالاترـه. برای فروش، قیمت باید ≤ بازار باشه."
+                    ),
+                }
 
         # ── محاسبه‌ی quantity از amount_tmn (اگه کاربر مبلغ داده) ──
         if amount_tmn > 0 and quantity <= 0:

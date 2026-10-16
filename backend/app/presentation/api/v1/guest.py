@@ -110,6 +110,7 @@ class ManualOrderRequest(BaseModel):
     symbol: str = Field(..., min_length=3)
     quantity: float = Field(default=0.0, ge=0)
     amount_tmn: float = Field(default=0.0, ge=0)
+    limit_price: float = Field(default=0.0, ge=0)
     tp_pct: float = Field(default=2.0, ge=0.1, le=50)
     sl_pct: float = Field(default=1.0, ge=0.1, le=50)
 
@@ -305,6 +306,29 @@ async def stop_paper(
     return result
 
 
+@router.get("/price/{symbol}")
+async def get_current_price(
+    request: Request,
+    symbol: str,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
+    """قیمت لحظه‌ای نماد (برای فرم سفارش مهمان)."""
+    from app.application.use_cases.get_candles import GetCandlesUseCase
+
+    exchange = request.app.state.exchange
+    try:
+        uc = GetCandlesUseCase(exchange=exchange)
+        candles = await uc.execute(symbol=symbol, timeframe="1h", limit=2)
+        if not candles:
+            return {"symbol": symbol, "price": None, "error": "قیمت دریافت نشد"}
+        return {
+            "symbol": symbol,
+            "price": float(candles[-1].close),
+        }
+    except Exception as e:
+        return {"symbol": symbol, "price": None, "error": str(e)}
+
+
 @router.post("/order")
 async def place_manual_order(
     request: Request,
@@ -324,6 +348,7 @@ async def place_manual_order(
         symbol=payload.symbol,
         quantity=payload.quantity,
         amount_tmn=payload.amount_tmn,
+        limit_price=payload.limit_price,
         tp_pct=payload.tp_pct,
         sl_pct=payload.sl_pct,
     )

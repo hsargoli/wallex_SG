@@ -21,6 +21,7 @@ import {
   useCandlesV2,
   usePlaceGuestOrder,
   useCloseGuestPosition,
+  useGuestPrice,
 } from "@/lib/queries";
 import { CandlestickChart } from "@/components/charts/candlestick-chart";
 
@@ -45,6 +46,7 @@ export default function GuestPage() {
   const [orderAmount, setOrderAmount] = useState<string>("100000");
   const [orderTp, setOrderTp] = useState<string>("2");
   const [orderSl, setOrderSl] = useState<string>("1");
+  const [orderLimitPrice, setOrderLimitPrice] = useState<string>("");
 
   const guest = useGuest();
   const status = useGuestPaperV3Status();
@@ -54,6 +56,7 @@ export default function GuestPage() {
   const resetPaper = useResetGuestPaperV3();
   const placeOrder = usePlaceGuestOrder();
   const closePosition = useCloseGuestPosition();
+  const marketPrice = useGuestPrice(orderSymbol, true);
 
   const data = status.data;
   const isRunning = data?.is_running ?? false;
@@ -403,6 +406,53 @@ export default function GuestPage() {
                   </div>
                 </div>
 
+                {/* قیمت پیشنهادی (Limit) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      قیمت پیشنهادی (اختیاری)
+                    </Label>
+                    <span className="font-mono text-[10px]">
+                      {marketPrice.isLoading ? (
+                        <span className="text-muted-foreground">...</span>
+                      ) : marketPrice.data?.price ? (
+                        <span className="text-violet-300">
+                          بازار: {Math.round(marketPrice.data.price).toLocaleString("fa-IR")}
+                        </span>
+                      ) : (
+                        <span className="text-rose-400">قیمت موجود نیست</span>
+                      )}
+                    </span>
+                  </div>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={orderLimitPrice}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/[^0-9]/g, "");
+                      setOrderLimitPrice(cleaned);
+                    }}
+                    placeholder="خالی = به قیمت بازار"
+                    className="h-9 font-mono text-xs"
+                  />
+                  {orderLimitPrice && marketPrice.data?.price && (() => {
+                    const lp = parseFloat(orderLimitPrice);
+                    const mp = marketPrice.data.price!;
+                    const isBuy = orderSide === "buy";
+                    const ok = isBuy ? lp >= mp : lp <= mp;
+                    return (
+                      <p className={cn(
+                        "text-[10px]",
+                        ok ? "text-emerald-400" : "text-amber-400",
+                      )}>
+                        {ok
+                          ? (isBuy ? "✅ قیمت شما ≥ بازار — سفارش پذیرفته می‌شه" : "✅ قیمت شما ≤ بازار — سفارش پذیرفته می‌شه")
+                          : (isBuy ? "⚠️ قیمت شما < بازار — سفارش رد می‌شه" : "⚠️ قیمت شما > بازار — سفارش رد می‌شه")}
+                      </p>
+                    );
+                  })()}
+                </div>
+
                 {/* TP + SL */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
@@ -434,6 +484,7 @@ export default function GuestPage() {
                       side: orderSide,
                       symbol: orderSymbol,
                       amount_tmn: parseFloat(orderAmount) || 0,
+                      limit_price: parseFloat(orderLimitPrice) || 0,
                       tp_pct: parseFloat(orderTp) || 2,
                       sl_pct: parseFloat(orderSl) || 1,
                     })
