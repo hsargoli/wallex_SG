@@ -194,6 +194,123 @@ class PaperEngine:
 
         self.state.open_positions = remaining
 
+    async def execute_manual_order(
+        self,
+        side: str,
+        symbol: str,
+        quantity: float,
+        tp_pct: float = 2.0,
+        sl_pct: float = 1.0,
+    ) -> dict:
+        """سفارش دستی مهمان (شبیه‌سازی).
+
+        Args:
+            side: "buy" یا "sell"
+            symbol: نماد
+            quantity: مقدار
+            tp_pct: درصد سود (پیش‌فرض ۲٪)
+            sl_pct: درصد ضرر (پیش‌فرض ۱٪)
+
+        Returns:
+            dict: {status, position, error?}
+        """
+        # ── چک‌ها ──
+        if side not in ("buy", "sell"):
+            return {"status": "error", "error": "side باید buy یا sell باشه"}
+
+        if quantity <= 0:
+            return {"status": "error", "error": "quantity باید مثبت باشه"}
+
+        if len(self.state.open_positions) >= 10:
+            return {"status": "error", "error": "سقف ۱۰ پوزیشن باز"}
+
+        if any(p["symbol"] == symbol for p in self.state.open_positions):
+            return {"status": "error", "error": f"{symbol} قبلاً باز است"}
+
+        # ── قیمت لحظه‌ای ──
+        try:
+            uc = GetCandlesUseCase(exchange=self.exchange)
+            candles = await uc.execute(symbol=symbol, timeframe=self.timeframe, limit=2)
+            if not candles:
+                return {"status": "error", "error": "قیمت دریافت نشد"}
+            price = float(candles[-1].close)
+        except Exception as e:
+            return {"status": "error", "error": f"خطا: {e}"}
+
+        # ── محاسبه‌ی هزینه ──
+        cost = price * quantity
+        if cost > self.state.capital:
+            return {
+                "status": "error",
+                "error": f"سرمایه کافی نیست (نیاز: {cost:.0f}، موجود: {self.state.capital:.0f})",
+            }
+
+        # ── SL/TP ──
+        if side == "buy":
+            tp = price * (1 + tp_pct / 100)
+            sl = price * (1 - sl_pct / 100)
+        else:  # sell (short)
+            tp = price * (1 - tp_pct / 100)
+            sl = price * (1 + sl_pct / 100)
+
+        # ── ساخت پوزیشن ──
+        pos = {
+            "symbol": symbol,
+            "side": side,
+            "entry_price": price,
+            "current_price": price,
+            "quantity": quantity,
+            "cost": cost,
+            "tp": tp,
+            "sl": sl,
+            "tp_pct": tp_pct,
+            "sl_pct": sl_pct,
+            "entry_time": int(time.time()),
+            "source": "manual",
+        }
+
+        # ── آپدیت state ──
+        self.state.open_positions.append(pos)
+        self.state.capital -= cost
+        self.state.total_trades += 1
+        self.state.update_metrics()
+
+        self._log_event(
+            "manual_order",
+            f"سفارش دستی: {side} {symbol} @ {price:,.0f}",
+            symbol=symbol,
+            data={"side": side, "quantity": quantity, "price": price},
+        )
+
+        self.repo.save(self.state)
+
+        return {"status": "ok", "position": pos}
+
+    async def close_position(self, symbol: str) -> dict:
+        """بستن دستی پوزیشن."""
+        for pos in list(self.state.open_positions):
+            if pos["symbol"] == symbol:
+                try:
+                    uc = GetCandlesUseCase(exchange=self.exchange)
+                    candles = await uc.execute(symbol=symbol, timeframe=self.timeframe, limit=2)
+                    exit_price = float(candles[-1].close) if candles else pos["current_price"]
+                except Exception:
+                    exit_price = pos["current_price"]
+
+                self._close_position(pos, exit_price, "manual_close")
+                self.state.open_positions.remove(pos)
+                self.state.update_metrics()
+                self.repo.save(self.state)
+
+                self._log_event(
+                    "manual_close",
+                    f"بستن دستی: {symbol} @ {exit_price:,.0f}",
+                    symbol=symbol,
+                )
+                return {"status": "ok", "exit_price": exit_price}
+
+        return {"status": "error", "error": f"پوزیشن {symbol} پیدا نشد"}
+
     def _log_event(self, kind: str, message: str, symbol: str = "", data: dict | None = None, **extra) -> None:
         """ثبت رویداد (جدیدترین اول، سقف ۲۰۰)."""
         payload = dict(data or {})

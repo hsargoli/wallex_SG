@@ -100,6 +100,15 @@ class StartRequest(BaseModel):
     position_size_pct: float = 50.0
 
 
+class ManualOrderRequest(BaseModel):
+    """سفارش دستی مهمان (شبیه‌سازی)."""
+    side: str = Field(..., pattern="^(buy|sell)$")
+    symbol: str = Field(..., min_length=3)
+    quantity: float = Field(..., gt=0)
+    tp_pct: float = Field(default=2.0, ge=0.1, le=50)
+    sl_pct: float = Field(default=1.0, ge=0.1, le=50)
+
+
 # ═══════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════
@@ -288,6 +297,65 @@ async def stop_paper(
         return {"status": "stopped"}
     result = await engine.stop()
     log.info("guest.paper.stopped", token=token[:8] + "...")
+    return result
+
+
+@router.post("/order")
+async def place_manual_order(
+    request: Request,
+    payload: ManualOrderRequest,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
+    """ثبت سفارش دستی مهمان (شبیه‌سازی).
+
+    ⚠️ این سفارش در orderbook واقعی والکس ثبت نمی‌شه.
+    فقط توی state مهمان (شبیه‌سازی) ذخیره می‌شه.
+    """
+    _get_or_create_meta(token)
+    engine = _get_or_create_engine(request, token)
+
+    result = await engine.execute_manual_order(
+        side=payload.side,
+        symbol=payload.symbol,
+        quantity=payload.quantity,
+        tp_pct=payload.tp_pct,
+        sl_pct=payload.sl_pct,
+    )
+
+    log.info(
+        "guest.manual_order",
+        token=token[:8] + "...",
+        side=payload.side,
+        symbol=payload.symbol,
+        quantity=payload.quantity,
+        result=result.get("status"),
+    )
+
+    return result
+
+
+@router.post("/position/{symbol}/close")
+async def close_manual_position(
+    request: Request,
+    symbol: str,
+    token: Annotated[str, Depends(require_guest_token)],
+) -> dict:
+    """بستن دستی پوزیشن مهمان."""
+    _get_or_create_meta(token)
+    engine = _get_engine(request, token)
+    if engine is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="پوزیشنی برای مهمان وجود ندارد",
+        )
+
+    result = await engine.close_position(symbol)
+    log.info(
+        "guest.manual_close",
+        token=token[:8] + "...",
+        symbol=symbol,
+        result=result.get("status"),
+    )
     return result
 
 
