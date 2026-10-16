@@ -167,3 +167,81 @@ async def ensure_state(self) -> None:
 - تست safety net: `tests/integration/test_paper_engine_persistence.py`
 - Migration: `291b79050370_create_users_and_register_attempts.py`
 - Tag نقطه‌ی برگشت: `v0.9.17-pre-user-paper`
+
+---
+
+## Addendum 1 — ستون `paper_meta` (2026-10-16)
+
+### داده‌ی جدید
+
+در طراحی `UserPaperRepository`، نگاشت دقیق `PaperState` (۲۱ فیلد) → `User` (۸ فیلد مرتبط) گرفته شد. نتیجه:
+
+**فیلدهای بی‌خونه (۱۰ تا):**
+
+| PaperState | معنی | وضعیت |
+|---|---|---|
+| `initial_capital` | سرمایه‌ی اولیه | ❌ معادل `capital_total` نیست (معنای متفاوت) |
+| `equity` | نقد + ارزش پوزیشن‌ها | ❌ مشتق می‌شه ولی برای UI سریع لازمه |
+| `peak_capital`, `peak_equity` | سقف تاریخی | ❌ برای max DD |
+| `max_drawdown_pct` | بیشترین افت | ❌ آمار زنده |
+| `total_pnl`, `total_pnl_pct` | سود/زیان | ❌ آمار زنده |
+| `win_rate` | نرخ برد | ❌ آمار زنده |
+| `is_running` | فعال بودن | ❌ برای scheduler |
+| `started_at`, `last_check_at`, `check_count` | متادیتای اجرا | ❌ برای scheduler |
+| `events`, `radar` | رویدادها + اسکن زنده | ❌ برای UI زنده |
+
+**نتیجه:** فرض ADR 0015 («migration جدید لازم نیست») با داده‌ی جدید رد می‌شه.
+
+### تصمیم تصحیح‌شده
+
+**۱. اضافه‌کردن ستون `paper_meta JSONB DEFAULT '{}'::jsonb NOT NULL` به `users`.**
+
+- `paper_meta` = منبع کامل ۱۰ فیلد بی‌خونه
+- ستون‌های موجود User به‌عنوان **view آماری ساده** برای کوئری سریع باقی می‌مونن
+- ستون‌های JSONB موجود (`open_positions`, `closed_trades`, `equity_curve`) و اعداد (`capital_available`, `total_trades`, `wins`, `losses`) دست‌نخورده می‌مونن
+
+**۲. `initial_capital` توی `paper_meta` نگه داشته می‌شه — نه `capital_total`.**
+
+دلیل: `capital_total` ممکنه با سود/زیان تغییر کنه، ولی `initial_capital` ثابته (مبنای max_drawdown).
+
+Fallback برای کاربرهای قدیمی (paper_meta خالی):
+
+~~~python
+meta = user.paper_meta or {}
+state.initial_capital = meta.get("initial_capital", float(user.capital_total))
+~~~
+
+**۳. Sync دائمی فقط از طریق `repo.save()`.**
+
+هر جا `UserPaperRepository.save(state)` صدا زده می‌شه، **هم** ستون‌های User **و هم** `paper_meta` آپدیت می‌شن — در یک transaction.
+
+⚠️ **هرگز** مستقیم `session.execute(update(User)...)` نزن — چون ممکنه `paper_meta` desync بشه.
+
+### چرا `paper_meta` JSONB، نه ۱۰ ستون جدید
+
+| معیار | JSONB | ۱۰ ستون |
+|---|---|---|
+| Forward-compatible (فیلد جدید بدون migration) | ✅ | ❌ |
+| Write-heavy (هر ۱۸۰ ثانیه) | ✅ یک `UPDATE` | ❌ |
+| Migration اندازه | کوچیک | بزرگ |
+| کوئری روی این فیلدها | ❌ (نیاز نداریم) | — |
+
+**نتیجه:** JSONB برنده‌ست چون این فیلدها **فقط برای نمایش UI** هستن، نه برای query.
+
+### چه چیزی در ADR 0015 عوض شد
+
+| بند ADR 0015 | قبل | بعد (Addendum 1) |
+|---|---|---|
+| Migration | «لازم نیست» | «یک migration کوچیک لازمـه» |
+| نگاشت state | «همه‌ی فیلدها توی User هستن» | «۱۰ فیلد توی paper_meta» |
+| Subclass تصمیم | الف (بدون تغییر) | الف (بدون تغییر) |
+| Scheduler | الف (بدون تغییر) | الف (بدون تغییر) |
+| Async repo | الف (بدون تغییر) | الف (بدون تغییر) |
+
+سه تصمیم اصلی ADR 0015 سرجاشون می‌مونن — فقط یک بند تصحیح شد.
+
+### References (اضافه)
+
+- `backend/alembic/versions/` — migration جدید (در همین فاز ساخته می‌شه)
+- `app/infrastructure/db/models/user.py` — ستون جدید
+- داده‌ی جدید: نگاشت ۲۱ فیلد PaperState → ۸ فیلد User (این سند)
