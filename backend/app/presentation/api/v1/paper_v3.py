@@ -110,6 +110,6 @@ async def reset(request: Request):
         from app.infrastructure.paper_trading.repository import PaperRepository
         from app.infrastructure.paper_trading.state import PaperState
         repo = PaperRepository()
-        repo.save(PaperState())
+        await repo.save(PaperState())
         return {"status": "reset"}
-    return engine.reset()
+    return await engine.reset()

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.domain.ports.exchange import ExchangePort
+from app.infrastructure.paper_trading.protocol import PaperRepositoryProtocol
 from app.infrastructure.paper_trading.repository import PaperRepository
 from app.infrastructure.paper_trading.state import PaperState
 from app.services.bots import bot_registry
@@ -25,6 +26,7 @@ class PaperEngine:
         position_size_pct: float = 50.0,
         fee_pct: float = 0.2,
         state_dir: Path | None = None,
+        repo: PaperRepositoryProtocol | None = None,
     ):
         self.exchange = exchange
         self.bot_slug = bot_slug
@@ -34,29 +36,44 @@ class PaperEngine:
         self.fee_pct = fee_pct
         self.check_interval_sec = check_interval_sec
 
-        self.repo = (
-            PaperRepository(state_dir=state_dir)
-            if state_dir is not None
-            else PaperRepository()
+        self.repo: PaperRepositoryProtocol = (
+            repo
+            if repo is not None
+            else (
+                PaperRepository(state_dir=state_dir)
+                if state_dir is not None
+                else PaperRepository()
+            )
         )
-        # چک: state قبلاً ذخیره شده یا نه
-        state_exists = self.repo.state_file.exists()
-        self.state = self.repo.load()
-        if not state_exists:
-            # state جدید — با initial_capital شروع کن
-            self.state.initial_capital = initial_capital
-            self.state.capital = initial_capital
-            self.state.equity = initial_capital
-            self.state.peak_capital = initial_capital
-            self.state.peak_equity = initial_capital
-        else:
-            # state قدیمی — فقط initial_capital رو آپدیت کن
-            self.state.initial_capital = initial_capital
+        self._initial_capital = initial_capital
+        self.state = PaperState()
+        self._state_initialized = False
 
         self._task: asyncio.Task | None = None
 
+    async def ensure_state(self) -> None:
+        """بارگذاری یا ساخت state — idempotent.
+
+        اگه state قبلاً ذخیره شده، لود می‌کنه.
+        اگه نه، با initial_capital مقداردهی می‌کنه.
+        """
+        if self._state_initialized:
+            return
+        exists = await self.repo.exists()
+        self.state = await self.repo.load()
+        if not exists:
+            self.state.initial_capital = self._initial_capital
+            self.state.capital = self._initial_capital
+            self.state.equity = self._initial_capital
+            self.state.peak_capital = self._initial_capital
+            self.state.peak_equity = self._initial_capital
+        else:
+            self.state.initial_capital = self._initial_capital
+        self._state_initialized = True
+
     async def start(self) -> dict:
         """شروع."""
+        await self.ensure_state()
         if self.state.is_running:
             return {"status": "already_running"}
 
@@ -80,10 +97,10 @@ class PaperEngine:
                 await self._task
             except asyncio.CancelledError:
                 pass
-        self.repo.save(self.state)
+        await self.repo.save(self.state)
         return {"status": "stopped"}
 
-    def reset(self) -> dict:
+    async def reset(self) -> dict:
         """ریست."""
         self.state = PaperState(
             initial_capital=self.state.initial_capital,
@@ -92,7 +109,7 @@ class PaperEngine:
             peak_capital=self.state.initial_capital,
             peak_equity=self.state.initial_capital,
         )
-        self.repo.save(self.state)
+        await self.repo.save(self.state)
         return {"status": "reset"}
 
     def get_status(self) -> dict:
@@ -153,7 +170,7 @@ class PaperEngine:
         # ۵. ذخیره
         self.state.last_check_at = int(time.time())
         self.state.check_count += 1
-        self.repo.save(self.state)
+        await self.repo.save(self.state)
 
     async def _check_exits(self) -> None:
         """چک خروج."""
@@ -310,7 +327,7 @@ class PaperEngine:
             data={"side": side, "quantity": quantity, "price": price},
         )
 
-        self.repo.save(self.state)
+        await self.repo.save(self.state)
 
         return {"status": "ok", "position": pos}
 
@@ -328,7 +345,7 @@ class PaperEngine:
                 self._close_position(pos, exit_price, "manual_close")
                 self.state.open_positions.remove(pos)
                 self.state.update_metrics()
-                self.repo.save(self.state)
+                await self.repo.save(self.state)
 
                 self._log_event(
                     "manual_close",

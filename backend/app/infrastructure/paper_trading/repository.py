@@ -1,5 +1,6 @@
-"""Paper Trading Repository — ذخیره/بازیابی state."""
+"""Paper Trading Repository — ذخیره/بازیابی state (async facade)."""
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -10,15 +11,28 @@ STATE_FILE = STATE_DIR / "state.json"
 
 
 class PaperRepository:
-    """Repository state."""
+    """Repository state فایلـی — async facade روی I/O sync."""
 
     def __init__(self, state_dir: Path = STATE_DIR):
         self.state_dir = state_dir
         self.state_file = state_dir / "state.json"
         self.state_dir.mkdir(parents=True, exist_ok=True)
 
-    def load(self) -> PaperState:
-        """بارگذاری state."""
+    async def exists(self) -> bool:
+        """آیا فایل state وجود دارد؟"""
+        return await asyncio.to_thread(self.state_file.exists)
+
+    async def load(self) -> PaperState:
+        """بارگذاری state — async wrapper."""
+        return await asyncio.to_thread(self._load_sync)
+
+    async def save(self, state: PaperState) -> None:
+        """ذخیره state — async wrapper."""
+        await asyncio.to_thread(self._save_sync, state)
+
+    # ── sync internals (اجرا در thread جدا) ──
+
+    def _load_sync(self) -> PaperState:
         if not self.state_file.exists():
             return PaperState()
         try:
@@ -31,8 +45,7 @@ class PaperRepository:
         except Exception:
             return PaperState()
 
-    def save(self, state: PaperState) -> None:
-        """ذخیره state."""
+    def _save_sync(self, state: PaperState) -> None:
         self.state_file.write_text(
             json.dumps(state.to_dict(), indent=2, ensure_ascii=False),
             encoding="utf-8",
