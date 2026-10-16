@@ -1,0 +1,205 @@
+"""User Paper Trading endpoints — /v1/user/paper-v3/*.
+
+فاز ۱۷.۷.۲.۵ — paper state برای کاربر لاگین‌شده.
+
+auth: JWT از header Authorization (dependency: require_user_token)
+
+State:
+- app.state.user_engines: dict[uuid.UUID, UserPaperEngine]
+- Scheduler مشترک (GuestScheduler با provider دوم) engineها رو check می‌کنه
+"""
+
+from __future__ import annotations
+
+import uuid
+from typing import Annotated
+
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
+
+from app.infrastructure.db.session import SessionLocal
+from app.infrastructure.paper_trading.state import PaperState
+from app.infrastructure.paper_trading.user_engine import UserPaperEngine
+from app.infrastructure.paper_trading.user_repository import UserPaperRepository
+from app.presentation.api.v1.auth import require_user_token
+
+log = structlog.get_logger("user.paper_v3.api")
+router = APIRouter(prefix="/user/paper-v3", tags=["User Paper V3"])
+
+
+# ═══════════════════════════════════════════
+# Schemas
+# ═══════════════════════════════════════════
+
+class StartRequest(BaseModel):
+    bot_slug: str = "scalp_master"
+    symbols: list[str] = ["NEARTMN"]
+    timeframe: str = "1h"
+    initial_capital: float = 3_000_000.0
+    check_interval_sec: int = 180
+    position_size_pct: float = 50.0
+
+
+# ═══════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════
+
+def _get_user_uuid(user: dict) -> uuid.UUID:
+    """استخراج UUID از payload JWT."""
+    try:
+        return uuid.UUID(user["sub"])
+    except (KeyError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "invalid_token", "message": "sub نامعتبر در توکن"},
+        ) from e
+
+
+def _get_engines(request: Request) -> dict[uuid.UUID, UserPaperEngine]:
+    """dict engineهای user از app.state."""
+    return getattr(request.app.state, "user_engines", {})
+
+
+def _get_engine(request: Request, user_id: uuid.UUID) -> UserPaperEngine | None:
+    """engine کاربر اگه وجود داشته باشه."""
+    return _get_engines(request).get(user_id)
+
+
+def _empty_status() -> dict:
+    """وضعیت پیش‌فرض وقتی engine نیست."""
+    return {
+        "is_running": False,
+        "initial_capital": 3_000_000.0,
+        "capital": 3_000_000.0,
+        "equity": 3_000_000.0,
+        "peak_capital": 3_000_000.0,
+        "peak_equity": 3_000_000.0,
+        "max_drawdown_pct": 0.0,
+        "total_trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0,
+        "total_pnl_pct": 0.0,
+        "win_rate": 0.0,
+        "open_positions": [],
+        "recent_trades": [],
+        "equity_curve": [],
+        "events": [],
+        "radar": [],
+        "started_at": 0,
+        "last_check_at": 0,
+        "check_count": 0,
+    }
+
+
+# ═══════════════════════════════════════════
+# Endpoints
+# ═══════════════════════════════════════════
+
+@router.get("/status")
+async def get_status(
+    request: Request,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """وضعیت Paper Trading کاربر."""
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+    if engine is None:
+        # fallback: از DB لود کن
+        repo = UserPaperRepository(user_id, SessionLocal)
+        state = await repo.load()
+        result = _empty_status()
+        result.update(state.to_dict())
+        return result
+    return engine.get_status()
+
+
+@router.get("/live")
+async def get_live(
+    request: Request,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """وضعیت + قیمت لحظه‌ای (PnL شناور)."""
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+    if engine is None:
+        repo = UserPaperRepository(user_id, SessionLocal)
+        state = await repo.load()
+        result = _empty_status()
+        result.update(state.to_dict())
+        return result
+    await engine.refresh_prices()
+    return engine.get_status()
+
+
+@router.post("/start")
+async def start(
+    request: Request,
+    payload: StartRequest,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """شروع Paper Trading برای کاربر."""
+    user_id = _get_user_uuid(user)
+
+    # اگه engine در حال اجرا هست، اول متوقف کن
+    old = _get_engine(request, user_id)
+    if old is not None and old.state.is_running:
+        await old.stop()
+
+    exchange = request.app.state.exchange
+
+    engine = UserPaperEngine(
+        user_id=user_id,
+        session_factory=SessionLocal,
+        exchange=exchange,
+        bot_slug=payload.bot_slug,
+        symbols=payload.symbols,
+        timeframe=payload.timeframe,
+        initial_capital=payload.initial_capital,
+        check_interval_sec=payload.check_interval_sec,
+        position_size_pct=payload.position_size_pct,
+    )
+
+    engines = _get_engines(request)
+    engines[user_id] = engine
+
+    result = await engine.start()
+    log.info("user.paper_started", user_id=str(user_id)[:8], bot=payload.bot_slug)
+    return result
+
+
+@router.post("/stop")
+async def stop(
+    request: Request,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """توقف Paper Trading."""
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+    if engine is None:
+        return {"status": "stopped"}
+    result = await engine.stop()
+    log.info("user.paper_stopped", user_id=str(user_id)[:8])
+    return result
+
+
+@router.post("/reset")
+async def reset(
+    request: Request,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """ریست state کاربر."""
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+
+    if engine is not None:
+        result = await engine.reset()
+        log.info("user.paper_reset", user_id=str(user_id)[:8])
+        return result
+
+    # اگه engine نیست، مستقیم از repo
+    repo = UserPaperRepository(user_id, SessionLocal)
+    await repo.save(PaperState())
+    log.info("user.paper_reset_no_engine", user_id=str(user_id)[:8])
+    return {"status": "reset"}

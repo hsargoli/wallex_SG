@@ -23,6 +23,7 @@ from app.presentation.api.v1 import (
     scanner,
     signals,
     simulation,
+    user,
 )
 
 router = APIRouter(prefix="/v1")
@@ -48,3 +49,4 @@ from app.presentation.api.v1 import order_chase  # noqa: E402
 router.include_router(order_chase.router)
 router.include_router(orders.router)
 router.include_router(simulation.router)
+router.include_router(user.router)
