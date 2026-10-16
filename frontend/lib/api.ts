@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getUserToken } from "./auth";
 import { getGuestToken } from "./guest";
 
 // استفاده از Next.js rewrite که توی next.config.ts تعریف کردیم
@@ -8,12 +9,20 @@ const client = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Guest Mode — اگه guest-token توی localStorage بود، به همه‌ی درخواست‌ها اضافه کن
+// Auth interceptor — اولویت: user-token → guest-token
 client.interceptors.request.use((config) => {
-  const token = getGuestToken();
-  if (token) {
-    config.headers = config.headers ?? {};
-    (config.headers as Record<string, string>)["X-Guest-Token"] = token;
+  config.headers = config.headers ?? {};
+  const headers = config.headers as Record<string, string>;
+
+  const userToken = getUserToken();
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+    return config;
+  }
+
+  const guestToken = getGuestToken();
+  if (guestToken) {
+    headers["X-Guest-Token"] = guestToken;
   }
   return config;
 });
@@ -873,6 +882,23 @@ export const api = {
     client
       .get(`/v1/markets/overview/${symbol}`, { params: { tf: timeframe } })
       .then((r) => r.data),
+
+  // ---------- Auth ----------
+  register: (payload: {
+    email: string;
+    password: string;
+    guest_token?: string | null;
+  }) =>
+    client.post("/v1/auth/register", payload).then((r) => r.data),
+
+  login: (payload: { email: string; password: string }) =>
+    client.post("/v1/auth/login", payload).then((r) => r.data),
+
+  getMe: () =>
+    client.get("/v1/auth/me").then((r) => r.data),
+
+  logout: () =>
+    client.post("/v1/auth/logout").then((r) => r.data),
 
   closeGuestPosition: (symbol: string) =>
     client

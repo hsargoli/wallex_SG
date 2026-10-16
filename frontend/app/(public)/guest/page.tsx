@@ -14,6 +14,7 @@ import { GuestSignals } from "@/components/guest/guest-signals";
 import { GuestScanner } from "@/components/guest/guest-scanner";
 import { GuestPersonality } from "@/components/guest/guest-personality";
 import { SarvLogo } from "@/components/landing/sarv-logo";
+import { UserBadge } from "@/components/layout/user-badge";
 import { cn } from "@/lib/utils";
 import {
   useGuest,
@@ -105,11 +106,8 @@ export default function GuestPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-2 border-violet-500/40 bg-violet-600/10 text-violet-300">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />
-              حالت مهمان
-            </Badge>
+          <div className="flex items-center gap-3">
+            <UserBadge />
             <Button asChild size="sm" variant="outline" className="gap-2 border-violet-500/40 hover:bg-violet-600/10">
               <Link href="/">
                 <ArrowLeft className="h-3.5 w-3.5" />

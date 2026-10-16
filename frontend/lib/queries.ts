@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ProfitabilityRequest, type PlaceOrderRequest, type BatchSignalItem } from "./api";
 import { toast } from "sonner";
 import { hasGuestToken, setGuestToken } from "./guest";
+import { setUserInfo, setUserToken, getUserToken, fullLogout } from "./auth";
 
 export function useBudget() {
   return useQuery({
@@ -953,4 +954,80 @@ export function usePublicMarketOverview(symbol: string, timeframe: string = "1h"
     staleTime: 5 * 60_000,
     retry: 1,
   });
+}
+
+
+// ═══════════════════════════════════════════
+// Auth hooks
+// ═══════════════════════════════════════════
+
+export function useMe() {
+  return useQuery({
+    queryKey: ["auth-me"],
+    queryFn: () => api.getMe(),
+    enabled: typeof window !== "undefined" && !!getUserToken(),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { email: string; password: string; guest_token?: string | null }) =>
+      api.register(payload),
+    onSuccess: (data: any) => {
+      setUserToken(data.user_token);
+      setUserInfo({
+        user_id: data.user_id,
+        email: data.email,
+        capital_total: data.capital_total,
+      });
+      qc.invalidateQueries({ queryKey: ["auth-me"] });
+      qc.invalidateQueries({ queryKey: ["guest-me"] });
+      toast.success(
+        data.merged
+          ? `ثبت‌نام موفق — دارایی مهمان ادغام شد (${Math.round(data.capital_total).toLocaleString("fa-IR")} تومان)`
+          : "ثبت‌نام موفق!",
+      );
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.detail?.message ?? err?.message ?? "خطا در ثبت‌نام";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { email: string; password: string }) => api.login(payload),
+    onSuccess: (data: any) => {
+      setUserToken(data.user_token);
+      setUserInfo({
+        user_id: data.user_id,
+        email: data.email,
+        capital_total: data.capital_total,
+      });
+      qc.invalidateQueries({ queryKey: ["auth-me"] });
+      qc.invalidateQueries({ queryKey: ["guest-me"] });
+      toast.success("خوش آمدی!");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.detail?.message ?? err?.message ?? "خطا در ورود";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return () => {
+    fullLogout();
+    qc.clear();
+    toast.success("خارج شدی");
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  };
 }
