@@ -42,14 +42,33 @@ class UserRepository:
         email: str,
         password_hash: str,
         capital_total: float = 3_000_000.0,
+        capital_available: float | None = None,
+        open_positions: list | None = None,
+        closed_trades: list | None = None,
+        equity_curve: list | None = None,
+        total_trades: int = 0,
+        wins: int = 0,
+        losses: int = 0,
     ) -> User:
-        """ساخت کاربر جدید."""
+        """ساخت کاربر جدید (با اختیار merge state).
+
+        اگه capital_available داده نشه → = capital_total
+        """
+        if capital_available is None:
+            capital_available = capital_total
+
         user = User(
             email=email.strip(),
             password_hash=password_hash,
             capital_total=capital_total,
-            capital_available=capital_total,
+            capital_available=capital_available,
             capital_in_use=0,
+            open_positions=open_positions or [],
+            closed_trades=closed_trades or [],
+            equity_curve=equity_curve or [],
+            total_trades=total_trades,
+            wins=wins,
+            losses=losses,
         )
         self.session.add(user)
         await self.session.flush()  # برای گرفتن id

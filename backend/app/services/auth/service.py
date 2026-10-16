@@ -18,6 +18,7 @@ from app.core.auth import (
     verify_password,
 )
 from app.infrastructure.db.repositories import UserRepository
+from app.services.auth.merge import cleanup_guest, merge_guest_into_user
 
 # ═══ Config ═══
 REGISTER_IP_LIMIT_HOURS = int(os.getenv("REGISTER_IP_LIMIT_HOURS", "24"))
@@ -49,6 +50,8 @@ class AuthResult:
     capital_total: float
     merged: bool = False
     merged_from_guest: bool = False
+    merged_capital: float = 0.0
+    merged_positions: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +61,8 @@ class AuthResult:
             "capital_total": float(self.capital_total),
             "merged": self.merged,
             "merged_from_guest": self.merged_from_guest,
+            "merged_capital": float(self.merged_capital),
+            "merged_positions": self.merged_positions,
         }
 
 
@@ -91,8 +96,12 @@ async def register_user(
     email: str,
     password: str,
     ip: str | None = None,
+    guest_token: str | None = None,
 ) -> AuthResult:
     """ثبت‌نام کاربر جدید.
+
+    اگه guest_token داده شده و state مهمان موجود باشه،
+    پول و positions منتقل می‌شن.
 
     Raises:
         AuthError: در صورت خطا (email تکراری، rate limit، پسورد ضعیف)
@@ -126,16 +135,33 @@ async def register_user(
             status=409,
         )
 
+    # ─── merge از guest (اختیاری) ───
+    merged_data = merge_guest_into_user(guest_token)
+
     # ─── ساخت کاربر ───
     try:
         pwd_hash = hash_password(password)
-        user = await repo.create(email, pwd_hash, capital_total=3_000_000.0)
+        user = await repo.create(
+            email=email,
+            password_hash=pwd_hash,
+            capital_total=merged_data.capital_total,
+            capital_available=merged_data.capital_available,
+            open_positions=merged_data.open_positions,
+            closed_trades=merged_data.closed_trades,
+            equity_curve=merged_data.equity_curve,
+            total_trades=merged_data.total_trades,
+            wins=merged_data.wins,
+            losses=merged_data.losses,
+        )
 
         if ip:
             await repo.log_attempt(ip, email, success=True)
 
         await session.commit()
         await session.refresh(user)
+
+        # ─── پاک‌سازی guest (فقط بعد از commit موفق) ───
+        cleanup_guest(guest_token, merged_data.merged)
 
         # ─── JWT ───
         token = create_user_token(str(user.id), user.email)
@@ -145,7 +171,10 @@ async def register_user(
             user_id=str(user.id),
             email=user.email,
             capital_total=float(user.capital_total),
-            merged=False,
+            merged=merged_data.merged,
+            merged_from_guest=merged_data.merged,
+            merged_capital=merged_data.capital_total - 3_000_000.0 if merged_data.merged else 0.0,
+            merged_positions=len(merged_data.open_positions),
         )
 
     except Exception as e:
