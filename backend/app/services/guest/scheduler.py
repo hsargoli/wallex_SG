@@ -27,13 +27,23 @@ class GuestScheduler:
         self.interval_sec = interval_sec
         self._task: asyncio.Task | None = None
         self._engines_provider: Callable[[], dict[str, "PaperEngine"]] | None = None
+        self._user_engines_provider: Callable[[], dict[str, "PaperEngine"]] | None = None
         self._running = False
 
     def set_engines_provider(
         self, provider: Callable[[], dict[str, "PaperEngine"]]
     ) -> None:
-        """تابعی که dict engineها رو برمی‌گردونه."""
+        """تابعی که dict engineهای guest رو برمی‌گردونه."""
         self._engines_provider = provider
+
+    def set_user_engines_provider(
+        self, provider: Callable[[], dict[str, "PaperEngine"]]
+    ) -> None:
+        """تابعی که dict engineهای user رو برمی‌گردونه.
+
+        جدا از guests — هر دو با هم توی _tick() check می‌شن.
+        """
+        self._user_engines_provider = provider
 
     def start(self) -> None:
         """شروع loop."""
@@ -69,22 +79,43 @@ class GuestScheduler:
                 await asyncio.sleep(30)
 
     async def _tick(self) -> None:
-        """یه چرخه: همه‌ی engineهای در حال اجرا رو check کن."""
-        if self._engines_provider is None:
-            return
-        engines = self._engines_provider()
+        """یه چرخه: همه‌ی engineهای در حال اجرا رو check کن.
+
+        هم guestها هم userها — با هم.
+        """
         active = 0
-        for token, engine in engines.items():
-            if not engine.state.is_running:
-                continue
-            active += 1
-            try:
-                await engine._check()
-            except Exception as e:
-                log.error(
-                    "guest.check_failed",
-                    token=token[:8] + "...",
-                    error=str(e),
-                )
+
+        # guestها
+        if self._engines_provider is not None:
+            guests = self._engines_provider()
+            for token, engine in guests.items():
+                if not engine.state.is_running:
+                    continue
+                active += 1
+                try:
+                    await engine._check()
+                except Exception as e:
+                    log.error(
+                        "guest.check_failed",
+                        token=token[:8] + "...",
+                        error=str(e),
+                    )
+
+        # userها
+        if self._user_engines_provider is not None:
+            users = self._user_engines_provider()
+            for user_id, engine in users.items():
+                if not engine.state.is_running:
+                    continue
+                active += 1
+                try:
+                    await engine._check()
+                except Exception as e:
+                    log.error(
+                        "user.check_failed",
+                        user_id=str(user_id)[:8] + "...",
+                        error=str(e),
+                    )
+
         if active:
-            log.info("guest.scheduler_tick", active=active)
+            log.info("paper.scheduler_tick", active=active)

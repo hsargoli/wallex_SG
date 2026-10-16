@@ -48,6 +48,9 @@ async def lifespan(app: FastAPI):
     app.state.guest_engines = {}
     guest_sched = GuestScheduler(interval_sec=180)
     guest_sched.set_engines_provider(lambda: app.state.guest_engines)
+    # User Mode — paper engines برای کاربران لاگین‌شده (فاز ۱۷.۷.۲)
+    app.state.user_engines = {}
+    guest_sched.set_user_engines_provider(lambda: app.state.user_engines)
     guest_sched.start()
     app.state.guest_scheduler = guest_sched
 
