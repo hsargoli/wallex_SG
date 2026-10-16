@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Play, Square, RotateCcw, TrendingUp, TrendingDown, Wallet, Target, Activity, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,13 @@ export default function GuestPage() {
   const placeOrder = usePlaceGuestOrder();
   const closePosition = useCloseGuestPosition();
   const marketPrice = useGuestPrice(orderSymbol, true);
+
+  // auto-fill قیمت پیشنهادی با قیمت بازار (وقتی نماد عوض می‌شه)
+  useEffect(() => {
+    if (marketPrice.data?.price) {
+      setOrderLimitPrice(String(Math.round(marketPrice.data.price)));
+    }
+  }, [orderSymbol, marketPrice.data?.price]);
 
   const data = status.data;
   const isRunning = data?.is_running ?? false;
