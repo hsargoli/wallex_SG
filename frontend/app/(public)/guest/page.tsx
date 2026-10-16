@@ -26,7 +26,9 @@ import {
   usePlaceGuestOrder,
   useCloseGuestPosition,
   useGuestPrice,
+  useMe,
 } from "@/lib/queries";
+import { getUserToken } from "@/lib/auth";
 import { CandlestickChart } from "@/components/charts/candlestick-chart";
 
 const SYMBOLS = [
@@ -64,6 +66,12 @@ export default function GuestPage() {
   const [orderSl, setOrderSl] = useState<string>("1");
   const [orderLimitPrice, setOrderLimitPrice] = useState<string>("");
 
+  const [isUser, setIsUser] = useState(false);
+  useEffect(() => {
+    setIsUser(!!getUserToken());
+  }, []);
+
+  const me = useMe();
   const guest = useGuest();
   const status = useGuestPaperV3Status();
   const candles = useCandlesV2(symbol, timeframe, 200);
@@ -83,7 +91,10 @@ export default function GuestPage() {
 
   const data = status.data;
   const isRunning = data?.is_running ?? false;
-  const capital = data?.capital ?? guest.data?.capital_total ?? 500_000;
+  const userCapital = (me.data as any)?.capital_total;
+  const capital = isUser && userCapital
+    ? userCapital
+    : (data?.capital ?? guest.data?.capital_total ?? 500_000);
   const pnl = data?.total_pnl ?? 0;
   const pnlPct = data?.total_pnl_pct ?? 0;
   const trades = data?.total_trades ?? 0;
@@ -124,7 +135,11 @@ export default function GuestPage() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight lg:text-3xl">
               <Sparkles className="h-6 w-6 text-violet-400" />
-              {guest.data ? `خوش آمدی، مهمان` : "در حال آماده‌سازی..."}
+              {isUser
+                ? `خوش آمدی، ${(me.data as any)?.email?.split("@")[0] ?? "کاربر"}`
+                : guest.data
+                  ? "خوش آمدی، مهمان"
+                  : "در حال آماده‌سازی..."}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               این محیط شبیه‌سازیـه — پول مجازی، بدون ریسک واقعی
