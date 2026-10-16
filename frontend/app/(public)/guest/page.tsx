@@ -33,6 +33,18 @@ const SYMBOLS = [
   { key: "XRPTMN",  fa: "ریپل" },
 ] as const;
 
+/** 21686999673 → "21,686,999,673" (با , انگلیسی — چون input فقط عدد و کاما قبول می‌کنه) */
+function formatNum(s: string): string {
+  const digits = s.replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** "21,686,999,673" → "21686999673" (فقط رقم) */
+function parseNum(s: string): string {
+  return s.replace(/[^0-9]/g, "");
+}
+
 const fmt = (n: number | undefined | null, dec: number = 0) =>
   n == null ? "—" : Math.round(n).toLocaleString("fa-IR") + (dec > 0 ? "" : "");
 
@@ -61,7 +73,7 @@ export default function GuestPage() {
   // auto-fill قیمت پیشنهادی با قیمت بازار (وقتی نماد عوض می‌شه)
   useEffect(() => {
     if (marketPrice.data?.price) {
-      setOrderLimitPrice(String(Math.round(marketPrice.data.price)));
+      setOrderLimitPrice(formatNum(String(Math.round(marketPrice.data.price))));
     }
   }, [orderSymbol, marketPrice.data?.price]);
 
@@ -383,8 +395,7 @@ export default function GuestPage() {
                     inputMode="numeric"
                     value={orderAmount}
                     onChange={(e) => {
-                      const cleaned = e.target.value.replace(/[^0-9]/g, "");
-                      setOrderAmount(cleaned);
+                      setOrderAmount(formatNum(e.target.value));
                     }}
                     placeholder="۱۰۰٬۰۰۰"
                     className="h-10 font-mono text-sm"
@@ -393,11 +404,11 @@ export default function GuestPage() {
                   <div className="flex gap-1">
                     {[25, 50, 75, 100].map((pct) => {
                       const amount = Math.floor(capital * (pct / 100));
-                      const active = parseInt(orderAmount) === amount;
+                      const active = parseNum(orderAmount) === String(amount);
                       return (
                         <button
                           key={pct}
-                          onClick={() => setOrderAmount(String(amount))}
+                          onClick={() => setOrderAmount(formatNum(String(amount)))}
                           type="button"
                           className={cn(
                             "flex-1 rounded-md border px-2 py-1 text-[10px] font-medium transition",
@@ -436,14 +447,13 @@ export default function GuestPage() {
                     inputMode="numeric"
                     value={orderLimitPrice}
                     onChange={(e) => {
-                      const cleaned = e.target.value.replace(/[^0-9]/g, "");
-                      setOrderLimitPrice(cleaned);
+                      setOrderLimitPrice(formatNum(e.target.value));
                     }}
                     placeholder="خالی = به قیمت بازار"
                     className="h-9 font-mono text-xs"
                   />
                   {orderLimitPrice && marketPrice.data?.price && (() => {
-                    const lp = parseFloat(orderLimitPrice);
+                    const lp = parseFloat(parseNum(orderLimitPrice));
                     const mp = marketPrice.data.price!;
                     const isBuy = orderSide === "buy";
                     const ok = isBuy ? lp >= mp : lp <= mp;
@@ -490,8 +500,8 @@ export default function GuestPage() {
                     placeOrder.mutate({
                       side: orderSide,
                       symbol: orderSymbol,
-                      amount_tmn: parseFloat(orderAmount) || 0,
-                      limit_price: parseFloat(orderLimitPrice) || 0,
+                      amount_tmn: parseFloat(parseNum(orderAmount)) || 0,
+                      limit_price: parseFloat(parseNum(orderLimitPrice)) || 0,
                       tp_pct: parseFloat(orderTp) || 2,
                       sl_pct: parseFloat(orderSl) || 1,
                     })
@@ -499,8 +509,8 @@ export default function GuestPage() {
                   disabled={
                     placeOrder.isPending ||
                     !orderAmount ||
-                    parseFloat(orderAmount) <= 0 ||
-                    parseFloat(orderAmount) > capital ||
+                    parseFloat(parseNum(orderAmount)) <= 0 ||
+                    parseFloat(parseNum(orderAmount)) > capital ||
                     openPositions.length >= 10
                   }
                   className={cn(
