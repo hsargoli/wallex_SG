@@ -13,7 +13,14 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # ─── load .env ───
 ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env")
+# .env ممکنه توی backend/.env یا والدش (wallex/.env) باشه
+for _env_path in (ROOT / ".env", ROOT.parent / ".env"):
+    if _env_path.exists():
+        load_dotenv(_env_path)
+        break
+else:
+    # fallback: auto-discover
+    load_dotenv()
 
 # ─── alembic config ───
 config = context.config
