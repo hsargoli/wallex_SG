@@ -49,10 +49,13 @@ export default function LandingPage() {
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button asChild size="lg" className="btn-glow gap-2 bg-violet-600 hover:bg-violet-500">
-                  <Link href="/demo">مشاهده‌ی دمو <ArrowLeft className="h-4 w-4" /></Link>
+                  <Link href="/register">
+                    ثبت‌نام
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 hover:bg-violet-600/10">
-                  <Link href="/dashboard">ورود به داشبورد</Link>
+                  <Link href="/guest">ورود سریع (مهمان)</Link>
                 </Button>
               </div>
             </div>
@@ -102,7 +105,13 @@ export default function LandingPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="btn-glow gap-2 bg-violet-600 hover:bg-violet-500">
-              <Link href="/demo">مشاهده‌ی دمو <ArrowLeft className="h-4 w-4" /></Link>
+              <Link href="/register">
+                ثبت‌نام
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 hover:bg-violet-600/10">
+              <Link href="/guest">ورود سریع (مهمان)</Link>
             </Button>
           </div>
         </div>

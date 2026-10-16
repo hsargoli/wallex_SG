@@ -103,7 +103,7 @@ POST /v1/guest/paper-v3/reset
 | مرحله | چیکار می‌کنه | توکن والکس | پول |
 |-------|-------------|-----------|-----|
 | **۱. مهمان** | بدون ثبت‌نام، فقط تجربه | ❌ | ۵۰۰,۰۰۰ تومان مجازی (localStorage) |
-| **۲. ثبت‌نام‌شده** | ایمیل + پسورد | ❌ | ۲,۵۰۰,۰۰۰ تومان مجازی (PostgreSQL) |
+| **۲. ثبت‌نام‌شده** | ایمیل + پسورد | ❌ | ۳,۰۰۰,۰۰۰ تومان مجازی (PostgreSQL) |
 | **۳. متصل به والکس** | + توکن والکس | ✅ | سرمایه‌ی واقعی |
 
 **هدف:** کاربر، بدون ترس از امنیت، مرحله‌به‌مرحله وارد شه:
@@ -133,7 +133,7 @@ POST /v1/guest/paper-v3/reset
 ┌─────────────────────────────────────────────────┐
 │  ۳. USER (authenticated)                        │
 │  - user-token (JWT)                             │
-│  - ۲.۵M تومان مجازی (paper)                     │
+│  - ۳M تومان مجازی (paper)                     │
 │  - /v1/user/*                                   │
 │                                                  │
 │  ┌───────────────────────────────────────────┐ │
@@ -261,7 +261,7 @@ POST /v1/user/register
   "email": "user@example.com",
   "password": "..."
 }
-→ { "user_token": "JWT...", "capital_total": 2500000 }
+→ { "user_token": "JWT...", "capital_total": 3000000 }
 ```
 
 **محدودیت:** ۱ ثبت‌نام/روز/IP (جلوگیری از حمله‌ی ربات‌ها).
@@ -284,7 +284,7 @@ POST /v1/user/login
 
 ### پول مجازی کاربر
 
-- **۲,۵۰۰,۰۰۰ تومان** (پیش‌فرض)
+- **۳,۰۰۰,۰۰۰ تومان** (پیش‌فرض)
 - ذخیره: PostgreSQL (state)
 - **قابل تغییر** از پنل admin (بعداً)
 
@@ -499,8 +499,8 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,           -- bcrypt
 
-    capital_total DECIMAL(20, 2) DEFAULT 2500000.00,
-    capital_available DECIMAL(20, 2) DEFAULT 2500000.00,
+    capital_total DECIMAL(20, 2) DEFAULT 3000000.00,
+    capital_available DECIMAL(20, 2) DEFAULT 3000000.00,
     capital_in_use DECIMAL(20, 2) DEFAULT 0.00,
 
     open_positions JSONB DEFAULT '[]',
@@ -671,7 +671,7 @@ async def can_register(ip: str) -> bool:
 │  ⚠️ فقط توی این مرورگر ذخیره شده                │
 │                                                 │
 │  [ثبت‌نام کنید]  ← برای:                        │
-│    • دارایی بیشتر (۲,۵۰۰,۰۰۰ تومان)             │
+│    • دارایی بیشتر (۳,۰۰۰,۰۰۰ تومان)             │
 │    • دسترسی از همه‌ی دستگاه‌ها                   │
 │    • نمادهای بیشتر (۷ به‌جای ۵)                 │
 │                                                 │
@@ -692,7 +692,7 @@ async def can_register(ip: str) -> bool:
 ### داشبورد کاربر (ثبت‌نام‌شده)
 
 - همه‌ی مهمان +
-- portfolio واقعی (۲.۵M مجازی)
+- portfolio واقعی (۳M مجازی)
 - Nooaah paper (۷ نماد)
 - **دکمه‌ی «اتصال توکن والکس»**
 
