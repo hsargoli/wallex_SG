@@ -103,3 +103,7 @@ backend/data/nooaah/
 
 # Guest Mode — per-guest state (runtime)
 backend/data/guests/
+
+# generated candle CSVs
+backend/data/candles/*.csv
+backend/data/candles/*.bak*
