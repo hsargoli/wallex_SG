@@ -851,6 +851,29 @@ export const api = {
       )
       .then((r) => r.data),
 
+  // ---------- Public (Guest-accessible) ----------
+  getPublicSignals: (symbol: string, timeframe: string = "1h") =>
+    client
+      .get(`/v1/signals/${symbol}`, { params: { tf: timeframe } })
+      .then((r) => r.data),
+
+  getPublicScanner: (page: number = 1, pageSize: number = 8) =>
+    client
+      .get(`/v1/scanner/list`, {
+        params: { page, page_size: pageSize, quote: "TMN" },
+      })
+      .then((r) => r.data),
+
+  getPublicAnalysis: (symbol: string, timeframe: string = "1h") =>
+    client
+      .get(`/v1/analysis/${symbol}`, { params: { tf: timeframe } })
+      .then((r) => r.data),
+
+  getPublicMarketOverview: (symbol: string, timeframe: string = "1h") =>
+    client
+      .get(`/v1/markets/overview/${symbol}`, { params: { tf: timeframe } })
+      .then((r) => r.data),
+
   closeGuestPosition: (symbol: string) =>
     client
       .post(`/v1/guest/position/${symbol}/close`)

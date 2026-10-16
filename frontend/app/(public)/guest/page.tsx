@@ -10,6 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BackgroundFX } from "@/components/landing/background-fx";
+import { GuestSignals } from "@/components/guest/guest-signals";
+import { GuestScanner } from "@/components/guest/guest-scanner";
+import { GuestPersonality } from "@/components/guest/guest-personality";
 import { SarvLogo } from "@/components/landing/sarv-logo";
 import { cn } from "@/lib/utils";
 import {
@@ -293,6 +296,15 @@ export default function GuestPage() {
             )}
           </CardContent>
         </Card>
+      </section>
+
+      {/* ─── Signals + Scanner + Personality ─── */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-6">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <GuestSignals symbol={symbol} timeframe={timeframe} />
+          <GuestScanner />
+          <GuestPersonality symbol={symbol} timeframe={timeframe} />
+        </div>
       </section>
 
       {/* ─── Disclaimer + Manual Order ─── */}

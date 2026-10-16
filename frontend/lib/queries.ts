@@ -913,3 +913,44 @@ export function useGuestPrice(symbol: string | null, enabled: boolean = true) {
     staleTime: 3000,
   });
 }
+
+
+// ═══════════════════════════════════════════
+// Public data hooks (for guest page)
+// ═══════════════════════════════════════════
+
+export function usePublicSignals(symbol: string, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["public-signals", symbol, timeframe],
+    queryFn: () => api.getPublicSignals(symbol, timeframe),
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+export function usePublicScanner(page: number = 1, pageSize: number = 8) {
+  return useQuery({
+    queryKey: ["public-scanner", page, pageSize],
+    queryFn: () => api.getPublicScanner(page, pageSize),
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+export function usePublicAnalysis(symbol: string, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["public-analysis", symbol, timeframe],
+    queryFn: () => api.getPublicAnalysis(symbol, timeframe),
+    staleTime: 5 * 60_000,   // analysis کندـه (9s) → cache طولانی
+    retry: 1,
+  });
+}
+
+export function usePublicMarketOverview(symbol: string, timeframe: string = "1h") {
+  return useQuery({
+    queryKey: ["public-overview", symbol, timeframe],
+    queryFn: () => api.getPublicMarketOverview(symbol, timeframe),
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
