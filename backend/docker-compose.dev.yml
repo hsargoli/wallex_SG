@@ -1,0 +1,24 @@
+# Docker Compose — Wallex dev (فقط لوکال)
+# Postgres برای تست migration
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: wallex_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wallex_user
+      POSTGRES_PASSWORD: wallex_dev_password_2026
+      POSTGRES_DB: wallex_db
+    ports:
+      - "55433:5432"
+    volumes:
+      - wallex_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wallex_user -d wallex_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  wallex_pg_data:
