@@ -237,6 +237,51 @@ curl -s -X POST -H "Host: sarvbots.ir" \
 curl -sI -H "Host: sarvbots.ir" \
   http://127.0.0.1/api/backend/v1/account/balances 2>&1 | head -1               # 401
 
+## 🛡️ fail2ban — محافظت از brute force
+
+**از 2026-10-16، fail2ban فعالـه.**
+
+### Jails فعال
+
+| Jail | محافظت از | maxretry | bantime |
+|------|-----------|----------|---------|
+| `sshd` | SSH | ۳ | ۲ ساعت |
+| `nginx-http-auth` | Basic Auth (401) | ۵ | ۲ ساعت |
+| `nginx-botsearch` | اسکنرها | ۳ | ۲۴ ساعت |
+
+### تنظیمات
+
+**فایل:** `/etc/fail2ban/jail.local`
+**لاگ:** `/var/log/fail2ban.log`
+
+### دستورات مفید
+
+**🖥️ سرور (root):**
+
+```bash
+# وضعیت کلی
+fail2ban-client status
+
+# وضعیت یه jail
+fail2ban-client status nginx-http-auth
+
+# بلاک دستی
+fail2ban-client set nginx-http-auth banip 1.2.3.4
+
+# آنبلاک
+fail2ban-client set nginx-http-auth unbanip 1.2.3.4
+
+# لاگ زنده
+tail -f /var/log/fail2ban.log
+
+نکته: ignoreself
+
+127.0.0.1 خودکار ignore می‌شه (پیش‌فرض). پس تست از localhost کار نمی‌کنه — برای تست، از یه IP خارجی باید استفاده کنی.
+تست regex
+bash
+
+fail2ban-regex /var/log/nginx/error.log /etc/fail2ban/filter.d/nginx-http-auth.conf
+
 ## 🚦 kill / resume Nooaah
 
 ### kill (متوقف کردن معاملات)
