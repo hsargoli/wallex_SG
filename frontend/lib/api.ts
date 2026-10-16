@@ -842,6 +842,22 @@ export const api = {
   resetGuestPaperV3: () =>
     client.post("/v1/guest/paper-v3/reset").then((r) => r.data),
 
+  // ── User Paper v3 (JWT-based, phase 17.7.2) ──
+  getUserPaperV3Status: () =>
+    client.get("/v1/user/paper-v3/status").then((r) => r.data),
+
+  getUserPaperV3Live: () =>
+    client.get("/v1/user/paper-v3/live").then((r) => r.data),
+
+  startUserPaperV3: (payload?: unknown) =>
+    client.post("/v1/user/paper-v3/start", payload ?? {}).then((r) => r.data),
+
+  stopUserPaperV3: () =>
+    client.post("/v1/user/paper-v3/stop").then((r) => r.data),
+
+  resetUserPaperV3: () =>
+    client.post("/v1/user/paper-v3/reset").then((r) => r.data),
+
   placeGuestOrder: (payload: {
     side: "buy" | "sell";
     symbol: string;

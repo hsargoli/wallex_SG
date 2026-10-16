@@ -861,6 +861,63 @@ export function useResetGuestPaperV3() {
   });
 }
 
+// ═══ User Paper v3 (JWT-based, phase 17.7.2) ═══
+
+export function useUserPaperV3Status() {
+  return useQuery({
+    queryKey: ["user-paper-v3-status"],
+    queryFn: () => api.getUserPaperV3Status(),
+    refetchInterval: 5_000,
+    enabled: !!getUserToken(),
+  });
+}
+
+export function useUserPaperV3Live() {
+  return useQuery({
+    queryKey: ["user-paper-v3-live"],
+    queryFn: () => api.getUserPaperV3Live(),
+    refetchInterval: 5_000,
+    enabled: !!getUserToken(),
+  });
+}
+
+export function useStartUserPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload?: unknown) => api.startUserPaperV3(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-live"] });
+      toast.success("Paper کاربر شروع شد");
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useStopUserPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.stopUserPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-live"] });
+      toast.success("متوقف شد");
+    },
+  });
+}
+
+export function useResetUserPaperV3() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resetUserPaperV3(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-status"] });
+      qc.invalidateQueries({ queryKey: ["user-paper-v3-live"] });
+      toast.success("ریست شد");
+    },
+  });
+}
+
 
 export function usePlaceGuestOrder() {
   const qc = useQueryClient();

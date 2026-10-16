@@ -22,6 +22,10 @@ import {
   useStartGuestPaperV3,
   useStopGuestPaperV3,
   useResetGuestPaperV3,
+  useUserPaperV3Status,
+  useStartUserPaperV3,
+  useStopUserPaperV3,
+  useResetUserPaperV3,
   useCandlesV2,
   usePlaceGuestOrder,
   useCloseGuestPosition,
@@ -73,11 +77,19 @@ export default function GuestPage() {
 
   const me = useMe();
   const guest = useGuest();
-  const status = useGuestPaperV3Status();
+  const guestStatus = useGuestPaperV3Status();
+  const userStatus = useUserPaperV3Status();
+  const status = isUser ? userStatus : guestStatus;
   const candles = useCandlesV2(symbol, timeframe, 200);
-  const startPaper = useStartGuestPaperV3();
-  const stopPaper = useStopGuestPaperV3();
-  const resetPaper = useResetGuestPaperV3();
+  const guestStart = useStartGuestPaperV3();
+  const guestStop = useStopGuestPaperV3();
+  const guestReset = useResetGuestPaperV3();
+  const userStart = useStartUserPaperV3();
+  const userStop = useStopUserPaperV3();
+  const userReset = useResetUserPaperV3();
+  const startPaper = isUser ? userStart : guestStart;
+  const stopPaper = isUser ? userStop : guestStop;
+  const resetPaper = isUser ? userReset : guestReset;
   const placeOrder = usePlaceGuestOrder();
   const closePosition = useCloseGuestPosition();
   const marketPrice = useGuestPrice(orderSymbol, true);
@@ -149,7 +161,10 @@ export default function GuestPage() {
             {!isRunning ? (
               <Button
                 onClick={() => startPaper.mutate(undefined)}
-                disabled={startPaper.isPending || !guest.data}
+                disabled={
+                  startPaper.isPending ||
+                  (isUser ? !me.data : !guest.data)
+                }
                 className="gap-2 bg-violet-600 hover:bg-violet-500"
               >
                 <Play className="h-4 w-4" />
