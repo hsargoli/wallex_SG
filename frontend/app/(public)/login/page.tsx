@@ -30,7 +30,8 @@ export default function LoginPage() {
       { email: email.trim(), password },
       {
         onSuccess: () => {
-          router.push("/guest");
+          // layout (app) خودش redirect می‌کنه اگه Wallex disconnected باشه
+          router.push("/dashboard");
         },
       },
     );

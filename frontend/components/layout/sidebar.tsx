@@ -48,7 +48,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
       { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
-      { href: "/paper-trading", label: "تست زنده", icon: Play, desc: "اجرای ربات روی بازار زنده بدون پول واقعی" },
+      { href: "/guest", label: "Paper (تست زنده)", icon: Play, desc: "شبیه‌سازی معامله بدون پول واقعی — بدون نیاز به والکس" },
     ],
   },
   {

@@ -49,7 +49,8 @@ export default function RegisterPage() {
       },
       {
         onSuccess: () => {
-          router.push("/guest");
+          // per ADR 0017 — بعد از ثبت‌نام، اول توکن View
+          router.push("/settings/wallex");
         },
       },
     );
