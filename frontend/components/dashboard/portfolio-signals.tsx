@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown } from "lucide-react";
+import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown, Wallet } from "lucide-react";
 import { useWallexStatus, useBatchSignals, useMarkets } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ function fmtPrice(p: string | number | null | undefined): string {
   if (p == null) return "—";
   const n = Number(p);
   if (!Number.isFinite(n) || n === 0) return "—";
+  if (n < 0.01) return n.toFixed(6);
+  if (n < 1) return n.toFixed(4);
   return formatNumber(n, { maximumFractionDigits: 0 });
 }
 
@@ -23,11 +25,31 @@ function fmtPct(p: number | null | undefined): string {
   return `${p >= 0 ? "+" : ""}${p.toFixed(2)}%`;
 }
 
+// کامپوننت اسپارک‌لاین برای نمایش روند قیمت
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 100;
+  const height = 30;
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((d - min) / range) * height;
+    return `${x},${y}`;
+  }).join(" ");
+  
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-8 mt-2 opacity-60" preserveAspectRatio="none">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 export function PortfolioSignals() {
   const wallex = useWallexStatus();
   const markets = useMarkets();
 
-  // استخراج دارایی‌های غیرصفر
   const assets = useMemo(() => {
     if (!wallex.data?.balances) return [];
     return wallex.data.balances
@@ -35,7 +57,6 @@ export function PortfolioSignals() {
       .map((b) => `${b.asset}TMN`);
   }, [wallex.data]);
 
-  // گرفتن سیگنال‌ها و بازارها
   const signals = useBatchSignals(assets, "1h");
 
   const marketMap = useMemo(() => {
@@ -93,13 +114,11 @@ export function PortfolioSignals() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base">
           <span className="flex items-center gap-2">
-            <PieChart className="h-4 w-4 text-violet-400" />
+            <Wallet className="h-4 w-4 text-violet-400" />
             دارایی‌های من (والکس)
-            {signals.isFetching && assets.length > 0 && (
-              <span className="text-[10px] font-normal text-muted-foreground">
-                (در حال بروزرسانی...)
-              </span>
-            )}
+            <span className="text-[10px] font-normal text-muted-foreground flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full">
+              <ArrowDown className="h-3 w-3" /> بر اساس ارزش
+            </span>
           </span>
           <Link href="/signals">
             <Button variant="ghost" size="sm" className="gap-1 text-xs">
@@ -111,10 +130,10 @@ export function PortfolioSignals() {
       </CardHeader>
       <CardContent>
         {isLoading && (
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
           </div>
         )}
 
@@ -129,99 +148,62 @@ export function PortfolioSignals() {
         )}
 
         {!isLoading && rows.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-[10px] text-muted-foreground">
-                <tr className="border-b border-white/10">
-                  <th className="px-2 py-2 text-right font-medium">
-                    <span className="flex items-center gap-1">
-                      دارایی <ArrowDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="px-2 py-2 text-left font-medium">موجودی</th>
-                  <th className="px-2 py-2 text-left font-medium">قیمت فعلی</th>
-                  <th className="px-2 py-2 text-left font-medium">تغییر ۲۴h</th>
-                  <th className="px-2 py-2 text-center font-medium">سیگنال</th>
-                  <th className="px-2 py-2 text-left font-medium" title="حد سود / حد ضرر">TP / SL</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const sig = row.sig;
-                  const action = sig?.signal ?? "hold";
-                  const isBuy = action === "buy";
-                  const isSell = action === "sell";
-                  const conf = sig?.confidence;
-                  const tp = sig?.take_profit;
-                  const sl = sig?.stop_loss;
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.map((row) => {
+              const sig = row.sig;
+              const action = sig?.signal ?? "hold";
+              const isBuy = action === "buy";
+              const isSell = action === "sell";
+              const conf = sig?.confidence;
+              const sparkData = sig?.sparkline || [];
+              const isUp = (row.change24 ?? 0) >= 0;
+              const sparkColor = isUp ? "#34d399" : "#fb7185";
 
-                  return (
-                    <tr
-                      key={row.symbol}
-                      className="border-b border-white/5 transition hover:bg-white/5"
-                    >
-                      <td className="px-2 py-2">
-                        <Badge variant="outline" className="font-mono text-[10px]">
-                          {row.asset}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2 text-left font-mono text-xs" dir="ltr">
-                        {Number(row.balance).toLocaleString("en-US", {
-                          maximumFractionDigits: 6,
-                        })}
-                      </td>
-                      <td className="px-2 py-2 text-left font-mono text-xs" dir="ltr">
-                        {fmtPrice(row.price)}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-2 py-2 text-left font-mono text-xs",
-                          row.change24 == null
-                            ? "text-muted-foreground"
-                            : row.change24 > 0
-                              ? "text-emerald-400"
-                              : row.change24 < 0
-                                ? "text-rose-400"
-                                : "text-muted-foreground"
-                        )}
-                        dir="ltr"
-                      >
-                        {fmtPct(row.change24)}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="inline-flex items-center gap-1">
-                          {isBuy && (
-                            <Badge className="bg-emerald-600/20 text-emerald-300 text-[10px]">
-                              <TrendingUp className="mr-1 h-3 w-3" />
-                              خرید {conf ? `${conf}%` : ""}
-                            </Badge>
-                          )}
-                          {isSell && (
-                            <Badge className="bg-rose-600/20 text-rose-300 text-[10px]">
-                              <TrendingDown className="mr-1 h-3 w-3" />
-                              فروش {conf ? `${conf}%` : ""}
-                            </Badge>
-                          )}
-                          {!isBuy && !isSell && (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                              <Minus className="mr-1 h-3 w-3" />
-                              نگهداری
-                            </Badge>
-                          )}
+              return (
+                <div
+                  key={row.symbol}
+                  className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] hover:border-violet-500/30"
+                >
+                  {/* هدر کارت: آیکون + نام + سیگنال */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-300">
+                        {row.asset.slice(0, 3)}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm">{row.asset}</div>
+                        <div className="text-[10px] text-muted-foreground" dir="ltr">
+                          {Number(row.balance).toLocaleString("en-US", { maximumFractionDigits: 4 })} units
                         </div>
-                      </td>
-                      <td className="px-2 py-2 text-left font-mono text-[10px] text-muted-foreground" dir="ltr">
-                        {tp && sl ? `${fmtPrice(tp)} / ${fmtPrice(sl)}` : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <p className="mt-3 text-[10px] text-muted-foreground">
-              💡 قیمت خرید (cost basis) از API View دریافت نمی‌شه. برای مشاهده‌ی
-              آن، به توکن Trade نیاز است (فاز بعدی).
-            </p>
+                      </div>
+                    </div>
+                    {isBuy && <Badge className="bg-emerald-600/20 text-emerald-300 text-[10px]">خرید {conf ? `${conf}%` : ""}</Badge>}
+                    {isSell && <Badge className="bg-rose-600/20 text-rose-300 text-[10px]">فروش {conf ? `${conf}%` : ""}</Badge>}
+                    {!isBuy && !isSell && <Badge variant="outline" className="text-[10px] text-muted-foreground">نگهداری</Badge>}
+                  </div>
+
+                  {/* اسپارک‌لاین */}
+                  {sparkData.length > 0 && <Sparkline data={sparkData} color={sparkColor} />}
+
+                  {/* فوتر کارت: ارزش + قیمت + تغییرات */}
+                  <div className="mt-3 flex items-end justify-between border-t border-white/5 pt-3">
+                    <div>
+                      <div className="text-[10px] text-muted-foreground">ارزش کل</div>
+                      <div className="font-mono text-xs font-bold text-foreground" dir="ltr">
+                        {formatNumber(row.value, { maximumFractionDigits: 0 })} <span className="text-[10px] text-muted-foreground font-normal">TMN</span>
+                      </div>
+                    </div>
+                    <div className="text-left" dir="ltr">
+                      <div className="text-[10px] text-muted-foreground">قیمت</div>
+                      <div className="font-mono text-xs">{fmtPrice(row.price)}</div>
+                    </div>
+                    <div className={cn("text-xs font-bold font-mono", isUp ? "text-emerald-400" : "text-rose-400")}>
+                      {fmtPct(row.change24)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
