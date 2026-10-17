@@ -65,7 +65,7 @@ export default function GuestPage() {
   const [timeframe, setTimeframe] = useState<string>("1h");
 
   // فرم سفارش دستی
-  const [orderSide, setOrderSide] = useState<"buy" | "sell">("buy");
+
   const [orderSymbol, setOrderSymbol] = useState<string>("BTCTMN");
   const [orderAmount, setOrderAmount] = useState<string>("100000");
   const [orderTp, setOrderTp] = useState<string>("2");
@@ -383,28 +383,9 @@ export default function GuestPage() {
               <div className="space-y-4">
                 {/* Side */}
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setOrderSide("buy")}
-                    className={cn(
-                      "rounded-lg border-2 py-2 text-sm font-bold transition",
-                      orderSide === "buy"
-                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
-                        : "border-white/10 text-muted-foreground hover:border-emerald-500/40",
-                    )}
-                  >
-                    خرید
-                  </button>
-                  <button
-                    onClick={() => setOrderSide("sell")}
-                    className={cn(
-                      "rounded-lg border-2 py-2 text-sm font-bold transition",
-                      orderSide === "sell"
-                        ? "border-rose-500 bg-rose-500/20 text-rose-300"
-                        : "border-white/10 text-muted-foreground hover:border-rose-500/40",
-                    )}
-                  >
-                    فروش
-                  </button>
+                  <div className="col-span-2 rounded-lg border-2 border-emerald-500 bg-emerald-500/20 py-2 text-center text-sm font-bold text-emerald-300">
+                    خرید دارایی
+                  </div>
                 </div>
 
                 {/* Symbol */}
@@ -501,16 +482,15 @@ export default function GuestPage() {
                   {orderLimitPrice && marketPrice.data?.price && (() => {
                     const lp = parseFloat(parseNum(orderLimitPrice));
                     const mp = marketPrice.data.price!;
-                    const isBuy = orderSide === "buy";
-                    const ok = isBuy ? lp >= mp : lp <= mp;
+                    const ok = lp >= mp;
                     return (
                       <p className={cn(
                         "text-[10px]",
                         ok ? "text-emerald-400" : "text-amber-400",
                       )}>
                         {ok
-                          ? (isBuy ? "✅ قیمت شما ≥ بازار — سفارش پذیرفته می‌شه" : "✅ قیمت شما ≤ بازار — سفارش پذیرفته می‌شه")
-                          : (isBuy ? "⚠️ قیمت شما < بازار — سفارش رد می‌شه" : "⚠️ قیمت شما > بازار — سفارش رد می‌شه")}
+                          ? "✅ قیمت شما ≥ بازار — سفارش پذیرفته می‌شه"
+                          : "⚠️ قیمت شما < بازار — سفارش رد می‌شه"}
                       </p>
                     );
                   })()}
@@ -544,7 +524,7 @@ export default function GuestPage() {
                 <Button
                   onClick={() =>
                     placeOrder.mutate({
-                      side: orderSide,
+                      side: "buy",
                       symbol: orderSymbol,
                       amount_tmn: parseFloat(parseNum(orderAmount)) || 0,
                       limit_price: parseFloat(parseNum(orderLimitPrice)) || 0,
@@ -560,19 +540,14 @@ export default function GuestPage() {
                     openPositions.length >= 10 ||
                     !isRunning
                   }
-                  className={cn(
-                    "w-full gap-2",
-                    orderSide === "buy"
-                      ? "bg-emerald-600 hover:bg-emerald-500"
-                      : "bg-rose-600 hover:bg-rose-500",
-                  )}
+                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500"
                 >
                   <Play className="h-4 w-4" />
                   {placeOrder.isPending
                     ? "در حال ثبت..."
                     : !isRunning
                       ? "اول Paper را شروع کن"
-                      : `ثبت ${orderSide === "buy" ? "خرید" : "فروش"}`}
+                      : "ثبت خرید"}
                 </Button>
 
                 {openPositions.length >= 10 && (
@@ -649,8 +624,9 @@ export default function GuestPage() {
                             disabled={closePosition.isPending}
                             className="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] text-rose-400 transition hover:bg-rose-500/20 disabled:opacity-50"
                             type="button"
+                            title="فروش به قیمت لحظه‌ای بازار"
                           >
-                            بستن
+                            فروش
                           </button>
                         </div>
                       </div>
