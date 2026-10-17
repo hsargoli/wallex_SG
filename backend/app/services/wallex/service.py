@@ -302,7 +302,8 @@ async def compute_pnl(
             400,
         ) from e
 
-    # ── fetch orders + balances + markets از Wallex ──
+    # ── fetch orders + balances از Wallex ──
+    # (قیمت فعلی از frontend میاد — frontend useMarkets داره)
     settings = get_settings()
     exchange = WallexExchange.create(settings, api_key=plaintext)
     try:
@@ -324,6 +325,7 @@ async def compute_pnl(
     finally:
         await exchange.aclose()
 
+
     # ── FIFO ──
     cost_map = compute_cost_basis(orders)
 
@@ -332,16 +334,10 @@ async def compute_pnl(
         b.asset.upper(): b for b in balances
     }
 
-    # ── current prices: از markets (public) — جدا fetch می‌کنیم ──
-    # (چون get_markets خیلی سنگینه، فقط برای symbolهایی که position دارن)
+    # ── current prices: از markets ──
     position_symbols = {
         s for s, cb in cost_map.items() if cb.total_qty > 0
     }
-    # fallback: از آخرین executed_price سفارش‌های همان symbol استفاده کنیم
-    last_price_by_symbol: dict[str, float] = {}
-    for o in sorted(orders, key=lambda x: x.updated_at, reverse=True):
-        if o.symbol not in last_price_by_symbol and o.executed_price > 0:
-            last_price_by_symbol[o.symbol] = float(o.executed_price)
 
     # ── merge: هم assets با position، هم assets در balances ──
     all_symbols = sorted(
@@ -371,12 +367,9 @@ async def compute_pnl(
 
         avg_cost = float(cb.avg_cost) if cb and qty_fifo > 0 else None
         cost = float(cb.total_cost) if cb else 0.0
-        current_price = last_price_by_symbol.get(symbol)
-        current_value = (
-            qty_balance * current_price
-            if current_price is not None and qty_balance > 0
-            else None
-        )
+        # قیمت فعلی و current_value از frontend میان (نه backend)
+        current_price = None
+        current_value = None
 
         # PnL فقط اگه همه‌ی اجزا موجود باشن
         unrealized_pnl = None
@@ -390,8 +383,11 @@ async def compute_pnl(
             unrealized_pnl = current_value - cost
             unrealized_pnl_pct = (unrealized_pnl / cost) * 100
 
+        # total_value همیشه (حتی برای unknown) چون کاربر می‌خواد ببینه "الان چقدر می‌ارزه"
         if has_unknown:
             unknown_count += 1
+            if current_value is not None:
+                total_value += current_value
         else:
             total_cost += cost
             if current_value is not None:
