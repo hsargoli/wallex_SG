@@ -109,13 +109,13 @@ export default function GuestPage() {
 
   const data = status.data;
   const isRunning = data?.is_running ?? false;
-  const userCapital = (me.data as any)?.capital_total;
-  const capital = isUser && userCapital
-    ? userCapital
-    : (data?.capital ?? guest.data?.capital_total ?? 500_000);
+  // ⚠️ capital از status (cash available) میاد، نه از me.capital_total
+  // capital_total = سرمایه‌ی کل (ثابت)، capital = نقد موجود (با سفارش‌ها کم می‌شه)
+  const capital = data?.capital ?? guest.data?.capital_total ?? 500_000;
   const pnl = data?.total_pnl ?? 0;
   const pnlPct = data?.total_pnl_pct ?? 0;
-  const trades = data?.total_trades ?? 0;
+  // ⚠️ "آخرین تریدها" = recent_trades (بسته‌شده‌ها)، نه total_trades
+  const trades = (data?.recent_trades ?? []).length;
   const winRate = data?.win_rate ?? 0;
   const openPositions = data?.open_positions ?? [];
   const isProfit = pnl >= 0;

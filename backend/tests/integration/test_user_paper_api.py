@@ -388,3 +388,69 @@ class TestOrderAfterStop:
         assert r.status_code == 409
         assert r.json()["detail"]["code"] == "engine_not_running"
 
+class TestTotalTradesSemantic:
+    """total_trades = تریدهای بسته‌شده، نه سفارش‌های باز.
+
+    Regression: قبلاً execute_manual_order هم total_trades رو زیاد می‌کرد،
+    که باعث می‌شد UI «آخرین تریدها: N» رو اشتباه نشون بده در حالی که
+    لیست خالی بود.
+    """
+
+    async def test_open_order_does_not_increment_total_trades(
+        self, client, test_user_and_token
+    ) -> None:
+        """order (open) → total_trades = 0، open_positions = 1."""
+        token = test_user_and_token["token"]
+
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+
+        # order — باز کردن پوزیشن
+        await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 100_000},
+        )
+
+        r = await client.get(
+            "/v1/user/paper-v3/status",
+            headers=auth_headers(token),
+        )
+        d = r.json()
+        assert len(d["open_positions"]) == 1
+        assert d["total_trades"] == 0, "total_trades نباید با open زیاد شه"
+        assert len(d["recent_trades"]) == 0
+
+    async def test_close_increments_total_trades(
+        self, client, test_user_and_token
+    ) -> None:
+        """order → close → total_trades = 1، recent_trades = 1."""
+        token = test_user_and_token["token"]
+
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+        await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 100_000},
+        )
+        await client.post(
+            "/v1/user/paper-v3/position/BTCTMN/close",
+            headers=auth_headers(token),
+        )
+
+        r = await client.get(
+            "/v1/user/paper-v3/status",
+            headers=auth_headers(token),
+        )
+        d = r.json()
+        assert len(d["open_positions"]) == 0
+        assert d["total_trades"] == 1, "total_trades باید با close زیاد شه"
+        assert len(d["recent_trades"]) == 1
+

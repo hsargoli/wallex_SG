@@ -315,9 +315,10 @@ class PaperEngine:
         }
 
         # ── آپدیت state ──
+        # ⚠️ total_trades فقط در close زیاد می‌شه — نه در open
+        # (این شمارنده = تریدهای بسته‌شده، نه سفارش‌های باز)
         self.state.open_positions.append(pos)
         self.state.capital -= cost
-        self.state.total_trades += 1
         self.state.update_metrics()
 
         self._log_event(
