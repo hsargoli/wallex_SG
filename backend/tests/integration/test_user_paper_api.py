@@ -217,3 +217,123 @@ class TestReset:
         )
         assert r.status_code == 200, r.text
         assert r.json()["status"] == "reset"
+
+class TestManualOrder:
+    async def test_order_without_engine_returns_409(
+        self, client, test_user_and_token
+    ) -> None:
+        """order بدون start → 409 Conflict."""
+        r = await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(test_user_and_token["token"]),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 100_000},
+        )
+        assert r.status_code == 409
+        assert r.json()["detail"]["code"] == "no_engine"
+
+    async def test_order_after_start_creates_position(
+        self, client, test_user_and_token
+    ) -> None:
+        """start → order → position ساخته می‌شه."""
+        token = test_user_and_token["token"]
+        user_id = test_user_and_token["user_id"]
+
+        # start
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+
+        # order
+        r = await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={
+                "side": "buy",
+                "symbol": "BTCTMN",
+                "amount_tmn": 100_000,
+                "tp_pct": 2.0,
+                "sl_pct": 1.0,
+            },
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["status"] == "ok"
+        assert "position" in data
+        assert data["position"]["symbol"] == "BTCTMN"
+
+        # engine state
+        engine = app.state.user_engines[user_id]
+        assert len(engine.state.open_positions) == 1
+
+    async def test_order_insufficient_capital(
+        self, client, test_user_and_token
+    ) -> None:
+        """order با مبلغ بیش از سرمایه → خطا."""
+        token = test_user_and_token["token"]
+
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+
+        r = await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 10_000_000},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "error"
+        assert "سرمایه" in data["error"]
+
+
+class TestClosePosition:
+    async def test_close_without_engine_returns_409(
+        self, client, test_user_and_token
+    ) -> None:
+        """close بدون engine → 409."""
+        r = await client.post(
+            "/v1/user/paper-v3/position/BTCTMN/close",
+            headers=auth_headers(test_user_and_token["token"]),
+        )
+        assert r.status_code == 409
+
+    async def test_close_existing_position(
+        self, client, test_user_and_token
+    ) -> None:
+        """order → close → position حذف می‌شه."""
+        token = test_user_and_token["token"]
+        user_id = test_user_and_token["user_id"]
+
+        # start
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+
+        # order
+        await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 100_000},
+        )
+
+        engine = app.state.user_engines[user_id]
+        assert len(engine.state.open_positions) == 1
+
+        # close
+        r = await client.post(
+            "/v1/user/paper-v3/position/BTCTMN/close",
+            headers=auth_headers(token),
+        )
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["status"] == "ok"
+
+        # position حذف شد
+        assert len(engine.state.open_positions) == 0
+

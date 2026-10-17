@@ -41,6 +41,16 @@ class StartRequest(BaseModel):
     position_size_pct: float = 50.0
 
 
+class ManualOrderRequest(BaseModel):
+    side: str  # "buy" | "sell"
+    symbol: str
+    quantity: float = 0.0
+    amount_tmn: float = 0.0
+    limit_price: float = 0.0
+    tp_pct: float = 2.0
+    sl_pct: float = 1.0
+
+
 # ═══════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════
@@ -203,3 +213,66 @@ async def reset(
     await repo.save(PaperState())
     log.info("user.paper_reset_no_engine", user_id=str(user_id)[:8])
     return {"status": "reset"}
+
+
+@router.post("/order")
+async def place_manual_order(
+    request: Request,
+    payload: ManualOrderRequest,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """ثبت سفارش دستی کاربر (شبیه‌سازی).
+
+    ⚠️ نیاز به Paper فعال — اگه engine نباشه، 409 Conflict.
+    """
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+    if engine is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "no_engine", "message": "اول Paper را شروع کن"},
+        )
+
+    result = await engine.execute_manual_order(
+        side=payload.side,
+        symbol=payload.symbol,
+        quantity=payload.quantity,
+        amount_tmn=payload.amount_tmn,
+        limit_price=payload.limit_price,
+        tp_pct=payload.tp_pct,
+        sl_pct=payload.sl_pct,
+    )
+
+    log.info(
+        "user.manual_order",
+        user_id=str(user_id)[:8],
+        side=payload.side,
+        symbol=payload.symbol,
+        result=result.get("status"),
+    )
+    return result
+
+
+@router.post("/position/{symbol}/close")
+async def close_manual_position(
+    request: Request,
+    symbol: str,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """بستن دستی پوزیشن کاربر."""
+    user_id = _get_user_uuid(user)
+    engine = _get_engine(request, user_id)
+    if engine is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "no_engine", "message": "اول Paper را شروع کن"},
+        )
+
+    result = await engine.close_position(symbol)
+    log.info(
+        "user.manual_close",
+        user_id=str(user_id)[:8],
+        symbol=symbol,
+        result=result.get("status"),
+    )
+    return result
