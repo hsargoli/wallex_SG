@@ -83,6 +83,28 @@ class UserRepository:
             .values(last_seen_at=datetime.now(timezone.utc))
         )
 
+    async def set_wallex_token(
+        self,
+        user_id: uuid.UUID,
+        encrypted: bytes | None,
+    ) -> None:
+        """ذخیره یا پاک‌کردن توکن والکس.
+
+        Args:
+            user_id: UUID کاربر
+            encrypted: ciphertext (bytes) یا None برای پاک‌کردن
+        """
+        await self.session.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(
+                wallex_token_encrypted=encrypted,
+                wallex_connected_at=(
+                    datetime.now(timezone.utc) if encrypted else None
+                ),
+            )
+        )
+
     # ═══════════════════════════════════════════
     # Register attempts (rate limit)
     # ═══════════════════════════════════════════
