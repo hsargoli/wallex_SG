@@ -557,7 +557,8 @@ export default function GuestPage() {
                     !orderAmount ||
                     parseFloat(parseNum(orderAmount)) <= 0 ||
                     parseFloat(parseNum(orderAmount)) > capital ||
-                    openPositions.length >= 10
+                    openPositions.length >= 10 ||
+                    !isRunning
                   }
                   className={cn(
                     "w-full gap-2",
@@ -567,7 +568,11 @@ export default function GuestPage() {
                   )}
                 >
                   <Play className="h-4 w-4" />
-                  {placeOrder.isPending ? "در حال ثبت..." : `ثبت ${orderSide === "buy" ? "خرید" : "فروش"}`}
+                  {placeOrder.isPending
+                    ? "در حال ثبت..."
+                    : !isRunning
+                      ? "اول Paper را شروع کن"
+                      : `ثبت ${orderSide === "buy" ? "خرید" : "فروش"}`}
                 </Button>
 
                 {openPositions.length >= 10 && (

@@ -1,4 +1,20 @@
 import axios from "axios";
+
+// ── Error extraction ──
+export function extractErrorMessage(err: any): string {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object") {
+    return detail.message ?? detail.code ?? err?.message ?? "خطای ناشناخته";
+  }
+  const data = err?.response?.data;
+  if (data && typeof data === "object") {
+    return data.message ?? data.error ?? err?.message ?? "خطای ناشناخته";
+  }
+  return err?.message ?? "خطای ناشناخته";
+}
+
+
 import { getUserToken } from "./auth";
 import { getGuestToken } from "./guest";
 

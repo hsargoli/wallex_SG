@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ProfitabilityRequest, type PlaceOrderRequest, type BatchSignalItem } from "./api";
+import {
+  api,
+  type ProfitabilityRequest,
+  type PlaceOrderRequest,
+  type BatchSignalItem,
+  extractErrorMessage,
+} from "./api";
 import { toast } from "sonner";
 import { hasGuestToken, setGuestToken } from "./guest";
 import { setUserInfo, setUserToken, getUserToken, fullLogout } from "./auth";
@@ -939,7 +945,7 @@ export function usePlaceUserOrder() {
         toast.error(data?.error ?? "خطا در ثبت سفارش");
       }
     },
-    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+    onError: (err: any) => toast.error(`خطا: ${extractErrorMessage(err)}`),
   });
 }
 
@@ -956,7 +962,7 @@ export function useCloseUserPosition() {
         toast.error(data?.error ?? "خطا");
       }
     },
-    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+    onError: (err: any) => toast.error(`خطا: ${err.message}`),
   });
 }
 
@@ -982,7 +988,7 @@ export function usePlaceGuestOrder() {
         toast.error(data?.error ?? "خطا در ثبت سفارش");
       }
     },
-    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+    onError: (err: any) => toast.error(`خطا: ${extractErrorMessage(err)}`),
   });
 }
 

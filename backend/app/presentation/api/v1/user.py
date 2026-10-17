@@ -232,6 +232,14 @@ async def place_manual_order(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "no_engine", "message": "اول Paper را شروع کن"},
         )
+    if not engine.state.is_running:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "engine_not_running",
+                "message": "Paper متوقف شده — دوباره شروع کن",
+            },
+        )
 
     result = await engine.execute_manual_order(
         side=payload.side,
@@ -266,6 +274,14 @@ async def close_manual_position(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "no_engine", "message": "اول Paper را شروع کن"},
+        )
+    if not engine.state.is_running:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "engine_not_running",
+                "message": "Paper متوقف شده — دوباره شروع کن",
+            },
         )
 
     result = await engine.close_position(symbol)

@@ -337,3 +337,54 @@ class TestClosePosition:
         # position حذف شد
         assert len(engine.state.open_positions) == 0
 
+class TestOrderAfterStop:
+    async def test_order_after_stop_returns_engine_not_running(
+        self, client, test_user_and_token
+    ) -> None:
+        """start → stop → order → 409 engine_not_running."""
+        token = test_user_and_token["token"]
+
+        # start
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+        # stop
+        await client.post(
+            "/v1/user/paper-v3/stop",
+            headers=auth_headers(token),
+        )
+
+        # order — باید 409 engine_not_running
+        r = await client.post(
+            "/v1/user/paper-v3/order",
+            headers=auth_headers(token),
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 100_000},
+        )
+        assert r.status_code == 409
+        assert r.json()["detail"]["code"] == "engine_not_running"
+
+    async def test_close_after_stop_returns_engine_not_running(
+        self, client, test_user_and_token
+    ) -> None:
+        """start → stop → close → 409 engine_not_running."""
+        token = test_user_and_token["token"]
+
+        await client.post(
+            "/v1/user/paper-v3/start",
+            headers=auth_headers(token),
+            json={"symbols": ["BTCTMN"], "check_interval_sec": 9999},
+        )
+        await client.post(
+            "/v1/user/paper-v3/stop",
+            headers=auth_headers(token),
+        )
+
+        r = await client.post(
+            "/v1/user/paper-v3/position/BTCTMN/close",
+            headers=auth_headers(token),
+        )
+        assert r.status_code == 409
+        assert r.json()["detail"]["code"] == "engine_not_running"
+
