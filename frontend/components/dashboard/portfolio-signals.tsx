@@ -91,8 +91,22 @@ export function PortfolioSignals() {
         const balance = Number(b.total);
         const value = balance * price;
 
-        // ── merge با PnL ──
-        const pnlAsset = pnlData.data?.assets?.find((a) => a.symbol === symbol);
+        // ── merge با cost_basis (backend) + market price (frontend) ──
+        const cb = pnlData.data?.assets?.find((a) => a.symbol === symbol);
+
+        // محاسبه‌ی PnL سمت کلاینت
+        const totalCost = cb ? Number(cb.total_cost) : null;
+        const currentValue = (price > 0 && balance > 0) ? price * balance : null;
+        const hasUnknown = cb?.has_unknown_history ?? false;
+        const unrealizedPnl = (
+          totalCost !== null
+          && totalCost > 0
+          && currentValue !== null
+          && !hasUnknown
+        ) ? currentValue - totalCost : null;
+        const unrealizedPnlPct = (
+          unrealizedPnl !== null && totalCost !== null && totalCost > 0
+        ) ? (unrealizedPnl / totalCost) * 100 : null;
 
         return {
           asset: b.asset,
@@ -102,7 +116,14 @@ export function PortfolioSignals() {
           change24: market?.daily_change_percent ? Number(market.daily_change_percent) : (sig?.change_24h ?? null),
           sig,
           value,
-          pnl: pnlAsset,
+          // pnl به شکل سازگار با UI فعلی (avg_cost از backend، بقیه محاسبه‌شده)
+          pnl: {
+            avg_cost: cb?.avg_cost ?? null,
+            total_cost: totalCost,
+            has_unknown_history: hasUnknown,
+            unrealized_pnl: unrealizedPnl,
+            unrealized_pnl_pct: unrealizedPnlPct,
+          },
         };
       });
 
