@@ -280,3 +280,240 @@ docs/reports/	گزارش‌های روزانه
 
 آخرین آپدیت: 2026-10-09
 نسخه: 1.0
+
+---
+
+## 🚀 Deploy & Server
+
+**سرور:** `87.248.152.239` | SSH port `9011` | alias: `ssh myserver`
+
+**مسیر پروژه:** `/home/deploy/wallex/`
+
+### سرویس‌های systemd
+
+| سرویس | پورت | مسیر |
+|-------|------|------|
+| `wallex-backend` | 127.0.0.1:8020 | `/home/deploy/wallex/backend/` |
+| `wallex-frontend` | 0.0.0.0:3020 | `/home/deploy/wallex/frontend/` |
+| `nginx` | :80 | — |
+
+### .env سرور
+
+- **مسیر:** `/home/deploy/wallex/.env` (والد `backend/`، نه داخلش)
+- **owner:** `deploy:deploy`, `chmod 600`
+- **systemd:** `EnvironmentFile=/home/deploy/wallex/.env`
+- **alembic:** `env.py` از `(ROOT/.env, ROOT.parent/.env)` لود می‌کنه
+
+~~~bash
+# شاهد
+sudo -u deploy grep -E "^(DATABASE_URL|JWT_SECRET_KEY)=" /home/deploy/wallex/.env | sed 's/=.*/=***/'
+~~~
+
+### الگوی deploy (Backend)
+
+~~~bash
+# 1. commit + push لوکال
+git add <file>
+git commit -m "..."
+git push origin refactor/full-ddd
+
+# 2. dry-run (اجباری — M22)
+rsync -avzn --delete \
+  --exclude='.venv' --exclude='__pycache__' --exclude='*.pyc' \
+  --exclude='.env' --exclude='.git' \
+  --exclude='data/candles' --exclude='data/guests' \
+  --exclude='data/paper_v3' --exclude='data/paper_v2' \
+  --exclude='data/paper_trading' --exclude='data/replay' \
+  --exclude='data/nooaah' --exclude='data/models' \
+  --exclude='data/backtest_results' --exclude='data/full_scan' \
+  --exclude='data/api_limits' \
+  -e "ssh -p 9011" \
+  backend/ root@87.248.152.239:/home/deploy/wallex/backend/
+
+# 3. rsync واقعی (بدون -n)
+
+# 4. chown قبل از migration (اجباری)
+ssh -p 9011 root@87.248.152.239 "chown -R deploy:deploy /home/deploy/wallex/backend"
+
+# 5. migration (اگه schema عوض شده)
+ssh -p 9011 root@87.248.152.239 << 'REMOTE'
+sudo -u deploy bash -c '
+  cd /home/deploy/wallex/backend
+  .venv/bin/alembic current
+  .venv/bin/alembic upgrade head
+  .venv/bin/alembic current
+'
+REMOTE
+
+# 6. restart backend
+ssh -p 9011 root@87.248.152.239 "systemctl restart wallex-backend"
+~~~
+
+### الگوی deploy (Frontend)
+
+~~~bash
+# 1. dry-run
+rsync -avzn --delete \
+  --exclude='node_modules' --exclude='.next' \
+  --exclude='.env.local' --exclude='.env' \
+  --exclude='.git' --exclude='tsconfig.tsbuildinfo' \
+  -e "ssh -p 9011" \
+  frontend/ root@87.248.152.239:/home/deploy/wallex/frontend/
+
+# 2. rsync واقعی
+
+# 3. chown + build + restart
+ssh -p 9011 root@87.248.152.239 << 'REMOTE'
+chown -R deploy:deploy /home/deploy/wallex/frontend
+su - deploy -c "cd /home/deploy/wallex/frontend && npm run build"
+systemctl restart wallex-frontend
+REMOTE
+~~~
+
+### nginx — public vs protected
+
+**فایل:** `/etc/nginx/sites-available/wallex`
+
+**Public (بدون Basic Auth):**
+- `/api/backend/v1/markets/*`
+- `/api/backend/v1/signals/*`
+- `/api/backend/v1/scanner/*`
+- `/api/backend/v1/analysis/*`
+- `/api/backend/v1/auth/*` — JWT داخلی
+- `/api/backend/v1/user/*` — JWT داخلی (فاز ۱۷.۷.۲)
+- `/api/backend/v1/guest/*` — guest-token
+
+**Protected (Basic Auth):**
+- `/dashboard` و `/app/*`
+- `/api/backend/v1/account/*`
+- `/api/backend/v1/orders/*`
+
+**الگوی بلوک public:**
+
+~~~nginx
+location /api/backend/v1/user/ {
+    auth_basic off;
+    proxy_pass http://127.0.0.1:8020/v1/user/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_connect_timeout 10s;
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
+}
+~~~
+
+**قبل از هر تغییر nginx:**
+
+~~~bash
+cp /etc/nginx/sites-available/wallex /etc/nginx/sites-available/wallex.bak.$(date +%Y%m%d_%H%M%S)
+nginx -t && systemctl reload nginx
+~~~
+
+### خط سرخ‌ها
+
+**دست نزن:**
+- `/var/www/noosharp` (پورت 8000 + 3000)
+- `/var/www/mabacheha` (8012)
+- `/var/opt/nourin` (8015)
+- DBهای `noosharp`, `noosharp_db`, `nourin_db`
+- `.env` سرور (`chmod 600`)
+- پورت‌های Wallex: فقط `8020` + `3020`
+
+---
+
+## 📦 User Paper Flow
+
+**فاز ۱۷.۷.۲/۳** — paper state برای کاربر لاگین‌شده.
+
+### Endpointها (`/v1/user/paper-v3/*`)
+
+| متد | مسیر | نیاز |
+|-----|------|------|
+| GET | `/status` | JWT |
+| GET | `/live` | JWT |
+| POST | `/start` | JWT |
+| POST | `/stop` | JWT |
+| POST | `/reset` | JWT |
+| POST | `/order` | JWT + engine فعال (409 اگر نه) |
+| POST | `/position/{symbol}/close` | JWT + engine فعال |
+
+### معماری
+
+~~~
+app/infrastructure/paper_trading/
+├── protocol.py           ← PaperRepositoryProtocol (async)
+├── repository.py         ← PaperRepository (async facade, asyncio.to_thread)
+├── user_repository.py    ← UserPaperRepository (DB-backed)
+├── engine.py             ← PaperEngine (base, ensure_state)
+└── user_engine.py        ← UserPaperEngine (subclass)
+
+app/presentation/api/v1/
+└── user.py               ← ۷ endpoint
+~~~
+
+### State در DB
+
+**ستون‌های `users` (view آماری):**
+- `capital_total` — سرمایه کل (تغییرناپذیر توسط repo)
+- `capital_available` — نقد (= `state.capital`)
+- `capital_in_use`
+- `open_positions` (JSONB)
+- `closed_trades` (JSONB) — = `state.recent_trades`
+- `equity_curve` (JSONB)
+- `total_trades`, `wins`, `losses`
+
+**ستون `paper_meta` (JSONB):**
+- `initial_capital`, `equity`, `peak_capital`, `peak_equity`
+- `max_drawdown_pct`, `total_pnl`, `total_pnl_pct`, `win_rate`
+- `is_running`, `started_at`, `last_check_at`, `check_count`
+- `events`, `radar`
+
+### قاعده‌ی sync
+
+⚠️ **همه‌ی تغییرات state فقط از طریق `UserPaperRepository.save()`.**
+
+هیچ‌جا `session.execute(update(User))` مستقیم نزن — `paper_meta` desync می‌شه.
+
+~~~python
+# ❌ اشتباه
+await session.execute(update(User).where(User.id == user_id).values(capital_available=100))
+
+# ✅ درست
+state.capital = 100
+await repo.save(state)
+~~~
+
+### تفاوت با Guest
+
+| مورد | Guest | User |
+|------|-------|------|
+| Storage | `data/guests/{token}/state.json` | DB (`users` + `paper_meta`) |
+| Auth | `X-Guest-Token` | `Authorization: Bearer <JWT>` |
+| Engine | خودکار ساخته می‌شه | باید `start` کنه (`409 no_engine`) |
+| Scheduler key | token string | UUID |
+| Repo | `PaperRepository` (فایل) | `UserPaperRepository` (DB) |
+
+### Test pattern
+
+~~~python
+# tests/integration/test_user_paper_api.py
+from httpx import ASGITransport, AsyncClient
+
+@pytest.fixture
+async def client():
+    async with app.router.lifespan_context(app):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c
+
+@pytest.fixture(autouse=True)
+async def _dispose():
+    yield
+    await engine.dispose()  # جلوگیری از loop desync
+~~~
+
+
