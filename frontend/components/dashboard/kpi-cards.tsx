@@ -10,9 +10,8 @@ import {
   AlertTriangle,
   RotateCw,
 } from "lucide-react";
-import { useWallet, usePortfolio, useOpenOrders } from "@/lib/queries";
+import { useWallexStatus, useUserPaperV3Status } from "@/lib/queries";
 import { formatNumber, formatPct } from "@/lib/format";
-import { usePaperLive } from "./use-paper-live";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -22,12 +21,6 @@ const num = (v: unknown): number | null => {
   const x = Number(v);
   return Number.isFinite(x) ? x : null;
 };
-
-function ago(sec: number): string {
-  if (sec < 3600) return `${Math.max(1, Math.floor(sec / 60))} دقیقه پیش`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} ساعت پیش`;
-  return `${Math.floor(sec / 86400)} روز پیش`;
-}
 
 type Tone = "emerald" | "amber" | "blue" | "violet";
 const TONES: Record<Tone, { card: string; icon: string; ico: string }> = {
@@ -100,89 +93,85 @@ function Kpi({
 }
 
 export function KpiCards() {
-  const wallet = useWallet();
-  const portfolio = usePortfolio();
-  const open = useOpenOrders();
-  const paper = usePaperLive();
+  const wallex = useWallexStatus();
+  const paper = useUserPaperV3Status();
 
-  // ۱) ارزش قابل برداشت سبد (bid)
-  const pv = num(portfolio.data?.total_value_tmn_bid);
-  const pu = num(portfolio.data?.total_value_usdt_bid);
+  // ── ۱) دارایی‌های والکس ──
+  const balances = wallex.data?.balances ?? [];
+  const nonZeroAssets = balances.filter((b) => num(b.total) && num(b.total)! > 0);
+  const totalAssets = nonZeroAssets.length;
+  const hasWallex = wallex.data?.connected && balances.length > 0;
 
-  // ۲) TMN آزاد
-  const tmnItem = wallet.data?.items?.find((b) => b.asset === "TMN");
-  const tmn = wallet.data ? (num(tmnItem?.available) ?? 0) : null;
+  // ── ۲) TMN آزاد ──
+  const tmnItem = balances.find((b) => b.asset === "TMN");
+  const tmn = tmnItem ? num(tmnItem.available) : null;
 
-  // ۳) سفارش‌های باز
-  const list = (open.data?.orders ?? []) as unknown as Array<Record<string, unknown>>;
-  let notional = 0;
-  let oldest = 0;
-  for (const o of list) {
-    const rem = Math.max(0, (num(o.orig_qty) ?? 0) - (num(o.executed_qty) ?? 0));
-    notional += (num(o.price) ?? 0) * rem;
-    const c = num(o.created_at) ?? 0;
-    if (c > 0 && (oldest === 0 || c < oldest)) oldest = c;
-  }
-  const ageSec = oldest > 0 ? Math.floor(Date.now() / 1000) - oldest : 0;
-  const stale = ageSec > 86400;
+  // ── ۳) پوزیشن‌های باز Paper ──
+  const paperData = paper.data as Record<string, unknown> | undefined;
+  const openPositions = (paperData?.open_positions as unknown[]) ?? [];
+  const openCount = openPositions.length;
+  const paperRunning = paperData?.is_running === true;
 
-  // ۴) تست زنده
-  const p = paper.data;
-  const pnlTone = !p || p.pnlPct === null || p.pnlPct === 0 ? "" : p.pnlPct > 0 ? "text-emerald-500" : "text-red-500";
+  // ── ۴) Paper PnL ──
+  const pnlPct = num(paperData?.total_pnl_pct);
+  const equity = num(paperData?.equity);
+  const pnlTone = pnlPct === null || pnlPct === 0 ? "" : pnlPct > 0 ? "text-emerald-500" : "text-red-500";
+  const isPaperIdle = paperData && !paperRunning && (num(paperData.total_trades) ?? 0) === 0 && openCount === 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Kpi
-        href="/portfolio"
+        href="/settings/wallex"
         icon={Wallet}
         tone="emerald"
-        label="ارزش قابل برداشت سبد"
-        loading={portfolio.isLoading}
-        error={portfolio.isError || (!portfolio.isLoading && pv === null)}
-        onRetry={() => portfolio.refetch()}
-        value={pv === null ? "—" : formatNumber(pv, { maximumFractionDigits: 0 })}
-        unit="TMN"
+        label="دارایی‌های والکس"
+        loading={wallex.isLoading}
+        error={!wallex.isLoading && (!wallex.data?.connected || !!wallex.data?.error)}
+        onRetry={() => wallex.refetch()}
+        value={hasWallex ? String(totalAssets) : "—"}
+        unit={hasWallex ? "دارایی" : undefined}
         valueClass="text-emerald-400"
-        sub={pu !== null ? `≈ ${formatNumber(pu)} USDT · بر پایه‌ی قیمت خرید (bid)` : "بر پایه‌ی قیمت خرید (bid)"}
+        sub={hasWallex ? "موجودی‌های واقعی حساب والکس" : "اتصال به والکس برقرار نیست"}
+        sub2={hasWallex ? "برای جزئیات کلیک کن" : undefined}
       />
       <Kpi
-        href="/order-bot"
+        href="/settings/wallex"
         icon={Coins}
         tone="amber"
         label="TMN آزاد در والکس"
-        loading={wallet.isLoading}
-        error={wallet.isError || (!wallet.isLoading && tmn === null)}
-        onRetry={() => wallet.refetch()}
+        loading={wallex.isLoading}
+        error={!wallex.isLoading && (!wallex.data?.connected || !!wallex.data?.error)}
+        onRetry={() => wallex.refetch()}
         value={tmn === null ? "—" : formatNumber(tmn, { maximumFractionDigits: 0 })}
-        unit="TMN"
-        sub="قابل استفاده برای سفارش جدید"
+        unit={tmn !== null ? "TMN" : undefined}
+        sub={tmn !== null ? "موجودی واقعی قابل استفاده" : "اتصال به والکس برقرار نیست"}
       />
       <Kpi
-        href="/orders"
+        href="/guest"
         icon={ClipboardList}
         tone="blue"
-        label="سفارش‌های باز"
-        loading={open.isLoading}
-        error={open.isError}
-        onRetry={() => open.refetch()}
-        value={String(list.length)}
-        unit="سفارش"
-        sub={list.length > 0 ? `ارزش اسمی ≈ ${formatNumber(notional, { maximumFractionDigits: 0 })} TMN` : "سفارش بازی وجود ندارد"}
-        sub2={oldest > 0 ? `قدیمی‌ترین: ${ago(ageSec)}${stale ? " — بررسی کن" : ""}` : undefined}
-        sub2Class={stale ? "text-amber-500" : undefined}
-      />
-      <Kpi
-        href="/paper-trading"
-        icon={FlaskConical}
-        tone="violet"
-        label="سود/زیان تست زنده"
+        label="پوزیشن‌های باز (Paper)"
         loading={paper.isLoading}
         error={paper.isError}
         onRetry={() => paper.refetch()}
-        value={!p || p.idle || p.pnlPct === null ? "—" : formatPct(p.pnlPct)}
+        value={String(openCount)}
+        unit="پوزیشن"
+        sub={openCount > 0 ? "در محیط شبیه‌سازی" : "پوزیشن بازی وجود ندارد"}
+        sub2={paperRunning ? "Paper در حال اجراست" : undefined}
+        sub2Class="text-violet-400"
+      />
+      <Kpi
+        href="/guest"
+        icon={FlaskConical}
+        tone="violet"
+        label="سود/زیان Paper"
+        loading={paper.isLoading}
+        error={paper.isError}
+        onRetry={() => paper.refetch()}
+        value={pnlPct === null ? "—" : formatPct(pnlPct)}
         valueClass={pnlTone}
-        sub={!p ? undefined : p.running ? "تست زنده در حال اجراست" : p.idle ? "تست زنده اجرا نشده" : "تست زنده متوقف است"}
-        sub2={p && p.equity !== null && !p.idle ? `ارزش کل ${formatNumber(p.equity)}` : undefined}
+        sub={!paperData ? undefined : paperRunning ? "Paper در حال اجراست" : isPaperIdle ? "Paper اجرا نشده" : "Paper متوقف است"}
+        sub2={equity !== null ? `ارزش کل ${formatNumber(equity)}` : undefined}
       />
     </div>
   );
