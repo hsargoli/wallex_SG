@@ -186,8 +186,8 @@ export function PortfolioSignals() {
                 <div
                   key={row.symbol}
                   className={cn(
-                    "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/5 p-3 transition-all hover:bg-white/[0.06] hover:border-violet-500/20",
-                    idx % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"
+                    "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-border/60 p-3 transition-all hover:border-violet-500/40",
+                    idx % 2 === 1 ? "bg-black/[0.03] dark:bg-white/[0.05]" : "bg-transparent"
                   )}
                 >
                   {/* ستون ۱: دارایی و موجودی */}
