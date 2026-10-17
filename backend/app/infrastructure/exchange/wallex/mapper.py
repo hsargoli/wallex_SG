@@ -74,15 +74,22 @@ def map_market(symbol_key: str, raw: dict[str, Any]) -> Market:
 
 
 def map_balance(asset: str, raw: dict[str, Any]) -> Balance:
-    # Wallex uses "value" for available balance
+    # Wallex API quirk:
+    # `value` = available balance
+    # `locked` = total balance (sometimes), or 0
+    # So total = max(available, locked) and locked_actual = total - available
     raw_available = raw.get("value") if raw.get("value") is not None else raw.get("available")
     available = _dec(raw_available) or Decimal(0)
-    locked = _dec(raw.get("locked")) or Decimal(0)
+    raw_locked = _dec(raw.get("locked")) or Decimal(0)
+
+    total = max(available, raw_locked)
+    locked = total - available
+
     return Balance(
         asset=asset.upper(),
         available=available,
         locked=locked,
-        total=available + locked,
+        total=total,
         fa_name=raw.get("faName"),
         en_name=raw.get("enName"),
     )
