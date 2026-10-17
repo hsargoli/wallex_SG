@@ -39,15 +39,23 @@ class WallexExchange:
         self._log = structlog.get_logger("wallex.exchange")
 
     @classmethod
-    def create(cls, settings: Settings) -> WallexExchange:
-        """ساخت با Connection Pool اختصاصی."""
+    def create(
+        cls, settings: Settings, api_key: str | None = None
+    ) -> WallexExchange:
+        """ساخت با Connection Pool اختصاصی.
+
+        Args:
+            settings: تنظیمات سراسری
+            api_key: توکن کاربر (phase 17.8). اگه None، از settings.WALLEX_API_KEY
+                (توکن سراسری) استفاده می‌شه — برای endpointهای عمومی.
+        """
         limits = httpx.Limits(
             max_connections=settings.WALLEX_MAX_CONNECTIONS,
             max_keepalive_connections=settings.WALLEX_MAX_CONNECTIONS // 2,
         )
         client = httpx.AsyncClient(
             base_url=settings.WALLEX_BASE_URL,
-            headers={"x-api-key": settings.WALLEX_API_KEY},
+            headers={"x-api-key": api_key or settings.WALLEX_API_KEY},
             timeout=httpx.Timeout(settings.WALLEX_TIMEOUT_SECONDS),
             limits=limits,
             http2=False,

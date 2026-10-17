@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     WALLEX_TIMEOUT_SECONDS: int = Field(default=10, ge=1, le=60)
     WALLEX_MAX_CONNECTIONS: int = Field(default=20, ge=1, le=100)
 
+    # --- Wallex Token Encryption (phase 17.8) ---
+    # Fernet key (base64, 44 chars). Empty = encryption disabled (tests only).
+    # Validation happens at use-time in app/core/crypto.py, not at startup.
+    WALLEX_TOKEN_ENC_KEY: str = ""
+
     # --- Cache ---
     CACHE_TTL_SECONDS: int = Field(default=5, ge=1, le=3600)
 
