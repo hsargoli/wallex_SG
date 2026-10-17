@@ -962,6 +962,9 @@ export const api = {
 
   getWallexStatus: () =>
     client.get("/v1/user/wallex/status").then((r) => r.data),
+
+  getWallexPnl: () =>
+    client.get("/v1/user/wallex/pnl").then((r) => r.data),
 };
 
 // --- Simulation API ---

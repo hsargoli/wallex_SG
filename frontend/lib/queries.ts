@@ -1164,6 +1164,43 @@ export function useWallexStatus() {
   });
 }
 
+export interface WallexPnlAsset {
+  asset: string;
+  symbol: string;
+  total_qty: string;
+  avg_cost: string | null;
+  total_cost: string;
+  current_price: string | null;
+  current_value: string | null;
+  unrealized_pnl: string | null;
+  unrealized_pnl_pct: string | null;
+  has_unknown_history: boolean;
+}
+
+export interface WallexPnl {
+  assets: WallexPnlAsset[];
+  summary: {
+    total_cost: string;
+    total_value: string;
+    total_pnl: string;
+    total_pnl_pct: string;
+    assets_with_unknown_history: number;
+  };
+  computed_at: string;
+  cached: boolean;
+}
+
+export function useWallexPnl() {
+  return useQuery<WallexPnl>({
+    queryKey: ["wallex-pnl"],
+    queryFn: () => api.getWallexPnl(),
+    enabled: !!getUserToken(),
+    refetchInterval: 5 * 60 * 1000,  // 5 min (backend cache TTL)
+    staleTime: 4 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function useConnectWallex() {
   const qc = useQueryClient();
   return useMutation({

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown, Wallet } from "lucide-react";
-import { useWallexStatus, useBatchSignals, useMarkets } from "@/lib/queries";
+import { useWallexStatus, useBatchSignals, useMarkets, useWallexPnl } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +48,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 export function PortfolioSignals() {
   const wallex = useWallexStatus();
   const markets = useMarkets();
+  const pnlData = useWallexPnl();
 
   const assets = useMemo(() => {
     if (!wallex.data?.balances) return [];
@@ -90,6 +91,9 @@ export function PortfolioSignals() {
         const balance = Number(b.total);
         const value = balance * price;
 
+        // ── merge با PnL ──
+        const pnlAsset = pnlData.data?.assets?.find((a) => a.symbol === symbol);
+
         return {
           asset: b.asset,
           balance,
@@ -98,11 +102,12 @@ export function PortfolioSignals() {
           change24: market?.daily_change_percent ? Number(market.daily_change_percent) : (sig?.change_24h ?? null),
           sig,
           value,
+          pnl: pnlAsset,
         };
       });
 
     return list.sort((a, b) => b.value - a.value);
-  }, [wallex.data, marketMap, signalMap]);
+  }, [wallex.data, marketMap, signalMap, pnlData.data]);
 
   const isLoading = wallex.isLoading || markets.isLoading;
 
@@ -185,32 +190,113 @@ export function PortfolioSignals() {
                   </div>
 
                   {/* ستون ۳: دیتای عددی */}
-                  <div className="grid grid-cols-3 sm:flex sm:items-center gap-4 flex-1 justify-end w-full">
-                    {/* ارزش کل */}
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-4 flex-1 justify-end w-full">
+                    {/* ارزش بازار */}
                     <div className="text-right sm:w-28">
-                      <div className="text-[10px] text-muted-foreground">ارزش کل</div>
+                      <div className="text-[10px] text-muted-foreground" title="موجودی × قیمت لحظه‌ای بازار">
+                        ارزش بازار
+                      </div>
                       <div className="font-mono text-xs font-bold text-foreground" dir="ltr">
                         {formatNumber(row.value, { maximumFractionDigits: 0 })} <span className="text-[10px] text-muted-foreground font-normal">TMN</span>
                       </div>
                     </div>
 
-                    {/* قیمت */}
+                    {/* میانگین خرید */}
                     <div className="text-right sm:w-24">
-                      <div className="text-[10px] text-muted-foreground">قیمت</div>
+                      <div className="text-[10px] text-muted-foreground" title="هزینه‌ی کل خرید تقسیم بر تعداد واحد (روش FIFO)">
+                        میانگین خرید
+                      </div>
+                      <div className="font-mono text-xs" dir="ltr">
+                        {row.pnl?.avg_cost ? fmtPrice(row.pnl.avg_cost) : "—"}
+                      </div>
+                    </div>
+
+                    {/* قیمت فعلی */}
+                    <div className="text-right sm:w-24">
+                      <div className="text-[10px] text-muted-foreground" title="آخرین قیمت معامله‌شده در بازار">
+                        قیمت فعلی
+                      </div>
                       <div className="font-mono text-xs" dir="ltr">{fmtPrice(row.price)}</div>
                     </div>
 
-                    {/* تغییرات ۲۴h */}
+                    {/* تغییر ۲۴h */}
                     <div className="text-left sm:w-20">
-                      <div className="text-[10px] text-muted-foreground">تغییر ۲۴h</div>
+                      <div className="text-[10px] text-muted-foreground" title="درصد تغییر قیمت بازار در ۲۴ ساعت گذشته">
+                        تغییر ۲۴h
+                      </div>
                       <div className={cn("font-mono text-xs font-bold", isUp ? "text-emerald-400" : "text-rose-400")} dir="ltr">
                         {fmtPct(row.change24)}
                       </div>
+                    </div>
+
+                    {/* سود/زیان */}
+                    <div className="text-left sm:w-24">
+                      <div className="text-[10px] text-muted-foreground" title="ارزش بازار − هزینه‌ی خرید (درصد نسبت به هزینه)">
+                        سود/زیان
+                      </div>
+                      {row.pnl?.unrealized_pnl ? (
+                        <div
+                          className={cn(
+                            "font-mono text-xs font-bold",
+                            Number(row.pnl.unrealized_pnl) > 0
+                              ? "text-emerald-400"
+                              : Number(row.pnl.unrealized_pnl) < 0
+                                ? "text-rose-400"
+                                : "text-muted-foreground"
+                          )}
+                          dir="ltr"
+                        >
+                          {Number(row.pnl.unrealized_pnl) > 0 ? "+" : ""}
+                          {formatNumber(Number(row.pnl.unrealized_pnl), { maximumFractionDigits: 0 })}
+                          {row.pnl.unrealized_pnl_pct && (
+                            <span className="mr-1 text-[10px] font-normal opacity-70">
+                              ({Number(row.pnl.unrealized_pnl_pct) > 0 ? "+" : ""}
+                              {Number(row.pnl.unrealized_pnl_pct).toFixed(1)}%)
+                            </span>
+                          )}
+                        </div>
+                      ) : row.pnl?.has_unknown_history ? (
+                        <div className="text-[10px] text-amber-400" title="خرید قبل از تاریخچه — PnL نامشخص">
+                          نامشخص
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">—</div>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* راهنمای ستون‌ها */}
+        {!isLoading && rows.length > 0 && (
+          <div className="mt-4 rounded-lg border border-white/5 bg-white/[0.02] p-3 text-[10px] text-muted-foreground">
+            <div className="mb-2 font-bold text-[11px] text-foreground">📖 راهنمای ستون‌ها</div>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              <div>
+                <span className="font-semibold text-foreground">ارزش بازار:</span>{" "}
+                موجودی × قیمت لحظه‌ای بازار (پولی که اگه الان بفروشی به دستت میاد)
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">میانگین خرید:</span>{" "}
+                هزینه‌ی کل خرید ÷ تعداد واحد (به روش FIFO — اولین خرید اول مصرف می‌شه)
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">قیمت فعلی:</span>{" "}
+                آخرین قیمت معامله‌شده در بازار
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">تغییر ۲۴h:</span>{" "}
+                درصد تغییر قیمت بازار در ۲۴ ساعت گذشته (ربطی به سود تو نداره)
+              </div>
+              <div className="sm:col-span-2">
+                <span className="font-semibold text-emerald-400">سود/زیان:</span>{" "}
+                ارزش بازار − هزینه‌ی خرید (درصد نسبت به هزینه). مثبت = سود، منفی = ضرر.
+                اگه «نامشخص» باشه، یعنی خریدهایی قبل از تاریخچه‌ی ثبت‌شده در والکس انجام شده.
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
