@@ -26,6 +26,8 @@ import {
   useStartUserPaperV3,
   useStopUserPaperV3,
   useResetUserPaperV3,
+  usePlaceUserOrder,
+  useCloseUserPosition,
   useCandlesV2,
   usePlaceGuestOrder,
   useCloseGuestPosition,
@@ -90,8 +92,12 @@ export default function GuestPage() {
   const startPaper = isUser ? userStart : guestStart;
   const stopPaper = isUser ? userStop : guestStop;
   const resetPaper = isUser ? userReset : guestReset;
-  const placeOrder = usePlaceGuestOrder();
-  const closePosition = useCloseGuestPosition();
+  const guestPlace = usePlaceGuestOrder();
+  const guestClose = useCloseGuestPosition();
+  const userPlace = usePlaceUserOrder();
+  const userClose = useCloseUserPosition();
+  const placeOrder = isUser ? userPlace : guestPlace;
+  const closePosition = isUser ? userClose : guestClose;
   const marketPrice = useGuestPrice(orderSymbol, true);
 
   // auto-fill قیمت پیشنهادی با قیمت بازار (وقتی نماد عوض می‌شه)

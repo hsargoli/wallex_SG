@@ -918,6 +918,48 @@ export function useResetUserPaperV3() {
   });
 }
 
+export function usePlaceUserOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      side: "buy" | "sell";
+      symbol: string;
+      quantity?: number;
+      amount_tmn?: number;
+      limit_price?: number;
+      tp_pct?: number;
+      sl_pct?: number;
+    }) => api.placeUserOrder(payload),
+    onSuccess: (data: any) => {
+      if (data?.status === "ok") {
+        qc.invalidateQueries({ queryKey: ["user-paper-v3-status"] });
+        qc.invalidateQueries({ queryKey: ["user-paper-v3-live"] });
+        toast.success("سفارش شبیه‌سازی ثبت شد");
+      } else {
+        toast.error(data?.error ?? "خطا در ثبت سفارش");
+      }
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
+export function useCloseUserPosition() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (symbol: string) => api.closeUserPosition(symbol),
+    onSuccess: (data: any) => {
+      if (data?.status === "ok") {
+        qc.invalidateQueries({ queryKey: ["user-paper-v3-status"] });
+        qc.invalidateQueries({ queryKey: ["user-paper-v3-live"] });
+        toast.success("پوزیشن بسته شد");
+      } else {
+        toast.error(data?.error ?? "خطا");
+      }
+    },
+    onError: (err: Error) => toast.error(`خطا: ${err.message}`),
+  });
+}
+
 
 export function usePlaceGuestOrder() {
   const qc = useQueryClient();

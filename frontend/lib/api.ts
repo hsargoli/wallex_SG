@@ -858,6 +858,22 @@ export const api = {
   resetUserPaperV3: () =>
     client.post("/v1/user/paper-v3/reset").then((r) => r.data),
 
+  placeUserOrder: (payload: {
+    side: "buy" | "sell";
+    symbol: string;
+    quantity?: number;
+    amount_tmn?: number;
+    limit_price?: number;
+    tp_pct?: number;
+    sl_pct?: number;
+  }) =>
+    client.post("/v1/user/paper-v3/order", payload).then((r) => r.data),
+
+  closeUserPosition: (symbol: string) =>
+    client
+      .post(`/v1/user/paper-v3/position/${symbol}/close`)
+      .then((r) => r.data),
+
   placeGuestOrder: (payload: {
     side: "buy" | "sell";
     symbol: string;
