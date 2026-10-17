@@ -18,6 +18,7 @@ from app.infrastructure.db.session import get_session
 from app.presentation.api.v1.auth import require_user_token
 from app.services.wallex import (
     WallexError,
+    compute_pnl,
     connect_token,
     disconnect_token,
     get_status,
@@ -93,5 +94,21 @@ async def status(
     user_id = _get_user_uuid(user)
     try:
         return await get_status(session, user_id)
+    except WallexError as e:
+        raise _to_http(e) from e
+
+
+@router.get("/pnl")
+async def pnl(
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """سود/زیان واقعی هر دارایی (FIFO cost basis).
+
+    Per ADR 0018. Cache 5 min.
+    """
+    user_id = _get_user_uuid(user)
+    try:
+        return await compute_pnl(session, user_id)
     except WallexError as e:
         raise _to_http(e) from e
