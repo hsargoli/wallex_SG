@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { useWallexStatus, useBatchSignals } from "@/lib/queries";
+import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown } from "lucide-react";
+import { useWallexStatus, useBatchSignals, useMarkets } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 function fmtPrice(p: string | number | null | undefined): string {
   if (p == null) return "—";
   const n = Number(p);
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n) || n === 0) return "—";
   return formatNumber(n, { maximumFractionDigits: 0 });
 }
 
@@ -25,7 +25,9 @@ function fmtPct(p: number | null | undefined): string {
 
 export function PortfolioSignals() {
   const wallex = useWallexStatus();
+  const markets = useMarkets();
 
+  // استخراج دارایی‌های غیرصفر
   const assets = useMemo(() => {
     if (!wallex.data?.balances) return [];
     return wallex.data.balances
@@ -33,7 +35,17 @@ export function PortfolioSignals() {
       .map((b) => `${b.asset}TMN`);
   }, [wallex.data]);
 
+  // گرفتن سیگنال‌ها و بازارها
   const signals = useBatchSignals(assets, "1h");
+
+  const marketMap = useMemo(() => {
+    if (!markets.data?.items) return {};
+    const map: Record<string, any> = {};
+    for (const m of markets.data.items) {
+      map[m.symbol] = m;
+    }
+    return map;
+  }, [markets.data]);
 
   const signalMap = useMemo(() => {
     if (!signals.data?.signals) return {};
@@ -44,7 +56,37 @@ export function PortfolioSignals() {
     return map;
   }, [signals.data]);
 
-  const isLoading = wallex.isLoading || (assets.length > 0 && signals.isLoading);
+  // ترکیب داده‌ها و مرتب‌سازی بر اساس ارزش
+  const rows = useMemo(() => {
+    if (!wallex.data?.balances) return [];
+    
+    const list = wallex.data.balances
+      .filter((b) => Number(b.total) > 0 && b.asset !== "TMN")
+      .map((b) => {
+        const symbol = `${b.asset}TMN`;
+        const market = marketMap[symbol];
+        const sig = signalMap[symbol];
+        
+        const price = market?.last_price ? Number(market.last_price) : (sig?.current_price ? Number(sig.current_price) : 0);
+        const balance = Number(b.total);
+        const value = balance * price;
+
+        return {
+          asset: b.asset,
+          balance,
+          symbol,
+          price: price > 0 ? price : null,
+          change24: market?.daily_change_percent ? Number(market.daily_change_percent) : (sig?.change_24h ?? null),
+          sig,
+          value,
+        };
+      });
+
+    // مرتب‌سازی از بیشترین ارزش به کمترین
+    return list.sort((a, b) => b.value - a.value);
+  }, [wallex.data, marketMap, signalMap]);
+
+  const isLoading = wallex.isLoading || markets.isLoading;
 
   return (
     <Card>
@@ -68,7 +110,6 @@ export function PortfolioSignals() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Loading */}
         {isLoading && (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
@@ -77,8 +118,7 @@ export function PortfolioSignals() {
           </div>
         )}
 
-        {/* Empty */}
-        {!isLoading && assets.length === 0 && (
+        {!isLoading && rows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
             <PieChart className="mb-2 h-8 w-8 opacity-20" />
             <p className="text-sm">هنوز دارایی غیرصفر نداری</p>
@@ -88,13 +128,16 @@ export function PortfolioSignals() {
           </div>
         )}
 
-        {/* Table */}
-        {!isLoading && assets.length > 0 && (
+        {!isLoading && rows.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-[10px] text-muted-foreground">
                 <tr className="border-b border-white/10">
-                  <th className="px-2 py-2 text-right font-medium">دارایی</th>
+                  <th className="px-2 py-2 text-right font-medium">
+                    <span className="flex items-center gap-1">
+                      دارایی <ArrowDown className="h-3 w-3" />
+                    </span>
+                  </th>
                   <th className="px-2 py-2 text-left font-medium">موجودی</th>
                   <th className="px-2 py-2 text-left font-medium">قیمت فعلی</th>
                   <th className="px-2 py-2 text-left font-medium">تغییر ۲۴h</th>
@@ -103,54 +146,47 @@ export function PortfolioSignals() {
                 </tr>
               </thead>
               <tbody>
-                {assets.map((symbol) => {
-                  const bal = wallex.data?.balances?.find(
-                    (b) => `${b.asset}TMN` === symbol
-                  );
-                  const sig = signalMap[symbol];
+                {rows.map((row) => {
+                  const sig = row.sig;
                   const action = sig?.signal ?? "hold";
                   const isBuy = action === "buy";
                   const isSell = action === "sell";
-                  const change24 = sig?.change_24h ?? null;
                   const conf = sig?.confidence;
-                  const currentPrice = sig?.current_price;
                   const tp = sig?.take_profit;
                   const sl = sig?.stop_loss;
 
                   return (
                     <tr
-                      key={symbol}
+                      key={row.symbol}
                       className="border-b border-white/5 transition hover:bg-white/5"
                     >
                       <td className="px-2 py-2">
                         <Badge variant="outline" className="font-mono text-[10px]">
-                          {bal?.asset ?? symbol}
+                          {row.asset}
                         </Badge>
                       </td>
                       <td className="px-2 py-2 text-left font-mono text-xs" dir="ltr">
-                        {bal
-                          ? Number(bal.total).toLocaleString("en-US", {
-                              maximumFractionDigits: 6,
-                            })
-                          : "—"}
+                        {Number(row.balance).toLocaleString("en-US", {
+                          maximumFractionDigits: 6,
+                        })}
                       </td>
                       <td className="px-2 py-2 text-left font-mono text-xs" dir="ltr">
-                        {fmtPrice(currentPrice)}
+                        {fmtPrice(row.price)}
                       </td>
                       <td
                         className={cn(
                           "px-2 py-2 text-left font-mono text-xs",
-                          change24 == null
+                          row.change24 == null
                             ? "text-muted-foreground"
-                            : change24 > 0
+                            : row.change24 > 0
                               ? "text-emerald-400"
-                              : change24 < 0
+                              : row.change24 < 0
                                 ? "text-rose-400"
                                 : "text-muted-foreground"
                         )}
                         dir="ltr"
                       >
-                        {fmtPct(change24)}
+                        {fmtPct(row.change24)}
                       </td>
                       <td className="px-2 py-2 text-center">
                         <div className="inline-flex items-center gap-1">
