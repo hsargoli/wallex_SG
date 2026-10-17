@@ -1136,3 +1136,58 @@ export function useLogout() {
     }
   };
 }
+
+// ═══ Wallex connection (phase 17.8) ═══
+
+export interface WallexBalance {
+  asset: string;
+  available: string;
+  locked: string;
+  total: string;
+  fa_name: string | null;
+  en_name: string | null;
+}
+
+export interface WallexStatus {
+  connected: boolean;
+  connected_at: string | null;
+  balances: WallexBalance[] | null;
+  error?: "decrypt_failed" | "token_revoked" | "wallex_unavailable";
+}
+
+export function useWallexStatus() {
+  return useQuery<WallexStatus>({
+    queryKey: ["wallex-status"],
+    queryFn: () => api.getWallexStatus(),
+    enabled: !!getUserToken(),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useConnectWallex() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => api.connectWallex(token),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallex-status"] });
+      toast.success("اتصال به والکس برقرار شد");
+    },
+    onError: (err: any) => {
+      toast.error(extractErrorMessage(err));
+    },
+  });
+}
+
+export function useDisconnectWallex() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.disconnectWallex(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallex-status"] });
+      toast.success("اتصال قطع شد");
+    },
+    onError: (err: any) => {
+      toast.error(extractErrorMessage(err));
+    },
+  });
+}

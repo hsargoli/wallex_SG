@@ -952,6 +952,16 @@ export const api = {
     client
       .post(`/v1/guest/position/${symbol}/close`)
       .then((r) => r.data),
+
+  // ---------- Wallex connection (phase 17.8) ----------
+  connectWallex: (token: string) =>
+    client.post("/v1/user/wallex/connect", { token }).then((r) => r.data),
+
+  disconnectWallex: () =>
+    client.delete("/v1/user/wallex/disconnect").then((r) => r.data),
+
+  getWallexStatus: () =>
+    client.get("/v1/user/wallex/status").then((r) => r.data),
 };
 
 // --- Simulation API ---
