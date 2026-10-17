@@ -172,7 +172,7 @@ export function PortfolioSignals() {
 
         {!isLoading && rows.length > 0 && (
           <div className="flex flex-col gap-2">
-            {rows.map((row) => {
+            {rows.map((row, idx) => {
               const sig = row.sig;
               const action = sig?.signal ?? "hold";
               const isBuy = action === "buy";
@@ -185,7 +185,10 @@ export function PortfolioSignals() {
               return (
                 <div
                   key={row.symbol}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition-all hover:bg-white/[0.04] hover:border-violet-500/20"
+                  className={cn(
+                    "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/5 p-3 transition-all hover:bg-white/[0.06] hover:border-violet-500/20",
+                    idx % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"
+                  )}
                 >
                   {/* ستون ۱: دارایی و موجودی */}
                   <div className="flex items-center gap-3 w-full sm:w-[180px] shrink-0">
