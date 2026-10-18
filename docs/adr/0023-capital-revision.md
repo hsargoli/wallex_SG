@@ -23,6 +23,11 @@ Adjust related limits proportionally:
 - `max_trades_per_day`: 3 (unchanged)
 - `cooldown_seconds`: 60 (unchanged)
 
+## Math Check
+- `max_trades_per_day(5) × per_order_limit(500,000) = 2,500,000`
+- `daily_volume_limit = 2,500,000` (consistent)
+- `capital = 5,000,000` (buffer for 5 consecutive losses = 12.5% max drawdown)
+
 ## Rationale
 - We cannot trade below 3M. 5M is the smallest safe value with margin.
 - Proportional adjustment maintains the same risk profile (5% per trade).

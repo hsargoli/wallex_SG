@@ -96,6 +96,16 @@ class BearHunterRunner:
         if not self.state.initialized:
             logger.warning("State not initialized. Skipping tick.")
             return
+        
+        # Daily reset: if last_trade_at is from a previous day, reset stats
+        if self.state.last_trade_at:
+            from datetime import datetime, timezone
+            last = self.state.last_trade_at
+            now = datetime.now(timezone.utc)
+            if last.date() < now.date():
+                self.state.reset_daily_stats()
+                logger.info(f"Daily reset triggered (last trade: {last.date()})")
+                self.store.save(self.state)
         if self.state.is_killed:
             logger.warning(f"Kill switch active: {self.state.kill_switch_reason}")
             return

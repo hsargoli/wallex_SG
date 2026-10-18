@@ -33,9 +33,17 @@ async def test_scenario(name: str, exit_price: Decimal, expected_reason: str):
     config = BearHunterConfig()
     adapter = MagicMock()
 
+    from app.services.bots.bear_hunter.rules import calculate_position_size
+    sizing = calculate_position_size(
+        capital_tmn=Decimal("5000000"),
+        config=config,
+        daily_remaining_tmn=Decimal("2500000"),
+        current_price=Decimal("21500000000"),
+    )
+    
     signal = Signal(
         market="BTCTMN",
-        size_tmn=Decimal("500000"),
+        size_tmn=sizing.size_tmn,
         entry_price=Decimal("21500000000"),
         stop_loss=Decimal("21822500000"),    # +1.5%
         take_profit=Decimal("20855000000"),  # -3.0%

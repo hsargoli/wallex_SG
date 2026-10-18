@@ -4,7 +4,8 @@ from dataclasses import dataclass
 class BearHunterConfig:
     # ── لایه ۱: قوانین قطعی ──
     # Aligned with 5M capital (ADR 0023)
-    daily_volume_limit_tmn: float = 1_500_000  # 30%
+    # Math: max_trades(5) × per_order(500k) = 2.5M daily limit
+    daily_volume_limit_tmn: float = 2_500_000  # 50% (5 trades × 10%)
     per_order_limit_tmn: float = 500_000       # 10%
     max_open_positions: int = 4
     cooldown_seconds: int = 60
