@@ -64,8 +64,7 @@ async def execute_short_entry(
             )
         
         state.open_positions.append(pos)
-        state.trades_today += 1
-        state.daily_volume_tmn += float(signal.size_tmn)
+        state.record_trade_open(float(signal.size_tmn))
         state.last_trade_at = datetime.now(timezone.utc)
         
         await audit_trail.log_trade_success(audit_id, pos)
@@ -111,7 +110,7 @@ async def close_paper_position(
     
     state.capital_tmn += float(pnl_obj.net_pnl)
     state.pnl_8h_pct += float(pnl_obj.net_pnl_pct_of_capital)
-    state.daily_pnl_pct += float(pnl_obj.net_pnl_pct_of_capital)
+    state.add_realized_pnl(float(pnl_obj.net_pnl_pct_of_capital))
     
     await audit_trail.log_entry(
         True, "PAPER_CLOSE", f"Closed {position_id} at {exit_price}",

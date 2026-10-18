@@ -96,18 +96,8 @@ class BearHunterRunner:
         if not self.state.initialized:
             logger.warning("State not initialized. Skipping tick.")
             return
-        
-        # Daily reset: only when no open positions AND day changed (UTC)
-        if not self.state.open_positions:
-            from datetime import datetime, timezone
-            now = datetime.now(timezone.utc)
-            last_tick_date = getattr(self.state, '_last_tick_date', None)
-            today = now.date()
-            if last_tick_date and last_tick_date < today:
-                self.state.reset_daily_stats()
-                logger.info(f"Daily reset (UTC): {last_tick_date} → {today}")
-                self.store.save(self.state)
-            self.state._last_tick_date = today
+
+        # Daily reset (via state._ensure_daily_reset())
         if self.state.is_killed:
             logger.warning(f"Kill switch active: {self.state.kill_switch_reason}")
             return
@@ -136,6 +126,7 @@ class BearHunterRunner:
         self.store.save(self.state)
 
     async def _process_signal(self, signal: Signal):
+        self.state._ensure_daily_reset()
         pre_flight = await pre_flight_check(
             signal=signal,
             state=self.state,

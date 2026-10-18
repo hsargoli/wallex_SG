@@ -20,7 +20,7 @@ STATE_VERSION = 1
 
 _DT_FIELDS = {
     "kill_switch_activated_at", "paper_started_at",
-    "last_user_seen_at", "last_trade_at", "last_reconciled_at", "last_presence_alert_at", "waiting_liquidity_since",
+    "last_user_seen_at", "last_trade_at", "last_reconciled_at", "last_presence_alert_at", "daily_date", "waiting_liquidity_since",
 }
 
 
@@ -60,6 +60,7 @@ class BearHunterState:
     trades_today: int = 0
     daily_pnl_pct: float = 0.0
     pnl_8h_pct: float = 0.0
+    daily_date: Optional[datetime] = None
     last_trade_at: Optional[datetime] = None
     last_known_liquidity: dict = field(default_factory=dict)
     waiting_liquidity_since: Optional[datetime] = None
@@ -171,6 +172,28 @@ class BearHunterState:
         self.daily_volume_tmn = 0.0
         self.trades_today = 0
         self.daily_pnl_pct = 0.0
+        self.daily_date = utcnow()
+
+    def _ensure_daily_reset(self) -> None:
+        """Reset daily stats if we've crossed into a new UTC day."""
+        now = utcnow()
+        today = now.date()
+        if self.daily_date is None or self.daily_date.date() < today:
+            self.trades_today = 0
+            self.daily_volume_tmn = 0.0
+            self.daily_pnl_pct = 0.0
+            self.daily_date = now
+
+    def record_trade_open(self, volume_tmn: float) -> None:
+        """Increment trade count and volume, resetting if day changed."""
+        self._ensure_daily_reset()
+        self.trades_today += 1
+        self.daily_volume_tmn += volume_tmn
+
+    def add_realized_pnl(self, pnl_pct: float) -> None:
+        """Add realized PnL, resetting if day changed."""
+        self._ensure_daily_reset()
+        self.daily_pnl_pct += pnl_pct
 
     def update_paper_days(self) -> None:
         if self.paper_started_at and self.paper_mode:
