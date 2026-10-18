@@ -12,18 +12,20 @@ export function ControlsCard({ isKilled, idle }: { isKilled: boolean; idle: bool
   const resume = useResumeLiveBot();
 
   const onKill = () => {
-    if (reason.trim().length < 3) return toast.error("دلیل حداقل ۳ کاراکتر");
-    kill.mutate(reason.trim(), {
-      onSuccess: () => { toast.success("ربات متوقف شد"); setReason(""); },
-      onError: (e: any) => toast.error(e?.response?.data?.detail ?? "خطا"),
+    // Kill switch must be instant! If no reason, use a default.
+    const finalReason = reason.trim() || "manual_kill_from_ui";
+    kill.mutate(finalReason, {
+      onSuccess: () => { toast.success("ربات با موفقیت متوقف شد"); setReason(""); },
+      onError: (e: any) => toast.error(e?.response?.data?.detail ?? "خطا در توقف"),
     });
   };
 
   const onResume = () => {
-    const r = reason.trim() || "user_resume";
-    resume.mutate(r, {
+    // Resume also uses default reason if empty
+    const finalReason = reason.trim() || "manual_resume_from_ui";
+    resume.mutate(finalReason, {
       onSuccess: () => { toast.success("ربات فعال شد"); setReason(""); },
-      onError: (e: any) => toast.error(e?.response?.data?.detail ?? "خطا"),
+      onError: (e: any) => toast.error(e?.response?.data?.detail ?? "خطا در فعال‌سازی"),
     });
   };
 
@@ -35,7 +37,7 @@ export function ControlsCard({ isKilled, idle }: { isKilled: boolean; idle: bool
       <CardContent className="space-y-3">
         <input
           type="text"
-          placeholder="دلیل (اجباری برای توقف)"
+          placeholder="دلیل (اختیاری - برای لاگ)"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           className="w-full px-3 py-2 rounded-md border bg-background text-sm"
