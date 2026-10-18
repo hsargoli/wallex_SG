@@ -196,7 +196,18 @@ async def pre_flight_check(
     except DryRunError as e:
         if e.reason == DryRunReason.NO_LIQUIDITY:
             _record_liquidity(state, signal.market, available=False)
-            state.mark_waiting_liquidity()
+            # Check if ANY market has liquidity (avoid permanent block on BTCTMN only)
+            liquid_markets = ["BTCTMN", "ETHTMN", "DOGETMN"]
+            has_any_liquidity = False
+            for m in liquid_markets:
+                if m == signal.market:
+                    continue  # already checked, it's NO_LIQUIDITY
+                info = state.last_known_liquidity.get(m, {})
+                if info.get("available") is True:
+                    has_any_liquidity = True
+                    break
+            if not has_any_liquidity:
+                state.mark_waiting_liquidity()
             return await _reject("no_margin_liquidity", "D")
         if e.reason == DryRunReason.UNAUTHORIZED:
             state.mark_kill_switch("dry_run_unauthorized", source="auto")
