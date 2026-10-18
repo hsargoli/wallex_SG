@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 from app.presentation.api.v1.auth import require_user_token
 from app.services.bots.bear_hunter.state import BearHunterState, StateStore
+from app.services.bots.bear_hunter.paths import user_state_path, user_audit_path
 
 log = structlog.get_logger("live_bot.api")
 router = APIRouter(prefix="/user/live-bot", tags=["Live Bot"])
@@ -32,7 +33,7 @@ def _get_store(user_id: uuid.UUID) -> StateStore:
     # Store instances are cheap and stateless; still memoized to avoid recreate
     if user_id not in _STORES:
         _STORES[user_id] = StateStore(
-            path=f"backend/data/bots/bear_hunter/users/{user_id}.json",
+            path=str(user_state_path(user_id)),
         )
     return _STORES[user_id]
 
@@ -53,7 +54,7 @@ def _persist(user_id: uuid.UUID, state: BearHunterState) -> None:
 def _audit(user_id: uuid.UUID, action: str, reason: str = "", **extra) -> None:
     """Append audit entry. Never raises (audit must not break user action)."""
     try:
-        log_path = Path(f"backend/data/bots/bear_hunter/users/{user_id}.audit.jsonl")
+        log_path = user_audit_path(user_id)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         entry = {
             "ts": datetime.now(timezone.utc).isoformat(),

@@ -164,16 +164,21 @@ class BearHunterRunner:
 
 async def main() -> None:
     """Entrypoint. Usage: python -m app.services.bots.bear_hunter.runner [args]"""
-    import argparse
-    import os
-    import sys
-    from pathlib import Path
+    import argparse, os, sys
+    import logging as _log
+    import signal as _sig
 
     parser = argparse.ArgumentParser(description="Bear Hunter Runner")
-    parser.add_argument("--user-id", default=None, help="Single user UUID (default: all)")
-    parser.add_argument("--interval", type=int, default=300, help="Tick interval (sec)")
-    parser.add_argument("--once", action="store_true", help="Run one tick and exit")
+    parser.add_argument("--user-id", default=None)
+    parser.add_argument("--interval", type=int, default=300)
+    parser.add_argument("--once", action="store_true")
+    parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
+
+    _log.basicConfig(
+        level=_log.INFO if args.verbose else _log.WARNING,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
 
     api_key = os.environ.get("WALLEX_VIEW_TOKEN", "").strip()
     if not api_key:
@@ -181,21 +186,19 @@ async def main() -> None:
         sys.exit(1)
 
     from app.infrastructure.exchange.wallex.margin_adapter import WallexMarginAdapter
+    from app.services.bots.bear_hunter.paths import USERS_DIR
+
     adapter = WallexMarginAdapter(api_key=api_key)
     config = BearHunterConfig()
 
-    users_dir = Path("backend/data/bots/bear_hunter/users")
-    if not users_dir.exists():
-        print(f"ERROR: {users_dir} not found. POST /signal first.", file=sys.stderr)
+    if not USERS_DIR.exists():
+        print(f"ERROR: {USERS_DIR} not found", file=sys.stderr)
         sys.exit(1)
 
-    if args.user_id:
-        user_files = [users_dir / f"{args.user_id}.json"]
-    else:
-        user_files = sorted(users_dir.glob("*.json"))
-
+    user_files = ([USERS_DIR / f"{args.user_id}.json"] if args.user_id
+                  else sorted(USERS_DIR.glob("*.json")))
     if not user_files:
-        print(f"ERROR: no *.json in {users_dir}", file=sys.stderr)
+        print(f"ERROR: no *.json in {USERS_DIR}", file=sys.stderr)
         sys.exit(1)
 
     runners = []
@@ -205,11 +208,8 @@ async def main() -> None:
             continue
         store = StateStore(path=str(uf))
         st = store.load()
-        if not st.initialized:
-            print(f"WARN: {uf.name} not initialized")
-            continue
-        if not st.human_signal:
-            print(f"WARN: {uf.name} no signal")
+        if not st.initialized or not st.human_signal:
+            print(f"WARN: {uf.name} not initialized or no signal")
             continue
         runners.append((uf.stem, BearHunterRunner(config, store, adapter, args.interval)))
         print(f"OK: {uf.stem} status={st.bot_status} paper={st.paper_mode}")
@@ -220,30 +220,31 @@ async def main() -> None:
 
     if args.once:
         for name, runner in runners:
+            bp, bt = len(runner.state.open_positions), runner.state.trades_today
             print(f">> tick {name}")
             try:
                 await runner.tick()
+                print(f"   OK: positions {bp}->{len(runner.state.open_positions)}, "
+                      f"trades {bt}->{runner.state.trades_today}, "
+                      f"status={runner.state.bot_status}")
             except Exception as e:
+                import traceback
                 print(f"FAIL {name}: {e}", file=sys.stderr)
+                traceback.print_exc()
         return
 
-    import signal as _sig
     stop_event = asyncio.Event()
-    def _stop(*_):
-        stop_event.set()
+    def _stop(*_): stop_event.set()
     loop = asyncio.get_event_loop()
-    for s in (_sig.SIGINT, _sig.SIGTERM):
-        try:
-            loop.add_signal_handler(s, _stop)
-        except NotImplementedError:
-            pass
+    for sig in (_sig.SIGINT, _sig.SIGTERM):
+        try: loop.add_signal_handler(sig, _stop)
+        except NotImplementedError: pass
 
     print(f"START {len(runners)} runner(s), interval={args.interval}s")
     tasks = [asyncio.create_task(rr.start(), name=name) for name, rr in runners]
     await stop_event.wait()
     print("STOP requested")
-    for _, rr in runners:
-        rr.stop()
+    for _, rr in runners: rr.stop()
     await asyncio.gather(*tasks, return_exceptions=True)
     print("DONE")
 
