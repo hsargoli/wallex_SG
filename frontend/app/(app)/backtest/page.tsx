@@ -88,24 +88,9 @@ export default function BacktestPage() {
   const [startDate, setStartDate] = useState("2022-01-01");
   const [endDate, setEndDate] = useState("2022-12-31");
   const [bot, setBot] = useState("scalp_master");
-  const [picked, setPicked] = useState<string[]>(["BTCTMN"]);
-  const [q, setQ] = useState("");
-  // Only these symbols have 5-year historical data locally
-  const HISTORICAL_SYMBOLS = [
-    { symbol: "BTCTMN", base: "BTC", name_fa: "بیت کوین" },
-    { symbol: "ETHTMN", base: "ETH", name_fa: "اتریوم" },
-    { symbol: "SOLTMN", base: "SOL", name_fa: "سولانا" },
-  ];
-  const matches = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return [];
-    return HISTORICAL_SYMBOLS
-      .filter((o) => !picked.includes(o.symbol) &&
-        (o.symbol.toLowerCase().includes(t) || o.base.toLowerCase().includes(t) ||
-         (o.name_fa ?? "").includes(q.trim())))
-      .slice(0, 8);
-  }, [q, picked]);
-  const [capital, setCapital] = useState(1000);
+  const [picked, setPicked] = useState<string[]>(["BTCTMN"]); // Keep array for backend compatibility
+    // Only these symbols have 5-year historical data locally
+      const [capital, setCapital] = useState(1000);
   const [sizePct, setSizePct] = useState(50);
   const [fee, setFee] = useState(0.2);
   const [sortKey, setSortKey] = useState<SortKey>("pnl_pct");
@@ -213,42 +198,25 @@ export default function BacktestPage() {
               <option value="4h">۴ ساعت</option>
             </select>
           </Field>
-          <div className="w-full space-y-2">
-            <div className="text-xs text-muted-foreground">
-              رمزارزها ({picked.length} از ۵) — حداقل ۱ و حداکثر ۵
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {picked.map((s) => (
-                <span key={s} className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs">
-                  {s}
-                  <button type="button" onClick={() => setPicked(picked.filter((x) => x !== s))}
-                    className="text-muted-foreground hover:text-red-500" aria-label="حذف">
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="relative">
-              <input className={inputCls + " w-full"} dir="ltr" value={q}
-                disabled={picked.length >= 5}
-                placeholder={picked.length >= 5 ? "به سقف ۵ نماد رسیدی" : "جست‌وجو: BTC، ETH، بیت‌کوین…"}
-                onChange={(e) => setQ(e.target.value)} />
-              {q.trim() && picked.length < 5 && (
-                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
-                  {matches.length === 0 && <div className="p-3 text-xs text-muted-foreground">نمادی پیدا نشد</div>}
-                  {matches.map((o) => (
-                    <button key={o.symbol} type="button"
-                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent"
-                      onClick={() => { setPicked([...picked, o.symbol]); setQ(""); }}>
-                      <span className="font-mono" dir="ltr">{o.symbol}</span>
-                      <span className="text-xs text-muted-foreground">{o.name_fa}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <Field label="سرمایه‌ی هر نماد">
+          <Field label="ارز (از دیتای تاریخی موجود)">
+              <select
+                className={inputCls + " w-full"}
+                value={picked[0]}
+                onChange={(e) => setPicked([e.target.value])}
+              >
+                <option value="BTCTMN">بیت‌کوین (BTCTMN)</option>
+                <option value="ETHTMN">اتریوم (ETHTMN)</option>
+                <option value="SOLTMN">سولانا (SOLTMN)</option>
+              </select>
+            </Field>
+            
+            <Field label="تاریخ شروع">
+                <input type="date" className={inputCls} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </Field>
+              <Field label="تاریخ پایان">
+                <input type="date" className={inputCls} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </Field>
+              <Field label="سرمایه‌ی هر نماد">
             <input className={inputCls + " w-28"} type="number" min={10} value={capital}
               onChange={(e) => setCapital(Number(e.target.value))} />
           </Field>
