@@ -15,7 +15,7 @@ class BearHunterConfig:
     
     audit_trail_enabled: bool = True
     dry_run_mandatory: bool = True
-    paper_skip_dry_run: bool = True  # Paper mode uses synthetic dry_run (no real API)
+
     
     # ── کارمزدها ──
     entry_fee_pct: float = 0.2
@@ -26,10 +26,11 @@ class BearHunterConfig:
     sl_atr_mult: float = 1.5
     tp_atr_mult: float = 3.0
     use_trailing: bool = True
-    trailing_atr_mult: float = 1.5
+    trailing_atr_mult: float = 3.0  # Wider trailing to avoid noise
     volume_z_min: float = -0.5
     adx_min: float = 25.0
-    rsi_overbought: float = 70.0
+    rsi_overbought: float = 70.0  # Standard for scalping waves
+    use_scalping: bool = True
     
     # Margin specific
     risk_coef: int = 1

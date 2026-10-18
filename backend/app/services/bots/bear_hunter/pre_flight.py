@@ -182,10 +182,7 @@ async def pre_flight_check(
 
     # ─── Phase D ───
     try:
-        if state.paper_mode and getattr(config, "paper_skip_dry_run", True):
-            dry = _synthetic_dry_run(signal, config)
-        else:
-            dry = await adapter.dry_run(
+        dry = await adapter.dry_run(
                 collateral=str(size), market=signal.market, open_price=str(signal.entry_price),
                 risk_coef=str(config.risk_coef), side="short",
                 stop_loss=str(signal.stop_loss), take_profit=str(signal.take_profit),
