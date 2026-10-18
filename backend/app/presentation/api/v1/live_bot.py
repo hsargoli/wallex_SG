@@ -1,13 +1,4 @@
-"""Live Bot endpoints — /v1/user/live-bot/*.
-
-Manages human-in-the-loop signal, kill switch, and status for bear_hunter.
-
-State: per-user JSON at data/bots/bear_hunter/users/{user_id}.json
-- No in-memory cache (read-through every request; MVP per Di Darya review)
-- Audit trail at {user_id}.audit.jsonl (kill/resume/signal)
-- Single-writer pattern: this module writes state; runner (future) will
-  read state.json + flags.json to act. Keeps state mutation authoritative.
-"""
+"""Live Bot endpoints — /v1/user/live-bot/*."""
 from __future__ import annotations
 
 import json
@@ -28,20 +19,17 @@ router = APIRouter(prefix="/user/live-bot", tags=["Live Bot"])
 
 _STORES: dict[uuid.UUID, StateStore] = {}
 
+def _get_user_id(user: dict) -> uuid.UUID:
+    raw = user.get("id") or user.get("sub")
+    return uuid.UUID(str(raw))
 
 def _get_store(user_id: uuid.UUID) -> StateStore:
-    # Store instances are cheap and stateless; still memoized to avoid recreate
     if user_id not in _STORES:
-        _STORES[user_id] = StateStore(
-            path=str(user_state_path(user_id)),
-        )
+        _STORES[user_id] = StateStore(path=str(user_state_path(user_id)))
     return _STORES[user_id]
 
-
 def _load_state(user_id: uuid.UUID) -> BearHunterState:
-    """Read fresh from disk. No cache (MVP)."""
     return _get_store(user_id).load()
-
 
 def _persist(user_id: uuid.UUID, state: BearHunterState) -> None:
     store = _get_store(user_id)
@@ -50,23 +38,15 @@ def _persist(user_id: uuid.UUID, state: BearHunterState) -> None:
     else:
         store.save(state)
 
-
 def _audit(user_id: uuid.UUID, action: str, reason: str = "", **extra) -> None:
-    """Append audit entry. Never raises (audit must not break user action)."""
     try:
         log_path = user_audit_path(user_id)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        entry = {
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "action": action,
-            "reason": reason,
-            **extra,
-        }
+        entry = {"ts": datetime.now(timezone.utc).isoformat(), "action": action, "reason": reason, **extra}
         with log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.warning("audit_write_failed", user_id=str(user_id), error=str(e))
-
 
 class StatusResponse(BaseModel):
     bot_status: str
@@ -83,21 +63,17 @@ class StatusResponse(BaseModel):
     kill_reason: Optional[str] = None
     last_trade_at: Optional[datetime] = None
 
-
 class SignalRequest(BaseModel):
     direction: Literal["bearish", "bullish", "neutral"]
     ttl_days: int = Field(10, ge=1, le=90)
     note: Optional[str] = Field(None, max_length=200)
 
-
 class ReasonRequest(BaseModel):
     reason: str = Field(..., min_length=3, max_length=200)
 
-
 class ResumeRequest(BaseModel):
     reason: str = Field(..., min_length=3, max_length=200)
-    force: bool = Field(False, description="Required to reset kill_switch_auto (safety)")
-
+    force: bool = Field(False, description="Required to reset kill_switch_auto")
 
 def _to_response(state: BearHunterState) -> StatusResponse:
     hs = state.human_signal
@@ -117,66 +93,40 @@ def _to_response(state: BearHunterState) -> StatusResponse:
         last_trade_at=state.last_trade_at,
     )
 
-
 @router.get("/status", response_model=StatusResponse)
-async def get_status(
-    user_id: Annotated[uuid.UUID, Depends(require_user_token)],
-) -> StatusResponse:
+async def get_status(user: Annotated[dict, Depends(require_user_token)]) -> StatusResponse:
+    user_id = _get_user_id(user)
     return _to_response(_load_state(user_id))
 
-
 @router.post("/signal", response_model=StatusResponse)
-async def set_signal(
-    body: SignalRequest,
-    user_id: Annotated[uuid.UUID, Depends(require_user_token)],
-) -> StatusResponse:
+async def set_signal(body: SignalRequest, user: Annotated[dict, Depends(require_user_token)]) -> StatusResponse:
+    user_id = _get_user_id(user)
     state = _load_state(user_id)
     try:
-        state.set_signal(
-            body.direction, body.ttl_days, set_by="endpoint", note=body.note,
-        )
+        state.set_signal(body.direction, body.ttl_days, set_by="endpoint", note=body.note)
     except ValueError as e:
         raise HTTPException(400, detail=str(e))
     _persist(user_id, state)
     _audit(user_id, "signal", direction=body.direction, ttl_days=body.ttl_days)
-    log.info("signal_set", user_id=str(user_id), direction=body.direction, ttl=body.ttl_days)
     return _to_response(state)
 
-
 @router.post("/kill", response_model=StatusResponse)
-async def kill_bot(
-    body: ReasonRequest,
-    user_id: Annotated[uuid.UUID, Depends(require_user_token)],
-) -> StatusResponse:
+async def kill_bot(body: ReasonRequest, user: Annotated[dict, Depends(require_user_token)]) -> StatusResponse:
+    user_id = _get_user_id(user)
     state = _load_state(user_id)
     state.mark_kill_switch(body.reason, source="manual")
     _persist(user_id, state)
     _audit(user_id, "kill", reason=body.reason)
-    log.warning("bot_killed", user_id=str(user_id), reason=body.reason)
     return _to_response(state)
 
-
 @router.post("/resume", response_model=StatusResponse)
-async def resume_bot(
-    body: ResumeRequest,
-    user_id: Annotated[uuid.UUID, Depends(require_user_token)],
-) -> StatusResponse:
+async def resume_bot(body: ResumeRequest, user: Annotated[dict, Depends(require_user_token)]) -> StatusResponse:
+    user_id = _get_user_id(user)
     state = _load_state(user_id)
-    was_killed = state.is_killed
-    was_idle = state.idle
-    # Safety: auto kill requires force=true (triggered by reconcile, corruption, etc.)
     if state.kill_switch_auto and not body.force:
-        raise HTTPException(
-            400,
-            detail=(
-                f"Auto kill switch active (reason: {state.kill_switch_reason or 'unknown'}). "
-                f"Investigate before resuming. Pass force=true to override."
-            ),
-        )
-    if was_killed:
-        state.reset_kill_switch(body.reason)
+        raise HTTPException(400, detail=f"Auto kill active ({state.kill_switch_reason}). Pass force=true to override.")
+    state.reset_kill_switch(body.reason)
     state.resume_from_idle()
     _persist(user_id, state)
-    _audit(user_id, "resume", reason=body.reason, was_killed=was_killed, was_idle=was_idle)
-    log.info("bot_resumed", user_id=str(user_id), reason=body.reason)
+    _audit(user_id, "resume", reason=body.reason)
     return _to_response(state)

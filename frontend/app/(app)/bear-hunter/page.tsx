@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { getUserToken } from "@/lib/auth";
 import { useLiveBotStatus } from "@/lib/hooks/use-bear-hunter";
 import { StatusCard } from "@/components/bear-hunter/status-card";
@@ -16,11 +16,23 @@ export default function BearHunterPage() {
   useEffect(() => {
     setMounted(true);
     if (!getUserToken()) {
+      console.log("[bear-hunter] No token found, redirecting to /login");
       router.replace("/login");
     }
   }, [router]);
 
-  const { data, isLoading } = useLiveBotStatus();
+  const { data, isLoading, isError, error, refetch } = useLiveBotStatus();
+
+  // Handle 401 globally (token expired)
+  useEffect(() => {
+    if (isError) {
+      const status = (error as any)?.response?.status;
+      console.error("[bear-hunter] API Error:", status, error);
+      if (status === 401) {
+        router.replace("/login");
+      }
+    }
+  }, [isError, error, router]);
 
   // 1. Mount guard + Loading state
   if (!mounted || isLoading) {
@@ -31,9 +43,24 @@ export default function BearHunterPage() {
     );
   }
 
-  // 2. If no data (e.g., redirecting), render nothing to avoid flicker
-  if (!data) {
-    return null;
+  // 2. Error state
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4" dir="rtl">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <h2 className="text-lg font-semibold">خطا در دریافت اطلاعات ربات</h2>
+        <p className="text-sm text-muted-foreground">
+          {String((error as any)?.response?.data?.detail || (error as any)?.message || "خطای نامشخص")}
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          تلاش مجدد
+        </button>
+      </div>
+    );
   }
 
   // 3. Safe to render
