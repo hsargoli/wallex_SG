@@ -64,7 +64,7 @@ class BearHunterState:
     last_known_liquidity: dict = field(default_factory=dict)
     waiting_liquidity_since: Optional[datetime] = None
 
-    capital_tmn: float = 100_000.0
+    capital_tmn: float = 5_000_000.0
     open_positions: List[MarginPosition] = field(default_factory=list)
     last_reconciled_at: Optional[datetime] = None
 

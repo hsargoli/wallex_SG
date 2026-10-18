@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from datetime import datetime, timezone
 from typing import Optional
 from app.domain.ports.margin_exchange import MarginExchangePort, MarginPosition
@@ -75,3 +76,47 @@ async def execute_short_entry(
         logger.error(f"Failed to open short: {e}")
         await audit_trail.log_trade_failure(audit_id, str(e))
         return None
+
+
+async def close_paper_position(
+    position_id: str,
+    exit_price: Decimal,
+    state: BearHunterState,
+    config: BearHunterConfig,
+) -> Optional[Decimal]:
+    """Close a virtual paper position locally (no API call). Returns net PnL."""
+    from .rules import calculate_short_net_pnl
+    
+    # Find position
+    target_pos = None
+    for i, pos in enumerate(state.open_positions):
+        if pos.position_id == position_id:
+            target_pos = pos
+            state.open_positions.pop(i)
+            break
+    
+    if not target_pos:
+        return None
+    
+    # Calculate PnL
+    hours_held = 1  # Simplified
+    pnl_obj = calculate_short_net_pnl(
+        entry_price=Decimal(str(target_pos.entry_price)),
+        exit_price=exit_price,
+        position_size_tmn=Decimal(str(target_pos.collateral)),
+        hours_held=hours_held,
+        capital_tmn=Decimal(str(state.capital_tmn)),
+        config=config,
+    )
+    
+    state.capital_tmn += float(pnl_obj.net_pnl)
+    state.pnl_8h_pct += float(pnl_obj.net_pnl_pct_of_capital)
+    state.daily_pnl_pct += float(pnl_obj.net_pnl_pct_of_capital)
+    
+    await audit_trail.log_entry(
+        True, "PAPER_CLOSE", f"Closed {position_id} at {exit_price}",
+        {"position_id": position_id, "pnl": float(pnl_obj.net_pnl)},
+        config, state,
+    )
+    
+    return pnl_obj.net_pnl
