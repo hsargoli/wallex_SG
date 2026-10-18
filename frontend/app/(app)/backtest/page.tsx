@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   compareBotsBacktest,
-  getSimulationSymbols,
+  
   runBotBacktest,
   type BotBacktestResult,
   type CompareBotsResult,
@@ -88,18 +88,23 @@ export default function BacktestPage() {
   const [startDate, setStartDate] = useState("2022-01-01");
   const [endDate, setEndDate] = useState("2022-12-31");
   const [bot, setBot] = useState("scalp_master");
-  const [picked, setPicked] = useState<string[]>(["NEARTMN"]);
+  const [picked, setPicked] = useState<string[]>(["BTCTMN"]);
   const [q, setQ] = useState("");
-  const symbolsQ = useQuery({ queryKey: ["sim-symbols"], queryFn: getSimulationSymbols, staleTime: 300_000 });
+  // Only these symbols have 5-year historical data locally
+  const HISTORICAL_SYMBOLS = [
+    { symbol: "BTCTMN", base: "BTC", name_fa: "بیت کوین" },
+    { symbol: "ETHTMN", base: "ETH", name_fa: "اتریوم" },
+    { symbol: "SOLTMN", base: "SOL", name_fa: "سولانا" },
+  ];
   const matches = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return [];
-    return (symbolsQ.data?.symbols ?? [])
+    return HISTORICAL_SYMBOLS
       .filter((o) => !picked.includes(o.symbol) &&
         (o.symbol.toLowerCase().includes(t) || o.base.toLowerCase().includes(t) ||
-         (o.name_fa ?? "").includes(q.trim()) || (o.name_en ?? "").toLowerCase().includes(t)))
+         (o.name_fa ?? "").includes(q.trim())))
       .slice(0, 8);
-  }, [symbolsQ.data, q, picked]);
+  }, [q, picked]);
   const [capital, setCapital] = useState(1000);
   const [sizePct, setSizePct] = useState(50);
   const [fee, setFee] = useState(0.2);
