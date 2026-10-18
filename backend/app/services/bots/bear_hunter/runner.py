@@ -53,7 +53,7 @@ class BearHunterRunner:
 
     async def start(self):
         self._running = True
-        logger.info("Starting BearHunterRunner...")
+        logger.info(f"Starting BearHunterRunner... (paper={self.state.paper_mode}, paper_started={self.state.paper_started_at})")
         await self._reconcile()
         try:
             while self._running:

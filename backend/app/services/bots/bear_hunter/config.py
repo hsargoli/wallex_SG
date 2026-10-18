@@ -3,8 +3,9 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class BearHunterConfig:
     # ── لایه ۱: قوانین قطعی ──
-    daily_volume_limit_tmn: float = 300_000
-    per_order_limit_tmn: float = 100_000
+    # Aligned with 5M capital (ADR 0023)
+    daily_volume_limit_tmn: float = 1_500_000  # 30%
+    per_order_limit_tmn: float = 500_000       # 10%
     max_open_positions: int = 4
     cooldown_seconds: int = 60
     loss_limit_8h_pct: float = -5.0
@@ -39,7 +40,7 @@ class BearHunterConfig:
 
     # ── لایه ۲: قابل تنظیم ──
     position_size_pct: float = 15.0  # percent (15.0 = 15%)
-    max_trades_per_day: int = 3
+    max_trades_per_day: int = 5
     daily_loss_limit_pct: float = 3.0
 
     # ── لایه ۳: Regime Router Rules (Presence) ──
