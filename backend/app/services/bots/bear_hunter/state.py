@@ -20,7 +20,7 @@ STATE_VERSION = 1
 
 _DT_FIELDS = {
     "kill_switch_activated_at", "paper_started_at",
-    "last_user_seen_at", "last_trade_at", "last_reconciled_at",
+    "last_user_seen_at", "last_trade_at", "last_reconciled_at", "last_presence_alert_at",
 }
 
 
@@ -53,6 +53,7 @@ class BearHunterState:
 
     human_signal: Optional[HumanSignal] = None
     last_user_seen_at: Optional[datetime] = None
+    last_presence_alert_at: Optional[datetime] = None
 
     daily_volume_tmn: float = 0.0
     trades_today: int = 0
