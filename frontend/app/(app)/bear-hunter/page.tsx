@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { getUserToken } from "@/lib/auth";
 import { useLiveBotStatus } from "@/lib/hooks/use-bear-hunter";
 import { StatusCard } from "@/components/bear-hunter/status-card";
 import { SignalCard } from "@/components/bear-hunter/signal-card";
@@ -10,31 +11,32 @@ import { ControlsCard } from "@/components/bear-hunter/controls-card";
 
 export default function BearHunterPage() {
   const router = useRouter();
-  const { data, isLoading, error } = useLiveBotStatus();
+  const [mounted, setMounted] = useState(false);
 
-  // Auth guard: 401 -> /login (SPA is public, JWT is the security layer)
   useEffect(() => {
-    if (error && (error as any)?.response?.status === 401) {
+    setMounted(true);
+    if (!getUserToken()) {
       router.replace("/login");
     }
-  }, [error, router]);
+  }, [router]);
 
-  if (isLoading) {
+  const { data, isLoading } = useLiveBotStatus();
+
+  // 1. Mount guard + Loading state
+  if (!mounted || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (error || !data) {
-    return (
-      <div className="p-8">
-        <p className="text-destructive">خطا در دریافت وضعیت ربات. لطفاً وارد شوید.</p>
-      </div>
-    );
+  // 2. If no data (e.g., redirecting), render nothing to avoid flicker
+  if (!data) {
+    return null;
   }
 
+  // 3. Safe to render
   return (
     <div className="container mx-auto p-6 max-w-5xl space-y-6" dir="rtl">
       <div>

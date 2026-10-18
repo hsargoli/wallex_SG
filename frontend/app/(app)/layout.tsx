@@ -52,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!getUserToken()) return spinner;
 
   // ۳. صفحه settings/wallex مستثنی — نیازی به چک Wallex نیست
-  if (pathname === "/settings/wallex") {
+  if (pathname === "/settings/wallex" || pathname === "/bear-hunter") {
     return <AppShell>{children}</AppShell>;
   }
 

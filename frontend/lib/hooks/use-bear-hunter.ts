@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getUserToken } from "@/lib/auth";
 
 export interface LiveBotStatus {
   bot_status: string;
@@ -21,9 +22,11 @@ export function useLiveBotStatus() {
   return useQuery({
     queryKey: ["live-bot-status"],
     queryFn: () => api.getLiveBotStatus() as Promise<LiveBotStatus>,
+    enabled: !!getUserToken(),
     refetchInterval: 5000,
     staleTime: 0,
     refetchOnWindowFocus: false,
+    retry: 1,
   });
 }
 
