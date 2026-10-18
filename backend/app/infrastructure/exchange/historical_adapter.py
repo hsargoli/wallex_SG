@@ -1,5 +1,5 @@
 """Historical Exchange Adapter — serves local CSV data as if it were the Exchange."""
-from typing import List
+from typing import List, Optional
 from app.domain.entities.candle import Candle
 from app.domain.ports.exchange import ExchangePort
 from app.application.use_cases.historical_loader import HistoricalCandleLoader
@@ -15,19 +15,28 @@ class HistoricalExchangeAdapter(ExchangePort):
         self.end_date = end_date
         self.loader = HistoricalCandleLoader()
 
-    async def get_candles(self, symbol: str, timeframe: str = "1h", limit: int = 3000) -> List[Candle]:
-        # Ignore limit, load exactly the requested date range
+    async def get_candles(
+        self, 
+        symbol: str, 
+        resolution: str = "60", 
+        from_ts: Optional[int] = None, 
+        to_ts: Optional[int] = None,
+        **kwargs
+    ) -> List[Candle]:
+        # We ignore resolution, from_ts, to_ts because GetCandlesUseCase
+        # calculates them based on "now", not our historical range.
+        # The loader uses self.start_date and self.end_date.
         return self.loader.load(
             symbol=symbol, 
             start_date=self.start_date, 
             end_date=self.end_date, 
-            timeframe=timeframe
+            timeframe="1h" # We only have 1h data locally for now
         )
 
-    # Placeholder implementations for other methods (not needed for backtest)
-    async def get_markets(self): raise NotImplementedError("HistoricalAdapter does not support get_markets")
-    async def get_market(self, symbol: str): raise NotImplementedError("HistoricalAdapter does not support get_market")
-    async def get_balances(self): raise NotImplementedError("HistoricalAdapter does not support get_balances")
-    async def place_order(self, *args, **kwargs): raise NotImplementedError("HistoricalAdapter does not support place_order")
-    async def cancel_order(self, *args, **kwargs): raise NotImplementedError("HistoricalAdapter does not support cancel_order")
-    async def get_order_book(self, *args, **kwargs): raise NotImplementedError("HistoricalAdapter does not support get_order_book")
+    # Placeholder implementations for other methods
+    async def get_markets(self): raise NotImplementedError
+    async def get_market(self, symbol: str): raise NotImplementedError
+    async def get_balances(self): raise NotImplementedError
+    async def place_order(self, *args, **kwargs): raise NotImplementedError
+    async def cancel_order(self, *args, **kwargs): raise NotImplementedError
+    async def get_order_book(self, *args, **kwargs): raise NotImplementedError
