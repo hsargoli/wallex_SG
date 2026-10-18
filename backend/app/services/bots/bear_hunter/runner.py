@@ -109,7 +109,7 @@ class BearHunterRunner:
         if not self.state.initialized:
             return
         if self.state.paper_mode:
-            logger.info("Skipping reconcile in Paper Mode (virtual positions).")
+            logger.info("Paper Mode: reconcile skipped. Virtual positions are managed locally by state.json.")
             return
             
         warnings = await reconcile(self.state, self.adapter)
@@ -135,7 +135,7 @@ class BearHunterRunner:
             if pos:
                 logger.info(f"Position opened: {pos.position_id}")
         else:
-            logger.info(f"Signal rejected: {pre_flight.reason} (Phase {pre_flight.phase})")
+            logger.warning(f"Signal REJECTED by pre_flight: {pre_flight.reason} (Phase {pre_flight.phase})")
 
     async def _generate_signal(self) -> Optional[Signal]:
         if len(self.state.open_positions) > 0:
@@ -167,10 +167,10 @@ class BearHunterRunner:
         for col in ["open", "high", "low", "close", "volume"]:
             df[col] = pd.to_numeric(df[col], errors="coerce")
             
-        df = df.dropna().reset_index(drop=True)
+        df = df.dropna(subset=["open", "high", "low", "close", "volume"]).reset_index(drop=True)
         
-        if len(df) < 25:
-            logger.error("Not enough valid data after cleaning.")
+        if len(df) < 35:
+            logger.error(f"Not enough valid data after cleaning ({len(df)} candles).")
             return None
 
         df = enrich_dataframe(df)
@@ -179,6 +179,7 @@ class BearHunterRunner:
         signal_data = find_entry_signal(df, len(df) - 1, direction, self.config)
         
         if not signal_data:
+            logger.info("Strategy check complete: no entry signal at this moment.")
             return None
 
         entry_price = Decimal(str(df['close'].iloc[-1]))
