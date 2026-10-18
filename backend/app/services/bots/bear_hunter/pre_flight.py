@@ -176,8 +176,12 @@ async def pre_flight_check(
     except Exception as e:
         return await _reject(f"phase_c_api_error_{type(e).__name__}", "C")
 
-    if _liquidity_is_fresh_and_negative(state, signal.market):
+    # Retry liquidity check every 1h, not every 5min
+    if _liquidity_is_fresh_and_negative(state, signal.market) and not state.should_retry_liquidity(max_wait_hours=1):
         return await _reject("no_margin_liquidity_cached", "C")
+    if state.should_retry_liquidity(max_wait_hours=1):
+        state.clear_waiting_liquidity()
+        logger.info("Liquidity retry triggered (1h timeout)")
     passed.append("liquidity_cache")
 
     # ─── Phase D ───

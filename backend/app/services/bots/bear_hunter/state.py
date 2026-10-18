@@ -146,6 +146,13 @@ class BearHunterState:
         if self.waiting_liquidity_since is None:
             self.waiting_liquidity_since = utcnow()
 
+    def should_retry_liquidity(self, max_wait_hours: int = 1) -> bool:
+        """Returns True if waiting_liquidity has expired and we should retry."""
+        if self.waiting_liquidity_since is None:
+            return False
+        elapsed = (utcnow() - self.waiting_liquidity_since).total_seconds() / 3600.0
+        return elapsed >= max_wait_hours
+
     def clear_waiting_liquidity(self) -> None:
         """Clear on dry_run success or signal change."""
         self.waiting_liquidity_since = None
