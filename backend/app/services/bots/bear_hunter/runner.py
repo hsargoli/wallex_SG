@@ -186,9 +186,9 @@ async def main() -> None:
         sys.exit(1)
 
     from app.infrastructure.exchange.wallex.margin_adapter import WallexMarginAdapter
+    from app.infrastructure.exchange.paper_adapter import PaperAdapter
     from app.services.bots.bear_hunter.paths import USERS_DIR
 
-    adapter = WallexMarginAdapter(api_key=api_key)
     config = BearHunterConfig()
 
     if not USERS_DIR.exists():
@@ -211,7 +211,9 @@ async def main() -> None:
         if not st.initialized or not st.human_signal:
             print(f"WARN: {uf.name} not initialized or no signal")
             continue
-        runners.append((uf.stem, BearHunterRunner(config, store, adapter, args.interval)))
+        # Paper mode uses local mock, Live mode uses real API
+        active_adapter = PaperAdapter(initial_balance=st.capital_tmn) if st.paper_mode else WallexMarginAdapter(api_key=api_key)
+        runners.append((uf.stem, BearHunterRunner(config, store, active_adapter, args.interval)))
         print(f"OK: {uf.stem} status={st.bot_status} paper={st.paper_mode}")
 
     if not runners:
