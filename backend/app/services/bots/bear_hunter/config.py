@@ -17,6 +17,20 @@ class BearHunterConfig:
     dry_run_mandatory: bool = True
     paper_skip_dry_run: bool = True  # Paper mode uses synthetic dry_run (no real API)
     
+    # ── کارمزدها ──
+    entry_fee_pct: float = 0.2
+    exit_fee_pct: float = 0.2
+    borrow_hourly_pct: float = 0.01
+
+    # ── ATR + Trailing (borrowed from Nooaah) ──
+    sl_atr_mult: float = 1.5
+    tp_atr_mult: float = 3.0
+    use_trailing: bool = True
+    trailing_atr_mult: float = 1.5
+    volume_z_min: float = -0.5
+    adx_min: float = 25.0
+    rsi_overbought: float = 70.0
+    
     # Margin specific
     risk_coef: int = 1
     max_hold_hours: int = 6
