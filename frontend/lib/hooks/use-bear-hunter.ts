@@ -30,6 +30,15 @@ export function useLiveBotStatus() {
   });
 }
 
+export function useLiveBotBacktest() {
+  return useQuery({
+    queryKey: ["live-bot-backtest"],
+    queryFn: () => api.getLiveBotBacktest(),
+    enabled: false, // only fetch on click
+    retry: 1,
+  });
+}
+
 export function useSetLiveBotSignal() {
   const qc = useQueryClient();
   return useMutation({

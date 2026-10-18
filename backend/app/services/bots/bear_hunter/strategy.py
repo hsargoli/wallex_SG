@@ -1,4 +1,4 @@
-"""Short strategy: RSI(14) > 70 + Price < EMA(20) + ADX(14) > 25."""
+"""Short strategy: RSI crosses down from 70 (reversal) + ADX > 25 (trend was strong)."""
 import pandas as pd
 
 def calculate_rsi(series: pd.Series, period: int = 14) -> pd.Series:
@@ -30,10 +30,20 @@ def calculate_adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int
     return dx.rolling(window=period).mean()
 
 def check_short_signal(df: pd.DataFrame, idx: int) -> bool:
-    if idx < 20: return False
+    if idx < 20: 
+        return False
+    
     rsi = df['rsi'].iloc[idx]
+    prev_rsi = df['rsi'].iloc[idx-1]
     adx = df['adx'].iloc[idx]
     close = df['close'].iloc[idx]
     ema = df['ema'].iloc[idx]
-    if pd.isna(rsi) or pd.isna(adx) or pd.isna(ema): return False
-    return (rsi > 70) and (adx > 25) and (close < ema)
+    
+    if pd.isna(rsi) or pd.isna(adx) or pd.isna(ema) or pd.isna(prev_rsi): 
+        return False
+        
+    # استراتژی جدید: RSI از بالای 70 به زیر 70 بشکنه (شکار برگشت) + ADX بالای 25 باشه
+    rsi_reversal = (prev_rsi > 70) and (rsi < 70)
+    strong_trend = adx > 25
+    
+    return rsi_reversal and strong_trend

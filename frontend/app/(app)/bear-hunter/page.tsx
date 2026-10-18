@@ -8,6 +8,7 @@ import { useLiveBotStatus } from "@/lib/hooks/use-bear-hunter";
 import { StatusCard } from "@/components/bear-hunter/status-card";
 import { SignalCard } from "@/components/bear-hunter/signal-card";
 import { ControlsCard } from "@/components/bear-hunter/controls-card";
+import { BacktestCard } from "@/components/bear-hunter/backtest-card";
 
 export default function BearHunterPage() {
   const router = useRouter();
@@ -79,6 +80,8 @@ export default function BearHunterPage() {
       </div>
 
       <ControlsCard isKilled={data.is_killed} idle={data.idle} />
+
+      <BacktestCard />
 
       {data.waiting_liquidity_since && (
         <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm">

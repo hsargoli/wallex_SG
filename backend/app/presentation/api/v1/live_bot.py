@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 from app.presentation.api.v1.auth import require_user_token
 from app.services.bots.bear_hunter.state import BearHunterState, StateStore
 from app.services.bots.bear_hunter.paths import user_state_path, user_audit_path
+from app.services.bots.bear_hunter.backtest import run_backtest
+from pathlib import Path
 
 log = structlog.get_logger("live_bot.api")
 router = APIRouter(prefix="/user/live-bot", tags=["Live Bot"])
@@ -130,3 +132,28 @@ async def resume_bot(body: ResumeRequest, user: Annotated[dict, Depends(require_
     _persist(user_id, state)
     _audit(user_id, "resume", reason=body.reason)
     return _to_response(state)
+
+class BacktestResponse(BaseModel):
+    initial_capital: float
+    final_capital: float
+    total_pnl: float
+    total_pnl_pct: float
+    total_trades: int
+    trades: list[dict]
+
+@router.get("/backtest", response_model=BacktestResponse)
+async def run_bt(user: Annotated[dict, Depends(require_user_token)]) -> BacktestResponse:
+    """Run backtest on historical data (BTCTMN_1h.csv)."""
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
+    csv_path = BASE_DIR / "data" / "candles" / "BTCTMN_1h.csv"
+    
+    if not csv_path.exists():
+        raise HTTPException(404, detail="Historical data not found on server.")
+        
+    try:
+        res = run_backtest(str(csv_path))
+        return BacktestResponse(**res)
+    except Exception as e:
+        log.error("backtest_failed", error=str(e))
+        raise HTTPException(500, detail=f"Backtest failed: {str(e)}")
+
