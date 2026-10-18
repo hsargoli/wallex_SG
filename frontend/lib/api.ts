@@ -604,6 +604,14 @@ export const api = {
     client.post<NooaahConfigResponse>("/v1/nooaah/resume").then((r) => r.data),
   getNooaahReadiness: () =>
     client.get<NooaahReadinessResponse>("/v1/nooaah/readiness").then((r) => r.data),
+  getLiveBotStatus: () =>
+    client.get<any>("/v1/user/live-bot/status").then((r) => r.data),
+  setLiveBotSignal: (body: { direction: string; ttl_days: number; note?: string }) =>
+    client.post<any>("/v1/user/live-bot/signal", body).then((r) => r.data),
+  killLiveBot: (body: { reason: string }) =>
+    client.post<any>("/v1/user/live-bot/kill", body).then((r) => r.data),
+  resumeLiveBot: (body: { reason: string }) =>
+    client.post<any>("/v1/user/live-bot/resume", body).then((r) => r.data),
   activateNooaahLive: (phrase: string) =>
     client.post<NooaahConfigResponse>("/v1/nooaah/live/activate", {
       confirmation_phrase: phrase,

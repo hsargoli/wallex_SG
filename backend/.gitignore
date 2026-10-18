@@ -10,3 +10,6 @@ wheels/
 .venv
 
 .coverage
+
+# Bear Hunter runtime state (per-user JSON + audit)
+data/bots/

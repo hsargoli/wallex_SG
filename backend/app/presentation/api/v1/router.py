@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.presentation.api.v1 import (
+    live_bot,
     account,
     analysis,
     auth,
@@ -46,6 +47,7 @@ router.include_router(paper_v2.router)
 router.include_router(paper_v3.router)
 router.include_router(guest.router)
 router.include_router(replay.router)
+router.include_router(live_bot.router)  # /user/live-bot/*
 from app.presentation.api.v1 import order_chase  # noqa: E402
 router.include_router(order_chase.router)
 router.include_router(orders.router)

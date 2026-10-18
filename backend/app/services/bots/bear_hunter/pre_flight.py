@@ -76,6 +76,9 @@ async def pre_flight_check(
     if state.is_killed:
         return await _reject("kill_switch_auto" if state.kill_switch_auto else "kill_switch_manual", "A")
     passed.append("kill_switch")
+    if state.idle:
+        return await _reject("idle", "A")
+    passed.append("idle")
     if state.paper_mode and not getattr(signal, "is_paper", False):
         return await _reject("paper_mode_violation", "A")
     passed.append("paper_mode")
@@ -163,9 +166,11 @@ async def pre_flight_check(
             stop_loss=str(signal.stop_loss), take_profit=str(signal.take_profit),
         )
         _record_liquidity(state, signal.market, available=True)
+        state.clear_waiting_liquidity()
     except DryRunError as e:
         if e.reason == DryRunReason.NO_LIQUIDITY:
             _record_liquidity(state, signal.market, available=False)
+            state.mark_waiting_liquidity()
             return await _reject("no_margin_liquidity", "D")
         if e.reason == DryRunReason.UNAUTHORIZED:
             state.mark_kill_switch("dry_run_unauthorized", source="auto")

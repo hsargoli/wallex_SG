@@ -166,13 +166,13 @@ def test_heartbeat_does_not_clear_idle(tracker):
     state = _state_at_hours(97)  # DAY4 level
     state.mark_kill_switch("presence_day4_close_all", source="manual")
     assert state.is_killed is True
-    assert state.bot_status == "killed"
+    assert state.bot_status == "killed_manual"
 
     tracker.heartbeat(state)
     assert tracker.current_level(state) == PresenceLevel.NORMAL
     # Kill stays -> bot still killed
     assert state.is_killed is True
-    assert state.bot_status == "killed"
+    assert state.bot_status == "killed_manual"
 
 
 @pytest.mark.asyncio

@@ -20,7 +20,7 @@ STATE_VERSION = 1
 
 _DT_FIELDS = {
     "kill_switch_activated_at", "paper_started_at",
-    "last_user_seen_at", "last_trade_at", "last_reconciled_at", "last_presence_alert_at",
+    "last_user_seen_at", "last_trade_at", "last_reconciled_at", "last_presence_alert_at", "waiting_liquidity_since",
 }
 
 
@@ -54,6 +54,7 @@ class BearHunterState:
     human_signal: Optional[HumanSignal] = None
     last_user_seen_at: Optional[datetime] = None
     last_presence_alert_at: Optional[datetime] = None
+    idle: bool = False
 
     daily_volume_tmn: float = 0.0
     trades_today: int = 0
@@ -61,6 +62,7 @@ class BearHunterState:
     pnl_8h_pct: float = 0.0
     last_trade_at: Optional[datetime] = None
     last_known_liquidity: dict = field(default_factory=dict)
+    waiting_liquidity_since: Optional[datetime] = None
 
     capital_tmn: float = 100_000.0
     open_positions: List[MarginPosition] = field(default_factory=list)
@@ -80,6 +82,29 @@ class BearHunterState:
             "neutral": "range",
         }.get(self.human_signal.direction, "idle")
 
+    @property
+    def is_waiting_liquidity(self) -> bool:
+        return self.waiting_liquidity_since is not None
+
+    @property
+    def bot_status(self) -> str:
+        """Derived status for UI/debug. Order matters: most severe first."""
+        if self.kill_switch_auto:
+            return "killed_auto"
+        if self.kill_switch_manual:
+            return "killed_manual"
+        if self.idle:
+            return "idle"
+        if not self.human_signal:
+            return "no_signal"
+        if self.human_signal.is_expired():
+            return "signal_expired"
+        if self.human_signal.direction != "bearish":
+            return "signal_not_bearish"
+        if self.is_waiting_liquidity:
+            return "waiting_liquidity"
+        return "active"
+
     def set_signal(self, direction: str, ttl_days: int, set_by: str = "test", note: Optional[str] = None) -> None:
         """Set/replace human signal. Only updates state — does NOT close open positions."""
         if direction not in ("bearish", "bullish", "neutral"):
@@ -96,6 +121,7 @@ class BearHunterState:
             set_by=set_by,  # type: ignore[arg-type]
             note=note,
         )
+        self.waiting_liquidity_since = None
 
     @property
     def is_killed(self) -> bool:
@@ -114,6 +140,25 @@ class BearHunterState:
         self.kill_switch_manual = False
         self.kill_switch_reason = f"manually_reset: {reason}"
         self.kill_switch_activated_at = None
+
+    def mark_waiting_liquidity(self) -> None:
+        """Set when dry_run returns NO_LIQUIDITY. Auto-cleared on success."""
+        if self.waiting_liquidity_since is None:
+            self.waiting_liquidity_since = utcnow()
+
+    def clear_waiting_liquidity(self) -> None:
+        """Clear on dry_run success or signal change."""
+        self.waiting_liquidity_since = None
+
+    def go_idle(self, reason: str = "manual") -> None:
+        """Explicit idle. Bot will not trade until resume_from_idle()."""
+        self.idle = True
+        logger.info(f"went idle: {reason}")
+
+    def resume_from_idle(self) -> None:
+        """User explicitly resumes. Does NOT clear kill_switch or waiting_liquidity."""
+        self.idle = False
+        logger.info("resumed from idle")
 
     def reset_daily_stats(self) -> None:
         self.daily_volume_tmn = 0.0
