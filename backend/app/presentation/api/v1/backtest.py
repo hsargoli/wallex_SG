@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 """Backtest endpoint."""
 
 from fastapi import APIRouter, HTTPException, status, Query
+from app.infrastructure.exchange.historical_adapter import HistoricalExchangeAdapter
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.presentation.api.deps import ExchangeDep
