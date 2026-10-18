@@ -1,16 +1,23 @@
 import asyncio
 import logging
+import os
+import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
+import httpx
+import pandas as pd
 
-from app.domain.ports.margin_exchange import MarginExchangePort
-from .config import BearHunterConfig
-from .state import BearHunterState, StateStore, reconcile
-from .rules import calculate_position_size, calculate_short_levels
-from .pre_flight import pre_flight_check
-from .executor import execute_short_entry
+from app.infrastructure.exchange.wallex.margin_adapter import WallexMarginAdapter
+from app.services.bots.bear_hunter.config import BearHunterConfig
+from app.services.bots.bear_hunter.state import BearHunterState, StateStore, reconcile
+from app.services.bots.bear_hunter.strategy import enrich_dataframe, find_entry_signal
+from app.services.bots.bear_hunter.rules import calculate_position_size
+from app.services.bots.bear_hunter.pre_flight import pre_flight_check
+from app.services.bots.bear_hunter.executor import execute_short_entry
+from app.services.bots.bear_hunter.paths import USERS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +39,8 @@ class BearHunterRunner:
         self,
         config: BearHunterConfig,
         state_store: StateStore,
-        adapter: MarginExchangePort,
-        tick_interval_sec: int = 300  # 5 minutes (changed from 60s)
+        adapter: WallexMarginAdapter,
+        tick_interval_sec: int = 300
     ):
         self.config = config
         self.store = state_store
@@ -41,21 +48,18 @@ class BearHunterRunner:
         self.tick_interval = tick_interval_sec
         self.state = self.store.load()
         self._running = False
-        self._lock = asyncio.Lock()  # Guard 1: Overlap prevention
+        self._lock = asyncio.Lock()
         self._consecutive_errors = 0
 
     async def start(self):
         self._running = True
         logger.info("Starting BearHunterRunner...")
-
         await self._reconcile()
-
         try:
             while self._running:
                 try:
-                    # Guard 2: Timeout protection (max 60s per tick)
                     await asyncio.wait_for(self._safe_tick(), timeout=60.0)
-                    self._consecutive_errors = 0  # reset on success
+                    self._consecutive_errors = 0
                 except asyncio.TimeoutError:
                     logger.error("Tick timed out after 60s.")
                     self._consecutive_errors += 1
@@ -63,7 +67,6 @@ class BearHunterRunner:
                     logger.error(f"Tick error: {e}", exc_info=True)
                     self._consecutive_errors += 1
 
-                # Guard 3: Consecutive errors -> Kill Switch
                 if self._consecutive_errors >= 3:
                     logger.critical("3 consecutive errors. Triggering kill switch.")
                     self.state.mark_kill_switch("3_consecutive_runner_errors", source="auto")
@@ -73,7 +76,6 @@ class BearHunterRunner:
 
                 await asyncio.sleep(self.tick_interval)
         except KeyboardInterrupt:
-            # Guard 4: Graceful shutdown
             logger.info("KeyboardInterrupt received. Saving state and exiting.")
         finally:
             self.stop()
@@ -84,7 +86,6 @@ class BearHunterRunner:
         self.store.save(self.state)
 
     async def _safe_tick(self):
-        """Wrap tick in a lock to prevent overlapping executions."""
         if self._lock.locked():
             logger.warning("Previous tick still running. Skipping this cycle.")
             return
@@ -95,12 +96,11 @@ class BearHunterRunner:
         if not self.state.initialized:
             logger.warning("State not initialized. Skipping tick.")
             return
-
         if self.state.is_killed:
             logger.warning(f"Kill switch active: {self.state.kill_switch_reason}")
             return
 
-        signal = self._generate_mock_signal()
+        signal = await self._generate_signal()
         if signal:
             await self._process_signal(signal)
             self.store.save(self.state)
@@ -120,7 +120,6 @@ class BearHunterRunner:
             config=self.config,
             adapter=self.adapter
         )
-
         if pre_flight.approved:
             pos = await execute_short_entry(
                 signal=signal,
@@ -134,39 +133,69 @@ class BearHunterRunner:
         else:
             logger.info(f"Signal rejected: {pre_flight.reason} (Phase {pre_flight.phase})")
 
-    def _generate_mock_signal(self) -> Optional[Signal]:
+    async def _generate_signal(self) -> Optional[Signal]:
         if len(self.state.open_positions) > 0:
             return None
-            
-        entry = Decimal("21562618329")
-        levels = calculate_short_levels(entry, self.config)
+
+        to_ts = int(time.time())
+        from_ts = to_ts - (100 * 3600)
+        url = "https://api.wallex.ir/v1/udf/history"
+        params = {"symbol": "BTCTMN", "resolution": "60", "from": from_ts, "to": to_ts}
+
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(url, params=params, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as e:
+            logger.error(f"Failed to fetch candles: {e}")
+            return None
+
+        if not data.get("c") or len(data["c"]) < 25:
+            return None
+
+        df = pd.DataFrame({
+            "open_time": data["t"], "open": data["o"], "high": data["h"],
+            "low": data["l"], "close": data["c"], "volume": data["v"]
+        })
+        df = enrich_dataframe(df)
+        
+        direction = self.state.human_signal.direction if self.state.human_signal else "bearish"
+        signal_data = find_entry_signal(df, len(df) - 1, direction, self.config)
+        
+        if not signal_data:
+            return None
+
+        entry_price = Decimal(str(df['close'].iloc[-1]))
         sizing = calculate_position_size(
             capital_tmn=Decimal(str(self.state.capital_tmn)),
             config=self.config,
             daily_remaining_tmn=Decimal("300000"),
-            current_price=entry
+            current_price=entry_price
         )
-
+        
         if sizing.size_tmn <= 0:
             return None
+
+        sl_price = Decimal(str(signal_data['sl']))
+        tp_price = Decimal(str(signal_data['tp']))
 
         return Signal(
             market="BTCTMN",
             size_tmn=sizing.size_tmn,
-            entry_price=entry,
-            stop_loss=levels.stop_loss,
-            take_profit=levels.take_profit,
-            sl_pct=levels.sl_distance_pct,
-            tp_pct=levels.tp_distance_pct,
-            current_price=entry,
+            entry_price=entry_price,
+            stop_loss=sl_price,
+            take_profit=tp_price,
+            sl_pct=abs(entry_price - sl_price) / entry_price * 100,
+            tp_pct=abs(entry_price - tp_price) / entry_price * 100,
+            current_price=entry_price,
             is_paper=self.state.paper_mode
         )
 
 async def main() -> None:
-    """Entrypoint. Usage: python -m app.services.bots.bear_hunter.runner [args]"""
-    import argparse, os, sys
-    import logging as _log
+    import argparse
     import signal as _sig
+    import logging as _log
 
     parser = argparse.ArgumentParser(description="Bear Hunter Runner")
     parser.add_argument("--user-id", default=None)
@@ -185,10 +214,7 @@ async def main() -> None:
         print("ERROR: WALLEX_VIEW_TOKEN env required", file=sys.stderr)
         sys.exit(1)
 
-    from app.infrastructure.exchange.wallex.margin_adapter import WallexMarginAdapter
-    from app.infrastructure.exchange.paper_adapter import PaperAdapter
-    from app.services.bots.bear_hunter.paths import USERS_DIR
-
+    adapter = WallexMarginAdapter(api_key=api_key)
     config = BearHunterConfig()
 
     if not USERS_DIR.exists():
@@ -204,16 +230,13 @@ async def main() -> None:
     runners = []
     for uf in user_files:
         if not uf.exists():
-            print(f"WARN: {uf.name} not found")
             continue
         store = StateStore(path=str(uf))
         st = store.load()
         if not st.initialized or not st.human_signal:
-            print(f"WARN: {uf.name} not initialized or no signal")
             continue
-        # Paper mode uses local mock, Live mode uses real API
-        active_adapter = PaperAdapter(initial_balance=st.capital_tmn) if st.paper_mode else WallexMarginAdapter(api_key=api_key)
-        runners.append((uf.stem, BearHunterRunner(config, store, active_adapter, args.interval)))
+        runner = BearHunterRunner(config, store, adapter, args.interval)
+        runners.append((uf.stem, runner))
         print(f"OK: {uf.stem} status={st.bot_status} paper={st.paper_mode}")
 
     if not runners:
@@ -222,17 +245,12 @@ async def main() -> None:
 
     if args.once:
         for name, runner in runners:
-            bp, bt = len(runner.state.open_positions), runner.state.trades_today
             print(f">> tick {name}")
             try:
                 await runner.tick()
-                print(f"   OK: positions {bp}->{len(runner.state.open_positions)}, "
-                      f"trades {bt}->{runner.state.trades_today}, "
-                      f"status={runner.state.bot_status}")
+                print(f"   OK: positions={len(runner.state.open_positions)}, status={runner.state.bot_status}")
             except Exception as e:
-                import traceback
                 print(f"FAIL {name}: {e}", file=sys.stderr)
-                traceback.print_exc()
         return
 
     stop_event = asyncio.Event()
@@ -250,7 +268,5 @@ async def main() -> None:
     await asyncio.gather(*tasks, return_exceptions=True)
     print("DONE")
 
-
 if __name__ == "__main__":
     asyncio.run(main())
-

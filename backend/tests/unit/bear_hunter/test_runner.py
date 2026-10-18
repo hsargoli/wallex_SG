@@ -2,7 +2,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from decimal import Decimal
-from app.services.bots.bear_hunter.runner import BearHunterRunner
+from app.services.bots.bear_hunter.runner import BearHunterRunner, Signal
 from app.services.bots.bear_hunter.config import BearHunterConfig
 from app.services.bots.bear_hunter.state import StateStore, BearHunterState
 from app.domain.ports.margin_exchange import MarginExchangePort, MarginPosition, DryRunResult
@@ -31,7 +31,9 @@ async def test_runner_full_tick(tmp_path, monkeypatch):
     adapter = MockMarginAdapter()
     runner = BearHunterRunner(config, store, adapter, tick_interval_sec=1)
     
-    await runner.tick()
+    mock_signal = Signal(market="BTCTMN", size_tmn=Decimal("15000"), entry_price=Decimal("100"), stop_loss=Decimal("103"), take_profit=Decimal("95"), sl_pct=Decimal("3"), tp_pct=Decimal("5"), current_price=Decimal("100"))
+    with patch.object(BearHunterRunner, '_generate_signal', new_callable=AsyncMock, return_value=mock_signal):
+        await runner.tick()
     
     assert len(runner.state.open_positions) == 1
     assert runner.state.open_positions[0].position_id == "mock-123"
@@ -73,7 +75,9 @@ async def test_runner_paper_mode_never_calls_open_position(tmp_path, monkeypatch
     adapter.open_position = AsyncMock(side_effect=AssertionError("open_position() called in paper_mode!"))
     
     runner = BearHunterRunner(BearHunterConfig(), store, adapter, tick_interval_sec=1)
-    await runner.tick()
+    mock_signal = Signal(market="BTCTMN", size_tmn=Decimal("15000"), entry_price=Decimal("100"), stop_loss=Decimal("103"), take_profit=Decimal("95"), sl_pct=Decimal("3"), tp_pct=Decimal("5"), current_price=Decimal("100"))
+    with patch.object(BearHunterRunner, '_generate_signal', new_callable=AsyncMock, return_value=mock_signal):
+        await runner.tick()
     
     # Verify virtual position created
     assert len(runner.state.open_positions) == 1
