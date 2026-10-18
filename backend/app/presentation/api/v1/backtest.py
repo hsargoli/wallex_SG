@@ -88,7 +88,12 @@ async def run_bot(
     initial_capital: float = 1000.0,
     position_size_pct: float = 50.0,
     fee_pct: float = 0.2,
+    start_date: str = Query(None),
+    end_date: str = Query(None),
 ):
+    if start_date and end_date:
+        exchange = HistoricalExchangeAdapter(start_date, end_date)
+
     """بک‌تست یک ربات روی داده‌ی گذشته (فعلاً فقط scalp_master)."""
     if bot_slug != "scalp_master":
         raise HTTPException(status_code=400, detail="فعلاً فقط scalp_master پشتیبانی می‌شود")
@@ -399,7 +404,12 @@ async def compare_bots(
     initial_capital: float = 1000.0,
     fee_pct: float = 0.2,
     days: int = 30,
+    start_date: str = Query(None),
+    end_date: str = Query(None),
 ):
+    if start_date and end_date:
+        exchange = HistoricalExchangeAdapter(start_date, end_date)
+
     """مقایسه‌ی همه‌ی ربات‌ها روی همان نمادها (فقط خلاصه‌ی هر ربات)."""
     import asyncio
 

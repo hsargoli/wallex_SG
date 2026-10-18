@@ -85,6 +85,8 @@ function Histogram({ values }: { values: number[] }) {
 
 export default function BacktestPage() {
   const [tf, setTf] = useState("1h");
+  const [startDate, setStartDate] = useState("2022-01-01");
+  const [endDate, setEndDate] = useState("2022-12-31");
   const [bot, setBot] = useState("scalp_master");
   const [picked, setPicked] = useState<string[]>(["NEARTMN"]);
   const [q, setQ] = useState("");
@@ -107,6 +109,8 @@ export default function BacktestPage() {
   const m = useMutation<BotBacktestResult, Error>({
     mutationFn: () =>
       runBotBacktest(bot, {
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
         tf,
         top: picked.length,
         symbols: picked.join(","),
@@ -130,7 +134,9 @@ export default function BacktestPage() {
 
   const cmp = useMutation<CompareBotsResult, Error>({
     mutationFn: () =>
-      compareBotsBacktest({ symbols: picked.join(","), tf, initial_capital: capital, fee_pct: fee }),
+      compareBotsBacktest({
+      start_date: startDate || undefined,
+      end_date: endDate || undefined, symbols: picked.join(","), tf, initial_capital: capital, fee_pct: fee }),
   });
 
   const ranked = useMemo(() => {

@@ -1270,6 +1270,8 @@ export interface BotBacktestParams {
   position_size_pct: number;
   fee_pct: number;
   symbols?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface BotBacktestResult {
@@ -1343,6 +1345,8 @@ export const compareBotsBacktest = async (params: {
   tf: string;
   initial_capital: number;
   fee_pct: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<CompareBotsResult> => {
   const res = await client.get("/v1/backtest/compare", { params, timeout: 240000 });
   return res.data;

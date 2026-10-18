@@ -1,4 +1,4 @@
-"""Backtest engine for Cooperation Strategy."""
+"""Backtest engine for BearHunter with Human-in-the-Loop strategy."""
 import pandas as pd
 from decimal import Decimal
 from .strategy import enrich_dataframe, find_entry_signal
@@ -6,11 +6,34 @@ from .rules import calculate_fees
 from .config import BearHunterConfig
 
 
-def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), human_direction: str = "bearish") -> dict:
+def run_backtest(
+    csv_path: str,
+    initial_capital: Decimal = Decimal("100000"),
+    human_direction: str = "bearish",
+    config: BearHunterConfig = None,
+    start_date: str = None,
+    end_date: str = None,
+) -> dict:
     df = pd.read_csv(csv_path)
-    df = enrich_dataframe(df)
+    
+    # Filter by date if provided
+    if start_date or end_date:
+        df['datetime'] = pd.to_datetime(df['open_time'], unit='s', utc=True)
+        if start_date:
+            start_dt = pd.to_datetime(start_date, utc=True)
+            df = df[df['datetime'] >= start_dt]
+        if end_date:
+            end_dt = pd.to_datetime(end_date, utc=True)
+            df = df[df['datetime'] <= end_dt]
+        df = df.reset_index(drop=True)
+        if len(df) < 35:
+            return {"error": "Not enough data in this date range."}
 
-    config = BearHunterConfig()
+    df = enrich_dataframe(df)
+    
+    if config is None:
+        config = BearHunterConfig()
+        
     capital = initial_capital
     position = None
     trades = []
@@ -28,6 +51,8 @@ def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), hu
 
         if position:
             position['bars_held'] += 1
+            
+            # Track peak/trough for trailing
             if position['direction'] == 'long' and current_high > position.get('peak', 0):
                 position['peak'] = current_high
             elif position['direction'] == 'short' and current_low < position.get('trough', float('inf')):
@@ -52,16 +77,19 @@ def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), hu
                     exit_price = effective_sl
                     exit_reason = "trailing" if effective_sl < initial_sl - 1e-9 else "SL"
                 elif current_low <= position['tp']:
-                    exit_price, exit_reason = position['tp'], "TP"
+                    exit_price = position['tp']
+                    exit_reason = "TP"
             elif position['direction'] == 'long':
                 if current_low <= effective_sl:
                     exit_price = effective_sl
                     exit_reason = "trailing" if effective_sl > initial_sl + 1e-9 else "SL"
                 elif current_high >= position['tp']:
-                    exit_price, exit_reason = position['tp'], "TP"
+                    exit_price = position['tp']
+                    exit_reason = "TP"
 
-            if exit_price is None and position['bars_held'] >= 24:
-                exit_price, exit_reason = current_close, "TIMEOUT"
+            if exit_price is None and position['bars_held'] >= config.max_hold_hours:
+                exit_price = current_close
+                exit_reason = "TIMEOUT"
 
             if exit_price is not None:
                 entry = position['entry']
@@ -88,19 +116,17 @@ def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), hu
                     "entry": round(float(entry), 2),
                     "exit": round(float(exit_price), 2),
                     "reason": exit_reason,
-                    "gross": round(float(gross_pnl), 2),
-                    "fees": round(float(fees.total), 2),
                     "pnl": round(float(net_pnl), 2),
                     "win": net_pnl > 0
                 })
                 position = None
 
         if not position:
-            # Pass the HUMAN direction to the bot to find an entry
             signal = find_entry_signal(df, i, human_direction, config)
             if signal:
                 size = capital * Decimal("0.15")
-                if size > 100_000: size = Decimal("100000")
+                if size > Decimal(str(config.per_order_limit_tmn)):
+                    size = Decimal(str(config.per_order_limit_tmn))
                 
                 position = {
                     "direction": signal['direction'],
@@ -119,6 +145,8 @@ def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), hu
 
     wins = [t for t in trades if t['win']]
     losses = [t for t in trades if not t['win']]
+    avg_win = sum(t['pnl'] for t in wins) / len(wins) if wins else 0
+    avg_loss = sum(t['pnl'] for t in losses) / len(losses) if losses else 0
 
     return {
         "initial_capital": float(initial_capital),
@@ -130,6 +158,8 @@ def run_backtest(csv_path: str, initial_capital: Decimal = Decimal("100000"), hu
         "total_trades": len(trades),
         "wins": len(wins),
         "losses": len(losses),
+        "avg_win": round(avg_win, 2),
+        "avg_loss": round(avg_loss, 2),
         "exit_counts": exit_counts,
         "trades": trades,
         "equity_curve": equity_curve,
