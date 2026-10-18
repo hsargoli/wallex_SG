@@ -108,6 +108,10 @@ class BearHunterRunner:
     async def _reconcile(self):
         if not self.state.initialized:
             return
+        if self.state.paper_mode:
+            logger.info("Skipping reconcile in Paper Mode (virtual positions).")
+            return
+            
         warnings = await reconcile(self.state, self.adapter)
         for w in warnings:
             logger.warning(f"Reconcile: {w}")
