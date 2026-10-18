@@ -1707,3 +1707,13 @@ export interface NooaahCycleLogResponse {
   closed_count: number;
 }
 
+
+export const getSpecializedBacktest = async (botSlug: string, params: {
+  symbol: string;
+  start_date: string;
+  end_date: string;
+  direction?: string;
+}) => {
+  const res = await client.get(`/v1/specialized-backtest/${botSlug}/${params.symbol}`, { params });
+  return res.data;
+};

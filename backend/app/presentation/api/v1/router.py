@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.presentation.api.v1 import (
+    specialized_backtest,
     live_bot,
     account,
     analysis,
@@ -40,6 +41,7 @@ router.include_router(profitability.router)
 router.include_router(signals.router)
 router.include_router(scanner.router)
 router.include_router(backtest.router)
+router.include_router(specialized_backtest.router)
 router.include_router(scalping.router)
 router.include_router(ml_bottom.router)
 router.include_router(paper_trading.router)

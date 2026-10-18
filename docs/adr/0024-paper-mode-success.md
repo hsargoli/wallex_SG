@@ -23,10 +23,14 @@ criteria for graduating to Live Mode.
 | 8 | Reconcile mismatch | 0 |
 | 9 | Unexpected crash/restart | 0 |
 
-### After 30 Days
-1. Bot goes IDLE automatically (no auto-live).
-2. User receives alert with all metrics.
-3. User decides: **Live (with real money) OR continue Paper (30 more days) OR abort**.
+### After 30 Days — NO AUTO-LIVE (hard rule)
+1. Bot goes IDLE automatically on day 31.
+2. User receives alert with all 9 metrics.
+3. **The bot NEVER switches to Live Mode automatically.**
+   - Even if all 9 criteria are green, user MUST manually POST `/graduate`.
+   - This endpoint requires a second confirmation (typed phrase).
+   - Without this, bot stays IDLE indefinitely.
+4. User decides: **Live (with real money) OR continue Paper (30 more days) OR abort**.
 
 ### Live Graduation (Phase 5)
 Requires all 9 criteria +:
