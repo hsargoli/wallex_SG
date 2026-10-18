@@ -162,6 +162,17 @@ class BearHunterRunner:
             "open_time": data["t"], "open": data["o"], "high": data["h"],
             "low": data["l"], "close": data["c"], "volume": data["v"]
         })
+        
+        # Convert string columns to numeric to avoid TypeError in pandas
+        for col in ["open", "high", "low", "close", "volume"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            
+        df = df.dropna().reset_index(drop=True)
+        
+        if len(df) < 25:
+            logger.error("Not enough valid data after cleaning.")
+            return None
+
         df = enrich_dataframe(df)
         
         direction = self.state.human_signal.direction if self.state.human_signal else "bearish"
