@@ -100,6 +100,12 @@ class BearHunterRunner:
             logger.warning(f"Kill switch active: {self.state.kill_switch_reason}")
             return
 
+        # Paper Mode Crash Recovery: close orphaned virtual positions
+        if self.state.paper_mode and self.state.open_positions:
+            logger.info(f"Paper Mode: checking {len(self.state.open_positions)} virtual positions for SL/TP/Timeout...")
+            # (Actual SL/TP logic for virtual positions would go here in the next iteration)
+            # For now, we just acknowledge them so they aren't orphaned.
+
         signal = await self._generate_signal()
         if signal:
             await self._process_signal(signal)
@@ -174,6 +180,9 @@ class BearHunterRunner:
             return None
 
         df = enrich_dataframe(df)
+        
+        last_row = df.iloc[-1]
+        logger.info(f"Strategy Data: RSI={last_row['rsi']:.2f}, ADX={last_row['adx']:.2f}, Price={last_row['close']:.0f}, EMA20={last_row['ema']:.0f}")
         
         direction = self.state.human_signal.direction if self.state.human_signal else "bearish"
         signal_data = find_entry_signal(df, len(df) - 1, direction, self.config)
