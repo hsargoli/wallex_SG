@@ -182,7 +182,7 @@ class BearHunterRunner:
         df = enrich_dataframe(df)
         
         last_row = df.iloc[-1]
-        logger.info(f"Strategy Data: RSI={last_row['rsi']:.2f}, ADX={last_row['adx']:.2f}, Price={last_row['close']:.0f}, EMA20={last_row['ema']:.0f}")
+        logger.info(f"Strategy Data: RSI={last_row['rsi']:.2f}, Price={last_row['close']:.0f}, ATR={last_row['atr']:.0f}, EMA20={last_row['ema']:.0f}")
         
         direction = self.state.human_signal.direction if self.state.human_signal else "bearish"
         signal_data = find_entry_signal(df, len(df) - 1, direction, self.config)
