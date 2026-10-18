@@ -187,7 +187,9 @@ async def test_pre_flight_rejects_on_idle():
 
 @pytest.mark.asyncio
 async def test_pre_flight_marks_waiting_on_no_liquidity():
+    """Live mode (paper_mode=False) — real adapter dry_run returns NO_LIQUIDITY."""
     state = _ready_state()
+    state.paper_mode = False  # live mode
     assert state.is_waiting_liquidity is False
     result = await pre_flight_check(MockSignal(), state, BearHunterConfig(), MockAdapter(liquidity_ok=False))
     assert result.reason == "no_margin_liquidity"
@@ -196,7 +198,9 @@ async def test_pre_flight_marks_waiting_on_no_liquidity():
 
 @pytest.mark.asyncio
 async def test_pre_flight_clears_waiting_on_success():
+    """Live mode — real adapter dry_run succeeds → waiting cleared."""
     state = _ready_state()
+    state.paper_mode = False  # live mode
     state.mark_waiting_liquidity()
     assert state.is_waiting_liquidity is True
     result = await pre_flight_check(MockSignal(), state, BearHunterConfig(), MockAdapter(liquidity_ok=True))
@@ -217,3 +221,31 @@ def test_migration_waiting_liquidity_since_string():
     state = BearHunterState.from_dict(data)
     assert state.waiting_liquidity_since is not None
     assert isinstance(state.waiting_liquidity_since, type(utcnow()))
+
+# ═══ Cached-negative rejection (safety-critical) ═══
+@pytest.mark.asyncio
+async def test_pre_flight_rejects_when_cached_liquidity_negative():
+    """When last_known_liquidity is fresh + negative, pre_flight rejects in Phase C."""
+    state = _ready_state()
+    state.last_known_liquidity["BTCTMN"] = {
+        "available": False,
+        "checked_at": utcnow().isoformat(),
+    }
+    result = await pre_flight_check(MockSignal(), state, BearHunterConfig(), MockAdapter(liquidity_ok=True))
+    assert result.approved is False
+    assert result.reason == "no_margin_liquidity_cached"
+    assert result.phase == "C"
+
+
+@pytest.mark.asyncio
+async def test_pre_flight_retries_after_cache_expires():
+    """When cache is stale (>5min), pre_flight retries dry_run."""
+    from datetime import timedelta
+    state = _ready_state()
+    state.last_known_liquidity["BTCTMN"] = {
+        "available": False,
+        "checked_at": (utcnow() - timedelta(minutes=10)).isoformat(),
+    }
+    result = await pre_flight_check(MockSignal(), state, BearHunterConfig(), MockAdapter(liquidity_ok=True))
+    assert "liquidity_cache" in result.checks_passed
+

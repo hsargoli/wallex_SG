@@ -15,6 +15,7 @@ class BearHunterConfig:
     
     audit_trail_enabled: bool = True
     dry_run_mandatory: bool = True
+    paper_skip_dry_run: bool = True  # Paper mode uses synthetic dry_run (no real API)
     
     # Margin specific
     risk_coef: int = 1

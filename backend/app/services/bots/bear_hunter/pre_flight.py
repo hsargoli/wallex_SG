@@ -52,6 +52,22 @@ def _record_liquidity(state: BearHunterState, market: str, available: bool) -> N
     }
 
 
+def _synthetic_dry_run(signal, config) -> DryRunResult:
+    """Paper mode: synthetic dry_run (no real API call)."""
+    entry = float(signal.entry_price)
+    size = float(signal.size_tmn)
+    return DryRunResult(
+        liquidity_price=entry * 2.0,
+        call_price=entry * 1.5,
+        open_fee=size * 0.002,
+        trade_fee=size * 0.002,
+        extend_fee=0.0,
+        loan_amount=size * (config.risk_coef - 1),
+        max_age=86400,
+        risk_coef=config.risk_coef,
+    )
+
+
 async def pre_flight_check(
     signal: Any,
     state: BearHunterState,
@@ -144,11 +160,17 @@ async def pre_flight_check(
 
     # ─── Phase C ───
     try:
-        if _D(await adapter.get_balance()) < size:
+        if state.paper_mode:
+            balance_val = 200_000.0
+            spread = 0.1
+        else:
+            balance_val = await adapter.get_balance()
+            ob = await adapter.get_order_book(signal.market)
+            spread = getattr(ob, "spread_pct", 0)
+        if _D(balance_val) < size:
             return await _reject("insufficient_collateral", "C")
         passed.append("collateral")
-        ob = await adapter.get_order_book(signal.market)
-        if getattr(ob, "spread_pct", 0) > 0.5:
+        if spread > 0.5:
             return await _reject("wide_spread", "C")
         passed.append("order_book")
     except Exception as e:
@@ -160,11 +182,14 @@ async def pre_flight_check(
 
     # ─── Phase D ───
     try:
-        dry = await adapter.dry_run(
-            collateral=str(size), market=signal.market, open_price=str(signal.entry_price),
-            risk_coef=str(config.risk_coef), side="short",
-            stop_loss=str(signal.stop_loss), take_profit=str(signal.take_profit),
-        )
+        if state.paper_mode and getattr(config, "paper_skip_dry_run", True):
+            dry = _synthetic_dry_run(signal, config)
+        else:
+            dry = await adapter.dry_run(
+                collateral=str(size), market=signal.market, open_price=str(signal.entry_price),
+                risk_coef=str(config.risk_coef), side="short",
+                stop_loss=str(signal.stop_loss), take_profit=str(signal.take_profit),
+            )
         _record_liquidity(state, signal.market, available=True)
         state.clear_waiting_liquidity()
     except DryRunError as e:

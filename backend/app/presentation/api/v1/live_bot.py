@@ -93,6 +93,11 @@ class ReasonRequest(BaseModel):
     reason: str = Field(..., min_length=3, max_length=200)
 
 
+class ResumeRequest(BaseModel):
+    reason: str = Field(..., min_length=3, max_length=200)
+    force: bool = Field(False, description="Required to reset kill_switch_auto (safety)")
+
+
 def _to_response(state: BearHunterState) -> StatusResponse:
     hs = state.human_signal
     return StatusResponse(
@@ -152,12 +157,21 @@ async def kill_bot(
 
 @router.post("/resume", response_model=StatusResponse)
 async def resume_bot(
-    body: ReasonRequest,
+    body: ResumeRequest,
     user_id: Annotated[uuid.UUID, Depends(require_user_token)],
 ) -> StatusResponse:
     state = _load_state(user_id)
     was_killed = state.is_killed
     was_idle = state.idle
+    # Safety: auto kill requires force=true (triggered by reconcile, corruption, etc.)
+    if state.kill_switch_auto and not body.force:
+        raise HTTPException(
+            400,
+            detail=(
+                f"Auto kill switch active (reason: {state.kill_switch_reason or 'unknown'}). "
+                f"Investigate before resuming. Pass force=true to override."
+            ),
+        )
     if was_killed:
         state.reset_kill_switch(body.reason)
     state.resume_from_idle()

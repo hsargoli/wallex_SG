@@ -161,3 +161,93 @@ class BearHunterRunner:
             current_price=entry,
             is_paper=self.state.paper_mode
         )
+
+async def main() -> None:
+    """Entrypoint. Usage: python -m app.services.bots.bear_hunter.runner [args]"""
+    import argparse
+    import os
+    import sys
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Bear Hunter Runner")
+    parser.add_argument("--user-id", default=None, help="Single user UUID (default: all)")
+    parser.add_argument("--interval", type=int, default=300, help="Tick interval (sec)")
+    parser.add_argument("--once", action="store_true", help="Run one tick and exit")
+    args = parser.parse_args()
+
+    api_key = os.environ.get("WALLEX_VIEW_TOKEN", "").strip()
+    if not api_key:
+        print("ERROR: WALLEX_VIEW_TOKEN env required", file=sys.stderr)
+        sys.exit(1)
+
+    from app.infrastructure.exchange.wallex.margin_adapter import WallexMarginAdapter
+    adapter = WallexMarginAdapter(api_key=api_key)
+    config = BearHunterConfig()
+
+    users_dir = Path("backend/data/bots/bear_hunter/users")
+    if not users_dir.exists():
+        print(f"ERROR: {users_dir} not found. POST /signal first.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.user_id:
+        user_files = [users_dir / f"{args.user_id}.json"]
+    else:
+        user_files = sorted(users_dir.glob("*.json"))
+
+    if not user_files:
+        print(f"ERROR: no *.json in {users_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    runners = []
+    for uf in user_files:
+        if not uf.exists():
+            print(f"WARN: {uf.name} not found")
+            continue
+        store = StateStore(path=str(uf))
+        st = store.load()
+        if not st.initialized:
+            print(f"WARN: {uf.name} not initialized")
+            continue
+        if not st.human_signal:
+            print(f"WARN: {uf.name} no signal")
+            continue
+        runners.append((uf.stem, BearHunterRunner(config, store, adapter, args.interval)))
+        print(f"OK: {uf.stem} status={st.bot_status} paper={st.paper_mode}")
+
+    if not runners:
+        print("ERROR: no runnable bots", file=sys.stderr)
+        sys.exit(1)
+
+    if args.once:
+        for name, runner in runners:
+            print(f">> tick {name}")
+            try:
+                await runner.tick()
+            except Exception as e:
+                print(f"FAIL {name}: {e}", file=sys.stderr)
+        return
+
+    import signal as _sig
+    stop_event = asyncio.Event()
+    def _stop(*_):
+        stop_event.set()
+    loop = asyncio.get_event_loop()
+    for s in (_sig.SIGINT, _sig.SIGTERM):
+        try:
+            loop.add_signal_handler(s, _stop)
+        except NotImplementedError:
+            pass
+
+    print(f"START {len(runners)} runner(s), interval={args.interval}s")
+    tasks = [asyncio.create_task(rr.start(), name=name) for name, rr in runners]
+    await stop_event.wait()
+    print("STOP requested")
+    for _, rr in runners:
+        rr.stop()
+    await asyncio.gather(*tasks, return_exceptions=True)
+    print("DONE")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
