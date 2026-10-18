@@ -17,10 +17,11 @@ def main():
     parser.add_argument("--direction", type=str, default="bearish", choices=["bearish", "bullish"])
     parser.add_argument("--rsi", type=float, default=70.0, help="RSI threshold")
     parser.add_argument("--trail", type=float, default=3.0, help="Trailing ATR multiplier")
+    parser.add_argument("--timeout", type=int, default=24, help="Max hold hours")
     
     args = parser.parse_args()
     
-    csv_path = BASE_DIR / "data" / "candles" / f"{args.symbol}_1h_all.csv"
+    csv_path = BASE_DIR / "data" / "candles" / "historical" / f"{args.symbol}_1h.csv"
     if not csv_path.exists():
         print(f"❌ File not found: {csv_path}")
         return
@@ -34,7 +35,8 @@ def main():
     config = replace(
         BearHunterConfig(),
         rsi_overbought=args.rsi,
-        trailing_atr_mult=args.trail
+        trailing_atr_mult=args.trail,
+        max_hold_hours=args.timeout
     )
 
     res = run_backtest(

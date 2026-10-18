@@ -6,22 +6,24 @@ import { AlertTriangle, FlaskConical, Loader2, Trophy, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   compareBotsBacktest,
   
   runBotBacktest,
+  getSpecializedBacktest,
   type BotBacktestResult,
   type CompareBotsResult,
 } from "@/lib/api";
 
 const BOTS = [
+  { slug: "bear_hunter", name: "شکارچی خرس (Bear Hunter)", ok: true },
+  { slug: "nooaah", name: "ربات نوح (Nooaah)", ok: true },
   { slug: "scalp_master", name: "اسکالپ‌مستر", ok: true },
   { slug: "trend_follow", name: "روندرو", ok: true },
   { slug: "mean_revert", name: "کف‌زن", ok: true },
   { slug: "volatility_hunter", name: "نوسان‌گیر", ok: true },
   { slug: "volatility_hunter_v2", name: "نوسان‌گیر v2", ok: true },
-  { slug: "grid_bot", name: "شبکه‌ای", ok: false },
-  { slug: "smart_portfolio", name: "پورتفوی هوشمند", ok: false },
 ];
 
 const REASONS: Record<string, string> = {
@@ -41,6 +43,8 @@ const fmtDate = (t: number) =>
 type SortKey = "symbol" | "trades" | "win_rate" | "pnl_pct" | "max_drawdown_pct";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  
+  
   return (
     <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
@@ -67,6 +71,8 @@ function Histogram({ values }: { values: number[] }) {
     return arr;
   }, [values]);
   const peak = Math.max(1, ...bins.map((b) => b.count));
+
+  
   return (
     <div dir="ltr" className="flex h-32 items-end gap-1">
       {bins.map((b, i) => (
@@ -85,6 +91,29 @@ function Histogram({ values }: { values: number[] }) {
 
 export default function BacktestPage() {
   const [tf, setTf] = useState("1h");
+  const [specBot, setSpecBot] = useState("bear_hunter");
+  const [specDirection, setSpecDirection] = useState("bearish");
+  const [specResult, setSpecResult] = useState<any>(null);
+  const [specLoading, setSpecLoading] = useState(false);
+
+  const handleSpecializedBacktest = async () => {
+    setSpecLoading(true);
+    setSpecResult(null);
+    try {
+      const res = await getSpecializedBacktest(specBot, {
+        symbol: picked[0],
+        start_date: startDate,
+        end_date: endDate,
+        direction: specBot === "bear_hunter" ? specDirection : undefined,
+      });
+      setSpecResult(res);
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || "خطا در اجرای بک‌تست اختصاصی");
+    } finally {
+      setSpecLoading(false);
+    }
+  };
+
   const [startDate, setStartDate] = useState("2022-01-01");
   const [endDate, setEndDate] = useState("2022-12-31");
   const [bot, setBot] = useState("scalp_master");
@@ -304,7 +333,9 @@ export default function BacktestPage() {
                 {ranked.map((b) => {
                   const sm = b.summary;
                   const isBest = bestSlug === b.bot_slug;
-                  return (
+                
+  
+  return (
                     <tr key={b.bot_slug} className={"border-t border-border/50 " + (isBest ? "bg-amber-500/10" : "")}>
                       <td className="px-3 py-2 font-semibold">
                         {isBest && <Trophy className="ml-1 inline h-3.5 w-3.5 text-amber-500" />}
@@ -451,6 +482,72 @@ export default function BacktestPage() {
           </Card>
         </>
       )}
+    
+      {/* Specialized Bots Lab */}
+      <Card className="mt-8 border-2 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <FlaskConical className="text-primary" />
+            آزمایشگاه ربات‌های اختصاصی (Bear Hunter & Nooaah)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            این بخش از موتور بک‌تست اختصاصی این ربات‌ها استفاده می‌کند (مستقل از اسکالپ‌مستر).
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Field label="ربات">
+              <select className={inputCls} value={specBot} onChange={(e) => setSpecBot(e.target.value)}>
+                <option value="bear_hunter">شکارچی خرس (Bear Hunter)</option>
+                <option value="nooaah">ربات نوح (Nooaah)</option>
+              </select>
+            </Field>
+            {specBot === "bear_hunter" && (
+              <Field label="جهت (فقط Bear Hunter)">
+                <select className={inputCls} value={specDirection} onChange={(e) => setSpecDirection(e.target.value)}>
+                  <option value="bearish">نزولی (Short)</option>
+                  <option value="bullish">صعودی (Long)</option>
+                </select>
+              </Field>
+            )}
+            <Field label="ارز">
+              <select className={inputCls} value={picked[0]} onChange={(e) => setPicked([e.target.value])}>
+                <option value="BTCTMN">بیت‌کوین (BTCTMN)</option>
+                <option value="ETHTMN">اتریوم (ETHTMN)</option>
+                <option value="SOLTMN">سولانا (SOLTMN)</option>
+              </select>
+            </Field>
+            <div className="flex items-end">
+              <Button onClick={handleSpecializedBacktest} disabled={specLoading} className="w-full">
+                {specLoading ? <Loader2 className="animate-spin ml-2" /> : "اجرای بک‌تست اختصاصی"}
+              </Button>
+            </div>
+          </div>
+
+          {specResult && (
+            <div className="p-4 bg-background border rounded-lg space-y-2">
+              <h3 className="font-bold text-lg">نتیجه {specResult.bot}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
+                <div>
+                  <span className="text-muted-foreground block">سود/ضرر</span>
+                  <span className={pnlColor(specResult.result.total_pnl_pct)}>
+                    {specResult.result.total_pnl_pct.toFixed(2)}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">تعداد ترید</span>
+                  <span>{specResult.result.total_trades}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">برد / باخت</span>
+                  <span>{specResult.result.wins} / {specResult.result.losses}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
