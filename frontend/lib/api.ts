@@ -14,6 +14,46 @@ export function extractErrorMessage(err: any): string {
   return err?.message ?? "خطای ناشناخته";
 }
 
+// ── Friendly status messages ──
+const STATUS_MESSAGES: Record<number, string> = {
+  400: "درخواست نامعتبر است. لطفاً ورودی‌ها را بررسی کنید.",
+  401: "ابتدا وارد حساب خود شوید.",
+  403: "دسترسی به این بخش مجاز نیست.",
+  404: "موردی که دنبالش هستید پیدا نشد.",
+  409: "این عملیات با وضعیت فعلی سازگار نیست.",
+  422: "داده‌های ورودی کامل یا معتبر نیستند.",
+  429: "تعداد درخواست‌ها زیاد است. لطفاً کمی صبر کنید.",
+  500: "خطای سرور. لطفاً چند دقیقه‌ی دیگر دوباره تلاش کنید.",
+  502: "سرور موقتاً در دسترس نیست.",
+  503: "سرویس در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.",
+  504: "پاسخی از سرور دریافت نشد. لطفاً دوباره تلاش کنید.",
+};
+
+export function toFriendlyMessage(err: unknown): string {
+  const anyErr = err as {
+    code?: string;
+    message?: string;
+    response?: { status?: number };
+  };
+
+  if (anyErr?.code === "ERR_NETWORK" || anyErr?.message === "Network Error") {
+    return "اتصال به سرور برقرار نشد. اینترنت یا وضعیت سرور را بررسی کنید.";
+  }
+  if (anyErr?.code === "ECONNABORTED" || anyErr?.message?.includes("timeout")) {
+    return "زمان پاسخ سرور به پایان رسید. لطفاً دوباره تلاش کنید.";
+  }
+
+  const status = anyErr?.response?.status;
+  if (typeof status === "number") {
+    const detail = extractErrorMessage(err);
+    if (detail && detail !== "خطای ناشناخته") return detail;
+    const msg = STATUS_MESSAGES[status];
+    if (msg) return msg;
+  }
+
+  return extractErrorMessage(err);
+}
+
 
 import { getUserToken } from "./auth";
 import { getGuestToken } from "./guest";
@@ -1087,7 +1127,7 @@ export const runSimulation = async (
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw new Error(`Simulation failed: ${response.statusText}`);
+    throw new Error(`شبیه‌سازی ناموفق بود (کد ${response.status})`);
   }
   return response.json();
 };
@@ -1130,7 +1170,7 @@ export const compareAllBots = async (
     headers: { 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
-    throw new Error(`Compare failed: ${response.statusText}`);
+    throw new Error(`مقایسه ناموفق بود (کد ${response.status})`);
   }
   return response.json();
 };
