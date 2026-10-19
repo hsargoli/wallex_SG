@@ -21,6 +21,7 @@ from app.services.wallex import (
     compute_pnl,
     connect_token,
     disconnect_token,
+    disconnect_trade_token,
     get_status,
 )
 
@@ -70,6 +71,23 @@ async def connect(
     return result.to_dict()
 
 
+
+@router.post("/connect-trade")
+async def connect_trade(
+    payload: ConnectRequest,
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """اتصال توکن معاملات والکس."""
+    user_id = _get_user_uuid(user)
+    try:
+        from app.services.wallex.service import connect_trade_token
+        result = await connect_trade_token(session, user_id, payload.token)
+    except WallexError as e:
+        log.info("wallex.connect_trade_failed", user_id=str(user_id)[:8], code=e.code)
+        raise _to_http(e) from e
+    return result.to_dict()
+
 @router.delete("/disconnect")
 async def disconnect(
     user: Annotated[dict, Depends(require_user_token)],
@@ -83,6 +101,21 @@ async def disconnect(
         raise _to_http(e) from e
     await session.commit()
     return {"connected": False}
+
+
+@router.delete("/disconnect-trade")
+async def disconnect_trade(
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """قطع اتصال توکن معاملات."""
+    user_id = _get_user_uuid(user)
+    try:
+        await disconnect_trade_token(session, user_id)
+    except WallexError as e:
+        raise _to_http(e) from e
+    await session.commit()
+    return {"trade_connected": False}
 
 
 @router.get("/status")

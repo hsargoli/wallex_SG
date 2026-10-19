@@ -139,6 +139,51 @@ async def disconnect_token(
     log.info("wallex.disconnected", user_id=str(user_id)[:8])
 
 
+async def disconnect_trade_token(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+) -> None:
+    """قطع اتصال توکن معاملات."""
+    repo = UserRepository(session)
+    db_user = await repo.get_by_id(user_id)
+    if db_user is None:
+        raise WallexError("user_not_found", "کاربر پیدا نشد", 404)
+
+    await repo.set_wallex_trade_token(user_id, None)
+    log.info("wallex.trade_disconnected", user_id=str(user_id)[:8])
+
+
+
+async def connect_trade_token(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    plaintext: str,
+) -> ConnectResult:
+    """ذخیره توکن معاملات (Trade)."""
+    repo = UserRepository(session)
+    db_user = await repo.get_by_id(user_id)
+    if db_user is None:
+        raise WallexError("user_not_found", "کاربر پیدا نشد", 404)
+
+    settings = get_settings()
+    exchange = WallexExchange.create(settings, api_key=plaintext)
+    try:
+        balances = await exchange.get_balances()
+    except Exception as e:
+        log.warning("wallex.connect_trade_invalid", user_id=str(user_id)[:8], error=str(e))
+        raise WallexError("invalid_token", "توکن وارد شده نامعتبر است یا دسترسی معامله ندارد.", 400)
+
+    encrypted = encrypt_token(plaintext)
+    await repo.set_wallex_trade_token(user_id, encrypted)
+    await session.commit()
+
+    return ConnectResult(
+        connected=True,
+        connected_at=datetime.now(timezone.utc),
+        balances=_balances_to_dict(balances),
+    )
+
+
 async def get_status(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -153,29 +198,50 @@ async def get_status(
     if db_user is None:
         raise WallexError("user_not_found", "کاربر پیدا نشد", 404)
 
-    if not db_user.wallex_token_encrypted:
+    trade_connected = bool(db_user.wallex_trade_token_encrypted)
+    trade_connected_at = (
+        db_user.wallex_trade_connected_at.isoformat()
+        if db_user.wallex_trade_connected_at
+        else None
+    )
+
+    has_view = bool(db_user.wallex_token_encrypted)
+    has_trade = bool(db_user.wallex_trade_token_encrypted)
+    is_connected = has_view or has_trade
+
+    if not is_connected:
         return {
             "connected": False,
+            "view_connected": False,
+            "trade_connected": False,
             "connected_at": None,
             "balances": None,
+            "trade_connected_at": None,
         }
 
+    # اگر توکن ویو نبود، از توکن ترید برای خواندن موجودی استفاده می‌کنیم
+    token_to_use = db_user.wallex_token_encrypted if has_view else db_user.wallex_trade_token_encrypted
+    connected_at_val = db_user.wallex_connected_at if has_view else db_user.wallex_trade_connected_at
     connected_at = (
-        db_user.wallex_connected_at.isoformat()
-        if db_user.wallex_connected_at
+        connected_at_val.isoformat()
+        if hasattr(connected_at_val, 'isoformat')
         else None
     )
 
     # decrypt
     try:
-        plaintext = decrypt_token(db_user.wallex_token_encrypted)
+        plaintext = decrypt_token(token_to_use)
     except TokenDecryptError:
         log.warning("wallex.decrypt_failed", user_id=str(user_id)[:8])
         return {
             "connected": True,
+            "view_connected": has_view,
+            "trade_connected": has_trade,
             "connected_at": connected_at,
             "balances": None,
             "error": "decrypt_failed",
+            "trade_connected": has_trade,
+            "trade_connected_at": trade_connected_at,
         }
 
     # fetch balances
@@ -185,8 +251,24 @@ async def get_status(
         balances = await exchange.get_balances()
         return {
             "connected": True,
+            "view_connected": has_view,
+            "trade_connected": has_trade,
             "connected_at": connected_at,
             "balances": _balances_to_dict(balances),
+            "trade_connected": has_trade,
+            "trade_connected_at": trade_connected_at,
+        }
+    except Exception as e:
+        log.warning("wallex.get_balances_failed", user_id=str(user_id)[:8], error=str(e))
+        return {
+            "connected": True,
+            "view_connected": has_view,
+            "trade_connected": has_trade,
+            "connected_at": connected_at,
+            "balances": None,
+            "error": "wallex_unavailable",
+            "trade_connected": has_trade,
+            "trade_connected_at": trade_connected_at,
         }
     except ExchangeAuthError:
         return {
@@ -198,6 +280,8 @@ async def get_status(
     except ExchangeError:
         return {
             "connected": True,
+            "view_connected": has_view,
+            "trade_connected": has_trade,
             "connected_at": connected_at,
             "balances": None,
             "error": "wallex_unavailable",

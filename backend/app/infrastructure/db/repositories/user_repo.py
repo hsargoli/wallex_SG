@@ -112,12 +112,16 @@ class UserRepository:
     async def set_wallex_trade_token(
         self, user_id: uuid.UUID, encrypted_token: bytes | None
     ) -> None:
-        """ذخیره یا حذف توکن Trade کاربر."""
-        user = await self.get_by_id(user_id)
-        if not user:
-            raise ValueError("user not found")
-        user.wallex_trade_token_encrypted = encrypted_token
-        user.wallex_trade_connected_at = datetime.now(timezone.utc) if encrypted_token else None
+        """ذخیره یا حذف توکن Trade کاربر با استفاده از update (بدون دست زدن به View)."""
+        stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(
+                wallex_trade_token_encrypted=encrypted_token,
+                wallex_trade_connected_at=datetime.now(timezone.utc) if encrypted_token else None
+            )
+        )
+        await self.session.execute(stmt)
         await self.session.commit()
 
     async def count_recent_attempts(

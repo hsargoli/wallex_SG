@@ -1010,6 +1010,8 @@ export const api = {
     client.post("/v1/user/wallex/connect", { token }).then((r) => r.data),
     connectTradeWallex: (token: string) =>
       client.post("/v1/user/wallex/connect-trade", { trade_token: token }).then((r) => r.data),
+    disconnectTradeWallex: () =>
+      client.delete("/v1/user/wallex/disconnect-trade").then((r) => r.data),
 
   disconnectWallex: () =>
     client.delete("/v1/user/wallex/disconnect").then((r) => r.data),

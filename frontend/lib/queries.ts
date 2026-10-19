@@ -1150,8 +1150,11 @@ export interface WallexBalance {
 
 export interface WallexStatus {
   connected: boolean;
+  view_connected: boolean;
   connected_at: string | null;
   balances: WallexBalance[] | null;
+  trade_connected: boolean;
+  trade_connected_at: string | null;
   error?: "decrypt_failed" | "token_revoked" | "wallex_unavailable";
 }
 
@@ -1220,7 +1223,17 @@ export function useConnectTradeWallex() {
   return useMutation({
     mutationFn: (token: string) => api.connectTradeWallex(token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wallexStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["wallex-status"] });
+    },
+  });
+}
+
+export function useDisconnectTradeWallex() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.disconnectTradeWallex(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallex-status"] });
     },
   });
 }
