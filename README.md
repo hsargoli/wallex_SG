@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)](#اجرای-تستها)
+[![Tests](https://img.shields.io/badge/tests-329%20passing-brightgreen)](#اجرای-تستها)
 
 ---
 
@@ -30,6 +30,8 @@
 
 - **📊 تحلیل بازار** — قیمت لحظه‌ای، کندل‌ها، orderbook، اندیکاتورها
 - **🤖 ۵ ربات معاملاتی** — روندر، نوسان‌گیر، کف‌زن، Grid، Smart Portfolio
+- **🔐 احراز هویت و امنیت** — سیستم کامل JWT، فراموشی رمز، تایید ایمیل و Rate Limit.
+- **🔑 توکن معاملات (Trade Token)** — اتصال امن به والکس برای ثبت سفارش‌های واقعی.
 - **🔄 شبیه‌سازی تاریخی** — بک‌تست ربات‌ها روی داده‌ی واقعی والکس
 - **📈 Paper Trading** — تست زنده‌ی استراتژی بدون پول واقعی
 - **💰 مدیریت ریسک** — بودجه، sizing، SL/TP
@@ -55,7 +57,7 @@
 - ✅ **RFC-7807** error handling
 - ✅ **structured logging** (structlog)
 - ✅ **Decimal** برای دقت مالی
-- ✅ **۷۶ تست** (۱۰۰٪ پاس)
+- ✅ **۳۲۹ تست** (۱۰۰٪ پاس)
 
 ### Frontend (Next.js + TypeScript)
 
@@ -169,7 +171,7 @@ wallex/
 │   │   ├── tools/        ← ابزارهای روزمره
 │   │   ├── ml/           ← ML فعال
 │   │   └── archive/      ← آرشیو کامل
-│   └── tests/            ← ۷۶ تست
+│   └── tests/            ← ۳۲۹ تست
 │
 ├── frontend/             ← Next.js 16 + TypeScript
 │   ├── app/              ← ۱۰ صفحه
@@ -229,7 +231,7 @@ wallex/
 | Endpointهای API | ۴۴ |
 | ربات‌های معاملاتی | ۵ |
 | صفحات Next.js | ۱۰ |
-| تست‌ها | ۷۶ (۱۰۰٪ پاس) |
+| تست‌ها | ۳۲۹ (۱۰۰٪ پاس) |
 | Ruff | ✅ All checks passed |
 | TypeScript | ✅ 0 errors |
 | ESLint | ✅ 0 warnings |
@@ -242,7 +244,7 @@ wallex/
 
 ```bash
 cd ~/wallex/backend
-uv run pytest tests/ -v          # ۷۶ تست
+uv run pytest tests/ -v          # ۳۲۹ تست
 uv run pytest --cov=app          # با coverage
 ```
 

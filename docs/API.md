@@ -66,9 +66,21 @@ POST /v1/simulation/run
 
 ## Authentication
 
-**⚠️ وضعیت فعلی:** API **بدون authentication** کار می‌کنه (برای development).
+**✅ وضعیت فعلی:** API کاملاً با **JWT (JSON Web Token)** محافظت می‌شود.
+برای دسترسی به Endpointهای محافظت‌شده، باید توکن را در هدر `Authorization: Bearer <token>` ارسال کنید.
 
-**در آینده:** JWT-based auth اضافه میشه. برای integration با frontend فعلاً نیازی نیست.
+### 🔐 Auth Endpoints
+- `POST /v1/auth/register` — ثبت‌نام کاربر.
+- `POST /v1/auth/login` — ورود و دریافت JWT (با محدودیت ۵ بار در دقیقه).
+- `POST /v1/auth/forgot-password` — ارسال لینک بازیابی رمز (با محدودیت ۳ بار در دقیقه).
+- `POST /v1/auth/reset-password` — تغییر رمز با استفاده از توکن ایمیل.
+- `POST /v1/auth/verify-email` — تایید آدرس ایمیل.
+
+### 🏦 Wallex Endpoints
+- `POST /v1/user/wallex/connect` — اتصال توکن View (برای دیدن موجودی).
+- `POST /v1/user/wallex/connect-trade` — اتصال توکن Trade (برای ثبت سفارش).
+- `DELETE /v1/user/wallex/disconnect-trade` — قطع اتصال توکن معاملات.
+
 
 **نکته امنیتی:** API Key والکس در `.env` بک‌اند نگهداری میشه، نه در requestهای کاربر.
 
