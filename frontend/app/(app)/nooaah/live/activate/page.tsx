@@ -391,7 +391,7 @@ function StepPosition({
           min={1}
           max={10}
           step={1}
-          hint="پیشنهاد: ۱ (تست شده برای Nooaah)"
+          hint="پیشنهاد: ۱ (بهینه‌شده برای این ربات)"
         />
         <NumRow
           label="تعداد نماد برای تحلیل (top_n)"
