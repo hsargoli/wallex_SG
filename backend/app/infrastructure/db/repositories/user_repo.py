@@ -113,12 +113,12 @@ class UserRepository:
         self, user_id: uuid.UUID, encrypted_token: bytes | None
     ) -> None:
         """ذخیره یا حذف توکن Trade کاربر."""
-        async with self._session.begin():
-            user = await self._session.get(User, user_id)
-            if not user:
-                raise ValueError("user not found")
-            user.wallex_trade_token_encrypted = encrypted_token
-            user.wallex_trade_connected_at = func.now() if encrypted_token else None
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise ValueError("user not found")
+        user.wallex_trade_token_encrypted = encrypted_token
+        user.wallex_trade_connected_at = datetime.now(timezone.utc) if encrypted_token else None
+        await self.session.commit()
 
     async def count_recent_attempts(
         self,
