@@ -15,13 +15,18 @@ import {
   useWallexStatus,
   useConnectWallex,
   useDisconnectWallex,
+  useConnectTradeWallex,
 } from "@/lib/queries";
+import { toast } from "sonner";
+import { extractErrorMessage } from "@/lib/api";
 
 export default function WallexSettingsPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
+  const [tradeToken, setTradeToken] = useState("");
+  const [showTradeToken, setShowTradeToken] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -34,6 +39,7 @@ export default function WallexSettingsPage() {
   const { data, isLoading, error } = useWallexStatus();
   const connectMut = useConnectWallex();
   const disconnectMut = useDisconnectWallex();
+  const connectTradeMut = useConnectTradeWallex();
 
   if (!mounted) return null;
 
@@ -47,6 +53,20 @@ export default function WallexSettingsPage() {
     if (!token.trim()) return;
     connectMut.mutate(token.trim(), {
       onSuccess: () => setToken(""),
+    });
+  };
+
+
+  const handleConnectTrade = () => {
+    if (!tradeToken.trim()) return;
+    connectTradeMut.mutate(tradeToken.trim(), {
+      onSuccess: () => {
+        setTradeToken("");
+        toast.success("توکن معاملات (Trade) با موفقیت ذخیره شد.");
+      },
+      onError: (err: unknown) => {
+        toast.error(extractErrorMessage(err) || "خطا در ذخیره توکن معاملات");
+      },
     });
   };
 
@@ -276,6 +296,46 @@ export default function WallexSettingsPage() {
           )}
         </>
       )}
+
+      {/* Trade Token Section */}
+      <Card className="border-emerald-500/20 mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Shield className="h-5 w-5 text-emerald-400" />
+            توکن معاملات (Trade Token)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            برای اجرای سفارش‌های واقعی، توکن Trade خود را وارد کنید. این توکن نیاز به دسترسی «معامله» دارد.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type={showTradeToken ? "text" : "password"}
+              value={tradeToken}
+              onChange={(e) => setTradeToken(e.target.value)}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              dir="ltr"
+              className="font-mono text-xs"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowTradeToken((s) => !s)}
+              className="shrink-0"
+            >
+              {showTradeToken ? "پنهان" : "نمایش"}
+            </Button>
+          </div>
+          <Button
+            onClick={handleConnectTrade}
+            disabled={!tradeToken.trim() || connectTradeMut.isPending}
+            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500"
+          >
+            {connectTradeMut.isPending ? "در حال اعتبارسنجی..." : "ذخیره توکن معاملات"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

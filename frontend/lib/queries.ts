@@ -1215,6 +1215,16 @@ export function useConnectWallex() {
   });
 }
 
+export function useConnectTradeWallex() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => api.connectTradeWallex(token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallexStatus"] });
+    },
+  });
+}
+
 export function useDisconnectWallex() {
   const qc = useQueryClient();
   return useMutation({
