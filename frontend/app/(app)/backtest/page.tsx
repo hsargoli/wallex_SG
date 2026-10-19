@@ -6,6 +6,7 @@ import { AlertTriangle, FlaskConical, Loader2, Trophy, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BacktestDisclaimer } from "@/components/legal/backtest-disclaimer";
 import { toast } from "sonner";
 import {
   compareBotsBacktest,
@@ -200,6 +201,7 @@ export default function BacktestPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-4" dir="rtl">
+      <BacktestDisclaimer />
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           بک‌تست <FlaskConical className="h-5 w-5 text-emerald-500" />
