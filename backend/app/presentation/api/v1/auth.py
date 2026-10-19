@@ -156,7 +156,10 @@ async def register(
 
 
 @router.post("/login", response_model=AuthResponse)
+@limiter.limit(LOGIN_LIMIT)
 async def login(
+    request: Request,
+    response: Response,
     payload: LoginRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> AuthResponse:
