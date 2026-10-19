@@ -25,7 +25,7 @@ from app.domain.exceptions import (
 )
 from app.domain.ports.exchange import ExchangePort
 from app.domain.value_objects.order_enums import OrderSide, OrderType
-from app.presentation.api.deps import get_exchange
+from app.presentation.api.deps import get_user_exchange
 from app.presentation.api.v1.schemas import (
     OrderListResponse,
     OrderResponse,
@@ -66,7 +66,7 @@ async def place_order(
     request: Request,
     payload: PlaceOrderRequest,
     response: Response,
-    exchange: ExchangePort = Depends(get_exchange),
+    exchange: ExchangePort = Depends(get_user_exchange),
     settings: Settings = Depends(get_settings),
 ) -> OrderResponse:
     """ثبت سفارش جدید.
@@ -114,7 +114,7 @@ async def cancel_order(
     response: Response,
     client_id: str,
     symbol: str = Query(..., description="نماد (مثل BTCTMN)"),
-    exchange: ExchangePort = Depends(get_exchange),
+    exchange: ExchangePort = Depends(get_user_exchange),
     settings: Settings = Depends(get_settings),
 ) -> OrderResponse:
     """لغو سفارش با client_id. فقط وقتی LIVE_TRADING_ENABLED=true.
@@ -146,7 +146,7 @@ async def list_orders(
     status_filter: str | None = Query(
         None, alias="status", description="فیلتر وضعیت (NEW, FILLED, ...)"
     ),
-    exchange: ExchangePort = Depends(get_exchange),
+    exchange: ExchangePort = Depends(get_user_exchange),
 ) -> OrderListResponse:
     """لیست سفارش‌های کاربر (read-only، safe).
 
@@ -176,7 +176,7 @@ async def list_open_orders(
     request: Request,
     response: Response,
     symbol: str | None = Query(None, description="فیلتر بر اساس نماد"),
-    exchange: ExchangePort = Depends(get_exchange),
+    exchange: ExchangePort = Depends(get_user_exchange),
 ) -> OrderListResponse:
     """سفارش‌های باز فعلی (شامل STOP_LIMIT و LIMIT).
 

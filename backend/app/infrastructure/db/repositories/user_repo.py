@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.user import RegisterAttempt, User
@@ -108,6 +108,17 @@ class UserRepository:
     # ═══════════════════════════════════════════
     # Register attempts (rate limit)
     # ═══════════════════════════════════════════
+
+    async def set_wallex_trade_token(
+        self, user_id: uuid.UUID, encrypted_token: bytes | None
+    ) -> None:
+        """ذخیره یا حذف توکن Trade کاربر."""
+        async with self._session.begin():
+            user = await self._session.get(User, user_id)
+            if not user:
+                raise ValueError("user not found")
+            user.wallex_trade_token_encrypted = encrypted_token
+            user.wallex_trade_connected_at = func.now() if encrypted_token else None
 
     async def count_recent_attempts(
         self,

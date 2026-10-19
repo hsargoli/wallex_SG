@@ -78,6 +78,12 @@ class User(Base):
     wallex_connected_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    
+    # Trade Token (فاز ۱۷.۱۱)
+    wallex_trade_token_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    wallex_trade_connected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # متادیتا
     created_at: Mapped[datetime] = mapped_column(
