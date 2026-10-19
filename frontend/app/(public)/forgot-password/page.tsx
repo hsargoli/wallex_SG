@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-[400px] space-y-6">
           <div className="text-center flex flex-col items-center">
-            <SarvLogo className="h-14 w-14 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]" />
+            <SarvLogo size={56} />
             <h1 className="mt-4 text-2xl font-bold tracking-tight">فراموشی رمز عبور</h1>
             <p className="mt-2 text-sm text-muted-foreground">ایمیل خود را وارد کنید تا لینک بازیابی ارسال شود.</p>
           </div>
