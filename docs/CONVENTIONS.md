@@ -398,3 +398,14 @@ uv run pytest
 **«آهسته، مطمئن، با شاهد، با بازبینی.»** — SGPR (سرو پایا رشد سبز)
 
 **موفق باشی، همراه.** 🌿
+
+## 🔐 قواعد امنیت و احراز هویت (Auth & Security)
+
+- **JWT:** تمام Endpointهای حساس (به جز Login و Register) باید از `Depends(require_user_token)` استفاده کنند.
+- **Rate Limit:** برای Endpointهای حساس (مانند Login و Forgot Password) از دکوریتور `@limiter.limit` استفاده کنید. **نکته مهم:** به تمام توابعی که این دکوریتور را دارند، الزاماً پارامتر `response: Response` اضافه کنید (به دلیل الزامات SlowAPI).
+- **رمزنگاری:** توکن‌های والکس باید با `Fernet` رمزنگاری شده و به صورت `LargeBinary` در دیتابیس ذخیره شوند.
+
+## 🧪 قواعد تست‌های Async
+
+- برای تست‌های Async از `httpx.AsyncClient` به جای `TestClient` استفاده کنید.
+- برای جلوگیری از خطای `Event loop is closed`، از یک `pytest.fixture(autouse=True)` استفاده کنید که پس از هر تست `await engine.dispose()` را صدا بزند.

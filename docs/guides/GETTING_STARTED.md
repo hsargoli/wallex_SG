@@ -46,7 +46,7 @@
 |---|---|
 | Backend (DDD) | ✅ کامل |
 | Frontend (۱۹ صفحه) | ✅ کامل |
-| تست‌ها | ✅ ۱۰۰ پاس |
+| تست‌ها | ✅ ۳۲۹ پاس |
 | شبیه‌ساز | ✅ کار می‌کند |
 | Live Order | ✅ تست‌شده روی والکس |
 | Live Loop | 🚧 در حال |
@@ -65,7 +65,7 @@
 │   │   ├── infrastructure/     ← Wallex adapter، mapper
 │   │   ├── presentation/       ← API routers (۷۱ endpoint)
 │   │   └── services/           ← منطق کسب‌وکار + ۸ ربات
-│   ├── tests/                  ← ۱۰۰ تست
+│   ├── tests/                  ← ۳۲۹ تست
 │   └── pyproject.toml
 │
 ├── frontend/                   ← Next.js 16 + TS
@@ -211,4 +211,23 @@ Services (Robots, Simulator)
 ---
 
 **پایان مستند — نسخه ۱.۰**
+
+
+## 🔐 تنظیمات محیطی (.env)
+
+قبل از اجرای پروژه، باید فایل `.env` را در روت پروژه (`~/wallex/.env`) بسازید. این فایل شامل اطلاعات حساس است و نباید در گیت پوش شود.
+
+نمونه‌ی مقادیر ضروری:
+```env
+# دیتابیس (PostgreSQL)
+DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/wallex_db
+
+# کلید API والکس
+WALLEX_API_KEY=your_wallex_view_token_here
+
+# کلید رمزنگاری (44 کاراکتری Fernet)
+WALLEX_TOKEN_ENC_KEY=your_fernet_key_here
+
+# آدرس فرانت‌اند (برای لینک بازیابی رمز)
+FRONTEND_URL=http://localhost:3020
 
