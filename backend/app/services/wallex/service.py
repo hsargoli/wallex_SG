@@ -219,6 +219,7 @@ async def get_status(
             "trade_connected_at": None,
         }
 
+    # TODO: Add unit test for Trade-only fallback (Phase 2)
     # اگر توکن ویو نبود، از توکن ترید برای خواندن موجودی استفاده می‌کنیم
     token_to_use = db_user.wallex_token_encrypted if has_view else db_user.wallex_trade_token_encrypted
     connected_at_val = db_user.wallex_connected_at if has_view else db_user.wallex_trade_connected_at

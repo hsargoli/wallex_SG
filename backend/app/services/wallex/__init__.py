@@ -20,3 +20,5 @@ __all__ = [
     "disconnect_token",
     "get_status",
 ]
+
+from .service import disconnect_trade_token
