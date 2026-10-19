@@ -35,6 +35,7 @@ class User(Base):
         server_default=text("gen_random_uuid()"),
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # پول مجازی
@@ -122,6 +123,7 @@ class RegisterAttempt(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     ip_address: Mapped[str] = mapped_column(INET, nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     success: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     attempted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

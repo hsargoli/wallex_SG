@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     # --- App ---
     PROJECT_NAME: str = "Wallex Platform"
+    FRONTEND_URL: str = "http://localhost:3020"
     ENV: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = True
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"

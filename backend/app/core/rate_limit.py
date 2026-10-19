@@ -21,3 +21,6 @@ limiter = Limiter(
 PLACE_ORDER_LIMIT = "5/minute"       # ثبت سفارش — سخت‌گیرانه
 CANCEL_ORDER_LIMIT = "10/minute"     # لغو سفارش
 LIST_ORDERS_LIMIT = "30/minute"      # لیست سفارش‌ها
+
+LOGIN_LIMIT = "5/minute"          # تلاش برای ورود
+FORGOT_PASSWORD_LIMIT = "3/minute" # درخواست فراموشی رمز
