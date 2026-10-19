@@ -993,6 +993,10 @@ export const api = {
 
   login: (payload: { email: string; password: string }) =>
     client.post("/v1/auth/login", payload).then((r) => r.data),
+  forgotPassword: (email: string) =>
+    client.post("/v1/auth/forgot-password", { email }).then((r) => r.data),
+  resetPassword: (token: string, new_password: string) =>
+    client.post("/v1/auth/reset-password", { token, new_password }).then((r) => r.data),
 
   getMe: () =>
     client.get("/v1/auth/me").then((r) => r.data),

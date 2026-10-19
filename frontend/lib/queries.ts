@@ -1251,3 +1251,16 @@ export function useDisconnectWallex() {
     },
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) => api.forgotPassword(email),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (payload: { token: string; new_password: string }) =>
+      api.resetPassword(payload.token, payload.new_password),
+  });
+}
