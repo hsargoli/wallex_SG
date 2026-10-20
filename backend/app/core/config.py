@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 """تنظیمات مرکزی برنامه — خواندن از .env در ریشه پروژه."""
 
 from functools import lru_cache
@@ -14,6 +16,8 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
+    RESEND_API_KEY: str | None = None
+    EMAIL_FROM: str = "noreply@sarvbots.ir"
     """تنظیمات برنامه با اعتبارسنجی خودکار."""
 
     model_config = SettingsConfigDict(

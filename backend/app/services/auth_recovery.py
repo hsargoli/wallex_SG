@@ -8,9 +8,9 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.db.repositories.user_repo import UserRepository
 from app.infrastructure.db.repositories.auth_token_repo import AuthTokenRepository
-from app.infrastructure.email.mock_sender import MockEmailSender
 from app.domain.entities.auth_token import AuthToken
 from app.core.config import get_settings
+from app.infrastructure.email import get_email_sender
 
 log = structlog.get_logger("auth.recovery")
 
@@ -48,7 +48,7 @@ async def request_password_reset(session: AsyncSession, email: str) -> None:
     settings = get_settings()
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={raw_token}"
     
-    email_sender = MockEmailSender() # بعداً بر اساس ENV به Resend سوییچ می‌شود
+    email_sender = get_email_sender()
     await email_sender.send(
         to=user.email,
         subject="بازیابی رمز عبور | SarvBots",
@@ -115,7 +115,7 @@ async def request_email_verification(session: AsyncSession, email: str) -> None:
     settings = get_settings()
     verify_link = f"{settings.FRONTEND_URL}/verify-email?token={raw_token}"
     
-    email_sender = MockEmailSender()
+    email_sender = get_email_sender()
     await email_sender.send(
         to=user.email,
         subject="تایید ایمیل | SarvBots",

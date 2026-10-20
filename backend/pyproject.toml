@@ -35,6 +35,7 @@ dependencies = [
     "pyjwt>=2.8.0",
     "bcrypt>=4.1.0",
     "cryptography>=50.0.2",
+    "resend>=2.50.0",
 ]
 
 [dependency-groups]
