@@ -1010,10 +1010,10 @@ export const api = {
       .then((r) => r.data),
 
   // ---------- Wallex connection (phase 17.8) ----------
-  connectWallex: (token: string) =>
-    client.post("/v1/user/wallex/connect", { token }).then((r) => r.data),
-    connectTradeWallex: (token: string) =>
-      client.post("/v1/user/wallex/connect-trade", { trade_token: token }).then((r) => r.data),
+  connectWallex: (token: string, password: string) =>
+    client.post("/v1/user/wallex/connect", { token, password }).then((r) => r.data),
+    connectTradeWallex: (token: string, password: string) =>
+      client.post("/v1/user/wallex/connect-trade", { trade_token: token, password }).then((r) => r.data),
     disconnectTradeWallex: () =>
       client.delete("/v1/user/wallex/disconnect-trade").then((r) => r.data),
 
@@ -1025,6 +1025,9 @@ export const api = {
 
   getWallexPnl: () =>
     client.get("/v1/user/wallex/pnl").then((r) => r.data),
+
+  changePassword: (old_password: string, new_password: string) =>
+    client.post("/v1/auth/change-password", { old_password, new_password }).then((r) => r.data),
 };
 
 // --- Simulation API ---

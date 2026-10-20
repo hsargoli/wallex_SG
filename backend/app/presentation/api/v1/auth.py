@@ -103,6 +103,7 @@ def _auth_error_to_http(e: AuthError) -> HTTPException:
 
 async def require_user_token(
     authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    session: AsyncSession = Depends(get_session),
 ) -> dict:
     """گرفتن و اعتبارسنجی JWT از header Authorization.
 
@@ -128,6 +129,20 @@ async def require_user_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "invalid_token", "message": f"توکن نامعتبر: {e}"},
         ) from e
+
+    
+    # ── Session Invalidation (token_version check) ──
+    from app.infrastructure.db.models.user import User
+    import uuid as _uuid
+    try:
+        _uid = _uuid.UUID(payload.get("sub", ""))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(status_code=401, detail="توکن نامعتبر")
+    _u = await session.get(User, _uid)
+    if not _u:
+        raise HTTPException(status_code=401, detail="کاربر پیدا نشد")
+    if payload.get("token_version", 1) != _u.token_version:
+        raise HTTPException(status_code=401, detail="توکن منقضی شده. لطفاً دوباره وارد شوید.")
 
     return payload
 
@@ -307,7 +322,7 @@ async def change_password(
     new_hash = bcrypt.hashpw(payload.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # ۵. آپدیت دیتابیس
-    stmt = update(User).where(User.id == user_id).values(password_hash=new_hash)
+    stmt = update(User).where(User.id == user_id).values(password_hash=new_hash, token_version=User.token_version + 1)
     await session.execute(stmt)
     await session.commit()
     

@@ -1207,7 +1207,7 @@ export function useWallexPnl() {
 export function useConnectWallex() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (token: string) => api.connectWallex(token),
+    mutationFn: ({ token, password }: { token: string; password: string }) => api.connectWallex(token, password),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wallex-status"] });
       toast.success("اتصال به والکس برقرار شد");
@@ -1221,7 +1221,7 @@ export function useConnectWallex() {
 export function useConnectTradeWallex() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (token: string) => api.connectTradeWallex(token),
+    mutationFn: ({ token, password }: { token: string; password: string }) => api.connectTradeWallex(token, password),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallex-status"] });
     },
