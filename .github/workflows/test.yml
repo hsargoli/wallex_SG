@@ -43,6 +43,7 @@ jobs:
       JWT_EXPIRE_DAYS: "7"
       BCRYPT_COST: "4"
       REGISTER_IP_LIMIT_HOURS: "24"
+      WALLEX_API_KEY: "dummy-wallex-api-key-for-ci"
     steps:
       - uses: actions/checkout@v4
 
