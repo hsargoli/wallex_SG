@@ -1,9 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 
 export function TiltCard({ children, className = "" }: { children: React.ReactNode, className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [isReduced, setIsReduced] = useState(false);
+  useEffect(() => { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setIsReduced(true); }, []);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -32,7 +35,7 @@ export function TiltCard({ children, className = "" }: { children: React.ReactNo
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`transition-transform duration-200 ease-out ${className}`}
-      style={{
+      style={isReduced ? {} : {
         transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)`,
         transformStyle: "preserve-3d",
       }}

@@ -2,7 +2,8 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from app.domain.exceptions import ExchangeAuthError
 
 from app.application.use_cases.get_balances import GetBalancesUseCase
 from app.application.use_cases.get_cost_basis import GetCostBasisUseCase

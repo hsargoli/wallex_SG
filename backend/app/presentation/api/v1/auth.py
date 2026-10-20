@@ -49,6 +49,11 @@ class ResetPasswordRequest(BaseModel):
 class VerifyEmailRequest(BaseModel):
     token: str
 
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
 class AuthResponse(BaseModel):
     user_token: str
     user_id: str
@@ -265,3 +270,45 @@ async def verify_email_token(
     if not success:
         raise HTTPException(status_code=400, detail="توکن نامعتبر یا منقضی شده است.")
     return {"message": "ایمیل با موفقیت تایید شد."}
+
+@router.post("/change-password")
+async def change_password(
+    payload: ChangePasswordRequest,
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+):
+    """تغییر رمز عبور برای کاربر لاگین‌شده."""
+    import bcrypt
+    from app.infrastructure.db.repositories.user_repo import UserRepository
+    from app.infrastructure.db.models.user import User
+    from sqlalchemy import update
+    import uuid
+
+    user_id = uuid.UUID(user["sub"])
+    repo = UserRepository(session)
+    db_user = await repo.get_by_id(user_id)
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
+
+    # ۱. چک کردن رمز قدیمی
+    if not bcrypt.checkpw(payload.old_password.encode('utf-8'), db_user.password_hash.encode('utf-8')):
+        raise HTTPException(status_code=400, detail="رمز عبور فعلی اشتباه است")
+    
+    # ۲. جلوگیری از تکرار رمز
+    if payload.old_password == payload.new_password:
+        raise HTTPException(status_code=400, detail="رمز عبور جدید نباید با رمز فعلی یکسان باشد")
+
+    # ۳. چک قدرت رمز
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="رمز عبور جدید باید حداقل ۸ کاراکتر باشد")
+
+    # ۴. هش کردن رمز جدید
+    new_hash = bcrypt.hashpw(payload.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    # ۵. آپدیت دیتابیس
+    stmt = update(User).where(User.id == user_id).values(password_hash=new_hash)
+    await session.execute(stmt)
+    await session.commit()
+    
+    return {"message": "رمز عبور با موفقیت تغییر یافت"}
