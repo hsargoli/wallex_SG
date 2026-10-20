@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.session import get_session
+from app.infrastructure.db.models.user import User
 from app.presentation.api.v1.auth import require_user_token
 from app.services.wallex import (
     WallexError,
@@ -31,6 +32,12 @@ router = APIRouter(prefix="/user/wallex", tags=["Wallex"])
 
 class ConnectRequest(BaseModel):
     token: str = Field(..., min_length=10, max_length=500)
+    password: str = Field(..., min_length=1)
+
+
+class ConnectTradeRequest(BaseModel):
+    trade_token: str = Field(..., min_length=10, max_length=500)
+    password: str = Field(..., min_length=1)
 
 
 def _get_user_uuid(user: dict) -> uuid.UUID:
@@ -58,6 +65,10 @@ async def connect(
 ) -> dict:
     """اتصال حساب والکس با توکن View."""
     user_id = _get_user_uuid(user)
+    db_user = await session.get(User, user_id)
+    import bcrypt
+    if not db_user or not bcrypt.checkpw(payload.password.encode("utf-8"), db_user.password_hash.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
     try:
         result = await connect_token(session, user_id, payload.token)
     except WallexError as e:
@@ -74,15 +85,19 @@ async def connect(
 
 @router.post("/connect-trade")
 async def connect_trade(
-    payload: ConnectRequest,
+    payload: ConnectTradeRequest,
     user: Annotated[dict, Depends(require_user_token)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict:
     """اتصال توکن معاملات والکس."""
     user_id = _get_user_uuid(user)
+    db_user = await session.get(User, user_id)
+    import bcrypt
+    if not db_user or not bcrypt.checkpw(payload.password.encode("utf-8"), db_user.password_hash.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
     try:
         from app.services.wallex.service import connect_trade_token
-        result = await connect_trade_token(session, user_id, payload.token)
+        result = await connect_trade_token(session, user_id, payload.trade_token)
     except WallexError as e:
         log.info("wallex.connect_trade_failed", user_id=str(user_id)[:8], code=e.code)
         raise _to_http(e) from e
@@ -96,6 +111,7 @@ async def disconnect(
     """قطع اتصال از والکس."""
     user_id = _get_user_uuid(user)
     try:
+        log.info("wallex.disconnect", user_id=str(user_id)[:8])
         await disconnect_token(session, user_id)
     except WallexError as e:
         raise _to_http(e) from e
