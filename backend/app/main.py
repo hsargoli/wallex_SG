@@ -110,6 +110,8 @@ app.add_middleware(
         # local dev
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:3020",
+        "http://127.0.0.1:3020",
     ],
     allow_credentials=False,   # ما cookie نداریم، فقط header
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],

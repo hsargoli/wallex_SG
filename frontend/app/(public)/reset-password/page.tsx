@@ -29,7 +29,10 @@ function ResetPasswordForm() {
         toast.success("رمز عبور با موفقیت تغییر کرد.");
         setTimeout(() => router.push("/login"), 2000);
       },
-      onError: () => toast.error("توکن نامعتبر یا منقضی شده است."),
+      onError: (err: any) => {
+        const msg = err?.response?.data?.detail || err?.response?.data?.message || "توکن نامعتبر یا منقضی شده است.";
+        toast.error(typeof msg === "string" ? msg : JSON.stringify(msg));
+      },
     });
   };
 
