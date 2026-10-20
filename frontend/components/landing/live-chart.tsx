@@ -91,6 +91,9 @@ const IconOf = ({ kind, className }: { kind: SymConf["icon"]; className?: string
     : <Diamond className={className} />;
 
 export function LiveChart({ className }: { className?: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [sym, setSym] = useState<SymKey>("MATMN");
   const conf = SYMBOLS[sym];
 
@@ -112,7 +115,8 @@ export function LiveChart({ className }: { className?: string }) {
       tick++;
       setCandles(prev => [...prev.slice(1), candleAt(tick, conf.seedPhase)]);
     }, 1800);
-    return () => clearInterval(t);
+  // جلوگیری از خطای Hydration در SSR
+return () => clearInterval(t);
   }, [conf.seedPhase]);
 
   useEffect(() => {
@@ -148,6 +152,8 @@ export function LiveChart({ className }: { className?: string }) {
   }, [candles]);
 
   const areaPath = `${trendPath} L ${START_X + (candles.length - 1) * SPACING + W / 2} ${BOTTOM} L ${START_X + W / 2} ${BOTTOM} Z`;
+
+  if (!mounted) return <div className="h-[400px] w-full animate-pulse bg-muted/20 rounded-xl" />;
 
   return (
     <div ref={wrapRef} className="relative select-none">
