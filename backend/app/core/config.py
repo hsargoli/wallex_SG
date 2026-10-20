@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     WALLEX_WS_URL: str = "wss://api.wallex.ir/ws"
     WALLEX_API_KEY: str = Field(..., min_length=10)
     ANALYSIS_CLASSIFIER: str = Field(default="rule_based")
-    WALLEX_TIMEOUT_SECONDS: int = Field(default=10, ge=1, le=60)
+    WALLEX_TIMEOUT_SECONDS: int = Field(default=4, ge=1, le=60)
     WALLEX_MAX_CONNECTIONS: int = Field(default=20, ge=1, le=100)
 
     # --- Wallex Token Encryption (phase 17.8) ---

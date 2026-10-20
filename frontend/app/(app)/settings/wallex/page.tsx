@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Shield, AlertTriangle, ExternalLink, Key } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Shield, AlertTriangle, ExternalLink, Key, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -117,7 +117,7 @@ export default function WallexSettingsPage() {
               </div>
             </div>
             <Button onClick={handleConnect} disabled={!token.trim() || connectMut.isPending} className="w-full gap-2 bg-violet-600 hover:bg-violet-500">
-              {connectMut.isPending ? "در حال اعتبارسنجی..." : "اتصال و اعتبارسنجی"}
+              {connectMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "اتصال و اعتبارسنجی"}
             </Button>
           </CardContent>
         </Card>
@@ -187,7 +187,7 @@ export default function WallexSettingsPage() {
                 </div>
               </div>
               <Button onClick={handleConnectTrade} disabled={!tradeToken.trim() || connectTradeMut.isPending} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500">
-                {connectTradeMut.isPending ? "در حال اعتبارسنجی..." : "ذخیره توکن معاملات"}
+                {connectTradeMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "ذخیره توکن معاملات"}
               </Button>
             </>
           )}

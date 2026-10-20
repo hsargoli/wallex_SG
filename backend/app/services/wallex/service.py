@@ -86,8 +86,12 @@ async def connect_token(
     # ── اعتبارسنجی: با توکن کاربر، موجودی‌ها رو بگیر ──
     settings = get_settings()
     exchange = WallexExchange.create(settings, api_key=plaintext_token)
+    import time
+    _start_time = time.time()
     try:
         balances = await exchange.get_balances()
+        _elapsed = time.time() - _start_time
+        log.info("wallex.connect_balances_success", elapsed_seconds=round(_elapsed, 2))
     except ExchangeAuthError as e:
         log.info("wallex.connect_invalid_token", user_id=str(user_id)[:8])
         raise WallexError(
