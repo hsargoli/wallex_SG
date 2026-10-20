@@ -14,7 +14,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import decode_user_token
-from app.core.rate_limit import limiter, LOGIN_LIMIT, FORGOT_PASSWORD_LIMIT
+from app.core.rate_limit import (
+    limiter, LOGIN_LIMIT, FORGOT_PASSWORD_LIMIT,
+    REGISTER_LIMIT, RESET_PASSWORD_LIMIT,
+)
 from app.services.auth_recovery import request_password_reset, reset_password, request_email_verification, verify_email
 from app.infrastructure.db.session import get_session
 from app.services.auth import AuthError, login_user, register_user
@@ -152,8 +155,10 @@ async def require_user_token(
 # ═══════════════════════════════════════════
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
+@limiter.limit(REGISTER_LIMIT)
 async def register(
     request: Request,
+    response: Response,
     payload: RegisterRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> AuthResponse:
@@ -253,7 +258,10 @@ async def forgot_password(
     return {"message": "اگر این ایمیل در سیستم ثبت شده باشد، لینک بازیابی ارسال خواهد شد."}
 
 @router.post("/reset-password")
+@limiter.limit(RESET_PASSWORD_LIMIT)
 async def reset_pass(
+    request: Request,
+    response: Response,
     payload: ResetPasswordRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ):

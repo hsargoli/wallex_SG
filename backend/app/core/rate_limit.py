@@ -24,3 +24,9 @@ LIST_ORDERS_LIMIT = "30/minute"      # لیست سفارش‌ها
 
 LOGIN_LIMIT = "5/minute"          # تلاش برای ورود
 FORGOT_PASSWORD_LIMIT = "3/minute" # درخواست فراموشی رمز
+
+# ---------- Fix #3 (2026-10-20) — endpointهای حساس ----------
+REGISTER_LIMIT = "3/hour"            # ثبت‌نام — اسپم
+RESET_PASSWORD_LIMIT = "5/hour"      # ریست رمز — اسپم
+CONNECT_LIMIT = "5/hour"             # اتصال والکس — brute-force
+CONNECT_TRADE_LIMIT = "5/hour"       # اتصال توکن معاملات

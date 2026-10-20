@@ -10,7 +10,7 @@ import uuid
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +25,7 @@ from app.services.wallex import (
     disconnect_trade_token,
     get_status,
 )
+from app.core.rate_limit import limiter, CONNECT_LIMIT, CONNECT_TRADE_LIMIT
 
 log = structlog.get_logger("wallex.api")
 router = APIRouter(prefix="/user/wallex", tags=["Wallex"])
@@ -58,7 +59,10 @@ def _to_http(e: WallexError) -> HTTPException:
 
 
 @router.post("/connect")
+@limiter.limit(CONNECT_LIMIT)
 async def connect(
+    request: Request,
+    response: Response,
     payload: ConnectRequest,
     user: Annotated[dict, Depends(require_user_token)],
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -84,7 +88,10 @@ async def connect(
 
 
 @router.post("/connect-trade")
+@limiter.limit(CONNECT_TRADE_LIMIT)
 async def connect_trade(
+    request: Request,
+    response: Response,
     payload: ConnectTradeRequest,
     user: Annotated[dict, Depends(require_user_token)],
     session: Annotated[AsyncSession, Depends(get_session)],
