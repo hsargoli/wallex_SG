@@ -79,6 +79,7 @@ async def reset_password(session: AsyncSession, raw_token: str, new_password: st
     import bcrypt
     new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     user.password_hash = new_hash
+    user.token_version = user.token_version + 1  # invalidate all existing JWTs
     await session.commit()
 
     # پاک کردن توکن

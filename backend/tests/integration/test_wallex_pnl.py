@@ -47,10 +47,12 @@ async def test_user_and_token():
     email = f"pnl-{user_id.hex[:8]}@example.local"
 
     async with SessionLocal() as session:
+        import bcrypt as _bcrypt
+        real_hash = _bcrypt.hashpw(b"TestPass123!@#", _bcrypt.gensalt()).decode("utf-8")
         user = User(
             id=user_id,
             email=email,
-            password_hash="test-hash-not-real",
+            password_hash=real_hash,
         )
         session.add(user)
         await session.commit()
@@ -160,7 +162,7 @@ class TestPnLBasic:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-1234567890"},
+                json={"token": "valid-token-1234567890", "password": "TestPass123!@#"},
             )
 
         # حالا pnl
@@ -192,7 +194,7 @@ class TestPnLBasic:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-1234567890"},
+                json={"token": "valid-token-1234567890", "password": "TestPass123!@#"},
             )
 
         # pnl
@@ -234,7 +236,7 @@ class TestPnLFIFO:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-1234567890"},
+                json={"token": "valid-token-1234567890", "password": "TestPass123!@#"},
             )
 
         orders = [
@@ -272,7 +274,7 @@ class TestPnLUnknownHistory:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-1234567890"},
+                json={"token": "valid-token-1234567890", "password": "TestPass123!@#"},
             )
 
         # balance داره ولی orders خالی
@@ -309,7 +311,7 @@ class TestPnLErrors:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-1234567890"},
+                json={"token": "valid-token-1234567890", "password": "TestPass123!@#"},
             )
 
         # pnl با auth error

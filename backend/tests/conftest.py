@@ -38,3 +38,21 @@ def client():
     """
     with TestClient(app) as c:
         yield c
+
+# ═══════════════════════════════════════════════════════════════
+# Rate limiter reset — جلوگیری از 429 در تست‌های متوالی
+# (CONNECT_LIMIT=5/hour، تست‌ها ۱۴ بار /connect می‌زنن)
+# ═══════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(autouse=True)
+def _reset_limiter_between_tests():
+    """Reset slowapi in-memory storage before each test."""
+    from app.core.rate_limit import limiter
+    storage = getattr(limiter, "_storage", None)
+    if storage is not None and hasattr(storage, "storage"):
+        try:
+            storage.storage.clear()
+        except Exception:
+            pass
+    yield

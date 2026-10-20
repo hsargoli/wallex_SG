@@ -41,11 +41,14 @@ async def test_user_and_token():
     user_id = uuid.uuid4()
     email = f"wallex-{user_id.hex[:8]}@example.local"
 
+    import bcrypt as _bcrypt
+    real_hash = _bcrypt.hashpw(b"TestPass123!@#", _bcrypt.gensalt()).decode("utf-8")
+
     async with SessionLocal() as session:
         user = User(
             id=user_id,
             email=email,
-            password_hash="test-hash-not-real",
+            password_hash=real_hash,
         )
         session.add(user)
         await session.commit()
@@ -131,7 +134,7 @@ class TestConnect:
             r = await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-wallex-token-12345"},
+                json={"token": "valid-wallex-token-12345", "password": "TestPass123!@#"},
             )
         assert r.status_code == 200, r.text
         d = r.json()
@@ -152,7 +155,7 @@ class TestConnect:
             r = await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "invalid-token-123456"},
+                json={"token": "invalid-token-123456", "password": "TestPass123!@#"},
             )
         assert r.status_code == 400
         assert r.json()["detail"]["code"] == "invalid_token"
@@ -164,7 +167,7 @@ class TestConnect:
         r = await client.post(
             "/v1/user/wallex/connect",
             headers=auth_headers(test_user_and_token["token"]),
-            json={"token": "short"},
+            json={"token": "short", "password": "TestPass123!@#"},
         )
         assert r.status_code == 422
 
@@ -183,7 +186,7 @@ class TestConnect:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-12345"},
+                json={"token": "valid-token-12345", "password": "TestPass123!@#"},
             )
             r = await client.get(
                 "/v1/user/wallex/status",
@@ -222,7 +225,7 @@ class TestDisconnect:
             await client.post(
                 "/v1/user/wallex/connect",
                 headers=auth_headers(test_user_and_token["token"]),
-                json={"token": "valid-token-12345"},
+                json={"token": "valid-token-12345", "password": "TestPass123!@#"},
             )
 
         r = await client.delete(
@@ -238,3 +241,80 @@ class TestDisconnect:
             headers=auth_headers(test_user_and_token["token"]),
         )
         assert r2.json()["connected"] is False
+
+
+# ═══════════════════════════════════════════════════════════════
+# Fix #3.5 — Password confirmation regression tests
+# ═══════════════════════════════════════════════════════════════
+
+class TestPasswordConfirmation:
+    """Regression: password required on /connect and /connect-trade."""
+
+    async def test_connect_without_password_422(self, client, test_user_and_token) -> None:
+        r = await client.post(
+            "/v1/user/wallex/connect",
+            headers=auth_headers(test_user_and_token["token"]),
+            json={"token": "valid-token-12345"},
+        )
+        assert r.status_code == 422, r.text
+        assert "password" in str(r.json()).lower()
+
+    async def test_connect_wrong_password_401(self, client, test_user_and_token) -> None:
+        r = await client.post(
+            "/v1/user/wallex/connect",
+            headers=auth_headers(test_user_and_token["token"]),
+            json={"token": "valid-token-12345", "password": "WrongPassword!@#"},
+        )
+        assert r.status_code == 401, r.text
+        assert "رمز" in r.text or "password" in r.text.lower()
+
+    async def test_connect_correct_password_200(self, client, test_user_and_token) -> None:
+        mock_ex = make_mock_exchange(balances=[make_balance("TMN", "100")])
+        with patch(
+            "app.services.wallex.service.WallexExchange.create",
+            return_value=mock_ex,
+        ):
+            r = await client.post(
+                "/v1/user/wallex/connect",
+                headers=auth_headers(test_user_and_token["token"]),
+                json={"token": "valid-token-12345", "password": "TestPass123!@#"},
+            )
+        assert r.status_code == 200, r.text
+
+    async def test_connect_trade_without_password_422(self, client, test_user_and_token) -> None:
+        r = await client.post(
+            "/v1/user/wallex/connect-trade",
+            headers=auth_headers(test_user_and_token["token"]),
+            json={"trade_token": "valid-trade-token-12345"},
+        )
+        assert r.status_code == 422, r.text
+        assert "password" in str(r.json()).lower()
+
+    async def test_connect_trade_wrong_password_401(self, client, test_user_and_token) -> None:
+        r = await client.post(
+            "/v1/user/wallex/connect-trade",
+            headers=auth_headers(test_user_and_token["token"]),
+            json={"trade_token": "valid-trade-token-12345", "password": "WrongPassword!@#"},
+        )
+        assert r.status_code == 401, r.text
+        assert "رمز" in r.text or "password" in r.text.lower()
+
+    async def test_connect_trade_correct_password_not_401(self, client, test_user_and_token) -> None:
+        # فقط تأیید که password check رد نمی‌شه (ممکنه mock نبودن → 400 یا 500 بده)
+        mock_ex = make_mock_exchange(balances=[])
+        # connect_trade_token انتظار result.to_dict() داره → MagicMock با to_dict
+        fake_result = MagicMock()
+        fake_result.to_dict.return_value = {"connected": True, "trade_connected": True}
+        with patch(
+            "app.services.wallex.service.WallexExchange.create",
+            return_value=mock_ex,
+        ), patch(
+            "app.services.wallex.service.connect_trade_token",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            r = await client.post(
+                "/v1/user/wallex/connect-trade",
+                headers=auth_headers(test_user_and_token["token"]),
+                json={"trade_token": "valid-trade-token-12345", "password": "TestPass123!@#"},
+            )
+        assert r.status_code != 401, f"Correct password should not 401: {r.text[:200]}"

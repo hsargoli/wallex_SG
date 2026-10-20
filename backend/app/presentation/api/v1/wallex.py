@@ -11,6 +11,7 @@ from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from app.core.auth import verify_password
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -70,8 +71,7 @@ async def connect(
     """اتصال حساب والکس با توکن View."""
     user_id = _get_user_uuid(user)
     db_user = await session.get(User, user_id)
-    import bcrypt
-    if not db_user or not bcrypt.checkpw(payload.password.encode("utf-8"), db_user.password_hash.encode("utf-8")):
+    if not db_user or not verify_password(payload.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
     try:
         result = await connect_token(session, user_id, payload.token)
@@ -99,8 +99,7 @@ async def connect_trade(
     """اتصال توکن معاملات والکس."""
     user_id = _get_user_uuid(user)
     db_user = await session.get(User, user_id)
-    import bcrypt
-    if not db_user or not bcrypt.checkpw(payload.password.encode("utf-8"), db_user.password_hash.encode("utf-8")):
+    if not db_user or not verify_password(payload.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
     try:
         from app.services.wallex.service import connect_trade_token
