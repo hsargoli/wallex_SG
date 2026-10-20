@@ -30,10 +30,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // در صفحه تنظیمات یا شکارچی خرس، نیازی به ریدایرکت نیست
     if (pathname === "/settings/wallex" || pathname === "/bear-hunter") return;
 
-    // اگر قطعی disconnected بود، ریدایرکت کن
-    if (!isLoading && data && data.connected === false) {
-      router.replace("/settings/wallex");
-    }
   }, [mounted, pathname, data, isLoading, router]);
 
   const spinner = (
@@ -51,8 +47,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !data) return spinner;
   
-  // فقط اگر دیتا داریم و قطعی disconnected هستیم، اسپینر نگه دار (چون در حال ریدایرکت هستیم)
-  if (data.connected === false) return spinner;
 
   return <AppShell>{children}</AppShell>;
 }
