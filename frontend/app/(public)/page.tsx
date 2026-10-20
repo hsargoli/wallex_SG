@@ -7,6 +7,7 @@ import { LiveChart } from "@/components/landing/live-chart";
 import { BackgroundFX } from "@/components/landing/background-fx";
 import { TickerTape } from "@/components/landing/ticker-tape";
 import { SarvLogo } from "@/components/landing/sarv-logo";
+import { LandingAuthButton } from "@/components/landing/landing-auth-button";
 import { TiltCard } from "@/components/landing/tilt-card";
 
 const FEATURES = [
@@ -49,12 +50,7 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button asChild size="lg" className="btn-glow gap-2 bg-violet-600 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-500 hover:shadow-[0_15px_50px_-10px_rgba(139,92,246,0.8)]">
-                  <Link href="/login">
-                    ورود / ثبت‌نام
-                    <ArrowLeft className="h-4 w-4" />
-                  </Link>
-                </Button>
+                <LandingAuthButton />
                 <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-600/10 hover:shadow-[0_10px_40px_-10px_rgba(139,92,246,0.5)]">
                   <Link href="/guest">ورود مهمان (Guest Trade)</Link>
                 </Button>
@@ -105,12 +101,7 @@ export default function LandingPage() {
             بدون ثبت‌نام، محیط دمو را ببین. هر وقت خواستی، وارد داشبورد شو.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg" className="btn-glow gap-2 bg-violet-600 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-500 hover:shadow-[0_15px_50px_-10px_rgba(139,92,246,0.8)]">
-              <Link href="/login">
-                ورود / ثبت‌نام
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
+            <LandingAuthButton />
             <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-600/10 hover:shadow-[0_10px_40px_-10px_rgba(139,92,246,0.5)]">
               <Link href="/guest">ورود مهمان (Guest Trade)</Link>
             </Button>
