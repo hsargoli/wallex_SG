@@ -13,5 +13,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/settings/:path*", "/dashboard"],
+  matcher: []  // Disabled: conflicts with localStorage auth in layout.tsx,
 };
