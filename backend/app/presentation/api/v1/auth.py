@@ -17,7 +17,7 @@ from app.core.auth import decode_user_token
 from app.core.rate_limit import (
     limiter, LOGIN_LIMIT, FORGOT_PASSWORD_LIMIT,
     REGISTER_LIMIT, RESET_PASSWORD_LIMIT, LOGOUT_ALL_LIMIT,
-    CHANGE_PASSWORD_LIMIT,
+    CHANGE_PASSWORD_LIMIT, get_user_and_ip,
 )
 from app.services.auth_recovery import request_password_reset, reset_password, request_email_verification, verify_email
 from app.infrastructure.db.session import get_session
@@ -243,7 +243,7 @@ async def logout() -> None:
 
 
 @router.post("/logout-all")
-@limiter.limit(LOGOUT_ALL_LIMIT)
+@limiter.limit(LOGOUT_ALL_LIMIT, key_func=get_user_and_ip)
 async def logout_all(
     request: Request,
     response: Response,
@@ -319,7 +319,7 @@ async def verify_email_token(
     return {"message": "ایمیل با موفقیت تایید شد."}
 
 @router.post("/change-password")
-@limiter.limit(CHANGE_PASSWORD_LIMIT)
+@limiter.limit(CHANGE_PASSWORD_LIMIT, key_func=get_user_and_ip)
 async def change_password(
     request: Request,
     response: Response,

@@ -26,7 +26,7 @@ from app.services.wallex import (
     disconnect_trade_token,
     get_status,
 )
-from app.core.rate_limit import limiter, CONNECT_LIMIT, CONNECT_TRADE_LIMIT
+from app.core.rate_limit import limiter, CONNECT_LIMIT, CONNECT_TRADE_LIMIT, get_user_and_ip
 
 log = structlog.get_logger("wallex.api")
 router = APIRouter(prefix="/user/wallex", tags=["Wallex"])
@@ -60,7 +60,7 @@ def _to_http(e: WallexError) -> HTTPException:
 
 
 @router.post("/connect")
-@limiter.limit(CONNECT_LIMIT)
+@limiter.limit(CONNECT_LIMIT, key_func=get_user_and_ip)
 async def connect(
     request: Request,
     response: Response,
@@ -83,12 +83,17 @@ async def connect(
         )
         raise _to_http(e) from e
     await session.commit()
-    return result.to_dict()
+    
+    response_data = result.to_dict()
+    if not db_user.is_verified:
+        response_data["warning"] = "email_not_verified"
+        response_data["warning_fa"] = "ایمیل شما تأیید نشده است. لطفاً برای امنیت بیشتر ایمیل خود را تأیید کنید."
+    return response_data
 
 
 
 @router.post("/connect-trade")
-@limiter.limit(CONNECT_TRADE_LIMIT)
+@limiter.limit(CONNECT_TRADE_LIMIT, key_func=get_user_and_ip)
 async def connect_trade(
     request: Request,
     response: Response,
@@ -107,7 +112,11 @@ async def connect_trade(
     except WallexError as e:
         log.info("wallex.connect_trade_failed", user_id=str(user_id)[:8], code=e.code)
         raise _to_http(e) from e
-    return result.to_dict()
+    response_data = result.to_dict()
+    if not db_user.is_verified:
+        response_data["warning"] = "email_not_verified"
+        response_data["warning_fa"] = "ایمیل شما تأیید نشده است. لطفاً برای امنیت بیشتر ایمیل خود را تأیید کنید."
+    return response_data
 
 @router.delete("/disconnect")
 async def disconnect(

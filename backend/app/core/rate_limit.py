@@ -5,6 +5,7 @@
 """
 
 from slowapi import Limiter
+from fastapi import Request
 from slowapi.util import get_remote_address
 
 # Limiter سراسری — همه routerها از این استفاده می‌کنن
@@ -32,3 +33,30 @@ CONNECT_LIMIT = "5/hour"             # اتصال والکس — brute-force
 CONNECT_TRADE_LIMIT = "5/hour"       # اتصال توکن معاملات
 LOGOUT_ALL_LIMIT = "3/hour"   # خروج از همه دستگاه‌ها
 CHANGE_PASSWORD_LIMIT = "5/hour"   # تغییر رمز (JWT + current_password)
+def get_user_and_ip(request: Request) -> str:
+    """کلید ترکیبی user_id:ip برای Rate Limit.
+
+    چرا؟ جلوگیری از دور زدن محدودیت با تغییر IP (مهاجم با ۱۰ IP، ۱۰ برابر شانس).
+    اگر توکن معتبر نبود، از anon:ip استفاده می‌کنیم.
+    """
+    import jwt
+    from fastapi import Request
+    from app.core.auth import decode_user_token
+    from app.core.rate_limit import get_remote_address
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        try:
+            payload = decode_user_token(token)
+            user_id = payload.get("sub", "anon")
+            ip = get_remote_address(request)
+            return f"{user_id}:{ip}"
+        except jwt.InvalidTokenError:
+            pass  # توکن نامعتبر/منقضی
+        except Exception:
+            pass
+
+    # fallback برای کاربران ناشناس
+    ip = get_remote_address(request)
+    return f"anon:{ip}"
