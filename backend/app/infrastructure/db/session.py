@@ -15,9 +15,20 @@ from sqlalchemy.ext.asyncio import (
 
 load_dotenv()
 
+import sys
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL تنظیم نشده — .env رو چک کن")
+
+# محافظت از دیتابیس اصلی در زمان اجرای تست‌ها
+if "pytest" in sys.modules:
+    # جایگزینی نام دیتابیس با دیتابیس تست
+    if "/wallex_db" in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("/wallex_db", "/wallex_test_db")
+    elif "wallex_db" in DATABASE_URL:
+        DATABASE_URL = DATABASE_URL.replace("wallex_db", "wallex_test_db")
+    print("🧪 [TEST MODE] Connected to wallex_test_db")
 
 # Engine — pool settings مناسب برای FastAPI async
 engine: AsyncEngine = create_async_engine(
