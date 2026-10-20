@@ -1,7 +1,10 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi import Request
+from app.services.auth import AuthError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -68,6 +71,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ROSHD_SARV API", lifespan=lifespan)
+@app.exception_handler(AuthError)
+async def auth_error_handler(request: Request, exc: AuthError):
+    return JSONResponse(
+        status_code=401,
+        content={"detail": str(exc)},
+    )
+
 
 # ---------- Rate Limiting ----------
 app.state.limiter = limiter
