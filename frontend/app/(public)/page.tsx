@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, BarChart3, Radar, Zap, ArrowLeft, Sparkles } from "lucide-react";
+import { Bot, BarChart3, Radar, Zap, ArrowLeft, Sparkles, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ export default function LandingPage() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-600/10 hover:shadow-[0_10px_40px_-10px_rgba(139,92,246,0.5)]">
-                  <Link href="/demo">مشاهده دمو</Link>
+                  <Link href="/guest">ورود مهمان (Guest Trade)</Link>
                 </Button>
               </div>
             </div>
@@ -111,9 +111,36 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-violet-600/10 hover:shadow-[0_10px_40px_-10px_rgba(139,92,246,0.5)]">
-              <Link href="/demo">مشاهده دمو</Link>
+              <Link href="/guest">ورود مهمان (Guest Trade)</Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+
+      {/* DEMO SECTION */}
+      <section className="relative z-10 px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <Card className="group relative overflow-hidden border-violet-500/30 bg-violet-950/20 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_20px_60px_-15px_rgba(139,92,246,0.6)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardContent className="relative flex flex-col items-center gap-6 p-10 text-center">
+              <div className="rounded-2xl bg-violet-600/20 p-4 transition-transform duration-300 group-hover:scale-110">
+                <FlaskConical className="h-10 w-10 text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-l from-violet-200 to-violet-400">دموی تعاملی SarvBots</h2>
+                <p className="mt-3 text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                  بدون نیاز به ثبت‌نام و اتصال کیف پول، محیط پلتفرم را با داده‌های واقعی بازار کاوش کنید. سیگنال‌ها، اسکنر بازار، شخصیت ارزها و ربات‌ها را ببینید.
+                </p>
+              </div>
+              <Button asChild size="lg" className="mt-2 bg-violet-600 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:bg-violet-500 group-hover:shadow-[0_10px_30px_-10px_rgba(139,92,246,0.8)]">
+                <Link href="/demo">
+                  مشاهده دموی زنده
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
