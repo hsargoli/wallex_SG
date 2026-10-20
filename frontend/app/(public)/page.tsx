@@ -7,6 +7,7 @@ import { LiveChart } from "@/components/landing/live-chart";
 import { BackgroundFX } from "@/components/landing/background-fx";
 import { TickerTape } from "@/components/landing/ticker-tape";
 import { SarvLogo } from "@/components/landing/sarv-logo";
+import { TiltCard } from "@/components/landing/tilt-card";
 
 const FEATURES = [
   { icon: Bot,       title: "ربات‌های معاملاتی", desc: "استراتژی‌های هوشمند برای شرایط مختلف بازار" },
@@ -121,26 +122,50 @@ export default function LandingPage() {
       {/* DEMO SECTION */}
       <section className="relative z-10 px-6 py-16">
         <div className="mx-auto max-w-4xl">
-          <Card className="group relative overflow-hidden border-violet-500/30 bg-violet-950/20 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-[0_20px_60px_-15px_rgba(139,92,246,0.6)]">
+          <TiltCard className="group relative w-full rounded-xl border border-violet-500/30 bg-violet-950/20 hover:shadow-[0_20px_60px_-15px_rgba(139,92,246,0.6)]">
+            <Card className="border-0 bg-transparent">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardContent className="relative flex flex-col items-center gap-6 p-10 text-center">
-              <div className="rounded-2xl bg-violet-600/20 p-4 transition-transform duration-300 group-hover:scale-110">
-                <FlaskConical className="h-10 w-10 text-violet-400" />
+            <CardContent className="relative flex flex-col items-center gap-6 p-10 text-center overflow-hidden">
+              {/* هاله نورانی پشت کارت */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-600/20 via-transparent to-transparent opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+
+              {/* آیکون با هاله نور */}
+              <div className="relative rounded-2xl bg-violet-600/30 p-4 shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-transform duration-300 group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(139,92,246,0.6)] z-10">
+                <FlaskConical className="h-10 w-10 text-violet-300" />
               </div>
-              <div>
-                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-l from-violet-200 to-violet-400">دموی تعاملی SarvBots</h2>
+
+              {/* عنوان با افکت درخشش */}
+              <div className="relative z-10">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5 text-violet-400 animate-pulse" />
+                  <h2 className="text-3xl font-extrabold text-white drop-shadow-[0_0_15px_rgba(139,92,246,0.8)]">
+                    دموی تعاملی SarvBots
+                  </h2>
+                  <Sparkles className="h-5 w-5 text-violet-400 animate-pulse" />
+                </div>
                 <p className="mt-3 text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                  بدون نیاز به ثبت‌نام و اتصال کیف پول، محیط پلتفرم را با داده‌های واقعی بازار کاوش کنید. سیگنال‌ها، اسکنر بازار، شخصیت ارزها و ربات‌ها را ببینید.
+                  محیط این پلتفرم را نگاهی بیندازید و ببینید این پلتفرم چه ویژگی‌هایی دارد.
                 </p>
+                
+                {/* لیست قابلیت‌های قابل مشاهده در دمو (CTA) */}
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-200">⚡ سیگنال‌های زنده</Badge>
+                  <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-200">🔍 اسکنر بازار</Badge>
+                  <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-200">🧠 شخصیت ارزها</Badge>
+                  <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-200">🤖 ربات‌های معاملاتی</Badge>
+                </div>
               </div>
-              <Button asChild size="lg" className="mt-2 bg-violet-600 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:bg-violet-500 group-hover:shadow-[0_10px_30px_-10px_rgba(139,92,246,0.8)]">
+
+              {/* دکمه با گرادیان و درخشش */}
+              <Button asChild size="lg" className="relative z-10 mt-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_10px_40px_-10px_rgba(192,38,211,0.8)] border border-violet-400/50">
                 <Link href="/demo">
                   مشاهده دموی زنده
-                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  <ArrowLeft className="h-5 w-5 mr-2 animate-bounce-x" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
+          </TiltCard>
         </div>
       </section>
 
