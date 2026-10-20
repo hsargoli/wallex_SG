@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import decode_user_token
 from app.core.rate_limit import (
     limiter, LOGIN_LIMIT, FORGOT_PASSWORD_LIMIT,
-    REGISTER_LIMIT, RESET_PASSWORD_LIMIT,
+    REGISTER_LIMIT, RESET_PASSWORD_LIMIT, LOGOUT_ALL_LIMIT,
 )
 from app.services.auth_recovery import request_password_reset, reset_password, request_email_verification, verify_email
 from app.infrastructure.db.session import get_session
@@ -239,6 +239,29 @@ async def me(
 async def logout() -> None:
     """Logout — JWT stateless، فقط client باید token رو پاک کنه."""
     return None
+
+
+@router.post("/logout-all")
+@limiter.limit(LOGOUT_ALL_LIMIT)
+async def logout_all(
+    request: Request,
+    response: Response,
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """خروج از همه دستگاه‌ها — با increment کردن token_version، همه JWTهای قبلی باطل می‌شوند."""
+    import uuid
+    from sqlalchemy import update
+    from app.infrastructure.db.models.user import User
+
+    user_id = uuid.UUID(user["sub"])
+    stmt = update(User).where(User.id == user_id).values(
+        token_version=User.token_version + 1
+    )
+    await session.execute(stmt)
+    await session.commit()
+    log.info("auth.logout_all", user_id=str(user_id)[:8])
+    return {"status": "logged_out_all", "message": "همه دستگاه‌ها خارج شدند"}
 
 
 # ═══════════════════════════════════════════

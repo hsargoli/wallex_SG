@@ -30,3 +30,4 @@ REGISTER_LIMIT = "3/hour"            # ثبت‌نام — اسپم
 RESET_PASSWORD_LIMIT = "5/hour"      # ریست رمز — اسپم
 CONNECT_LIMIT = "5/hour"             # اتصال والکس — brute-force
 CONNECT_TRADE_LIMIT = "5/hour"       # اتصال توکن معاملات
+LOGOUT_ALL_LIMIT = "3/hour"   # خروج از همه دستگاه‌ها
