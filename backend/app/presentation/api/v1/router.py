@@ -6,7 +6,6 @@ from app.presentation.api.v1 import (
     specialized_backtest,
     live_bot,
     account,
-    user_wallex,
     analysis,
     auth,
     nooaah,
