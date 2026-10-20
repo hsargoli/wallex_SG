@@ -36,7 +36,7 @@ router.include_router(analysis.router)
 router.include_router(auth.router)
 router.include_router(nooaah.router)
 router.include_router(account.router)
-router.include_router(user_wallex.router)
+# router.include_router(user_wallex.router)  # REMOVED: duplicate /connect-trade, superseded by wallex.py
 router.include_router(bot.router)
 router.include_router(bots.router)
 router.include_router(profitability.router)
