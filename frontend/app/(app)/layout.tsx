@@ -41,7 +41,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!mounted) return spinner;
   if (!getUserToken()) return spinner;
 
-  if (pathname === "/settings/wallex" || pathname === "/bear-hunter") {
+  if (pathname.startsWith("/settings") || pathname === "/bear-hunter") {
     return <AppShell>{children}</AppShell>;
   }
 

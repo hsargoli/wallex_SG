@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import {LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen, Brain, TrendingDown} from "lucide-react";
+import {LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen, Brain, TrendingDown, Settings} from "lucide-react";
+import { UserBadge } from "./user-badge";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
 import { useSidebar } from "./sidebar-provider";
@@ -232,7 +233,8 @@ export function Sidebar() {
             <ThemeSwitcher />
           </div>
         </div>
-      </aside>
+        <div className="mt-auto p-4 border-t border-border/50"><UserBadge /></div>
+  </aside>
     </>
   );
 }

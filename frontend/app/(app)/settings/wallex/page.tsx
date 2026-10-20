@@ -33,6 +33,7 @@ export default function WallexSettingsPage() {
   const [showToken, setShowToken] = useState(false);
   const [tradeToken, setTradeToken] = useState("");
   const [showTradeToken, setShowTradeToken] = useState(false);
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -55,7 +56,7 @@ export default function WallexSettingsPage() {
 
   const handleConnect = () => {
     if (!token.trim()) return;
-    connectMut.mutate(token.trim(), { onSuccess: () => setToken("") });
+    connectMut.mutate({ token: token.trim(), password }, { onSuccess: () => { setToken(""); setPassword(""); } });
   };
 
   const handleDisconnect = () => {
@@ -64,7 +65,7 @@ export default function WallexSettingsPage() {
 
   const handleConnectTrade = () => {
     if (!tradeToken.trim()) return;
-    connectTradeMut.mutate(tradeToken.trim(), {
+    connectTradeMut.mutate({ token: tradeToken.trim(), password }, {
       onSuccess: () => { setTradeToken(""); toast.success("توکن معاملات ذخیره شد."); },
       onError: (err: unknown) => toast.error(extractErrorMessage(err)),
     });
@@ -116,7 +117,18 @@ export default function WallexSettingsPage() {
                 <Button type="button" variant="outline" onClick={() => setShowToken(s => !s)} className="shrink-0">{showToken ? "پنهان" : "نمایش"}</Button>
               </div>
             </div>
-            <Button onClick={handleConnect} disabled={!token.trim() || connectMut.isPending} className="w-full gap-2 bg-violet-600 hover:bg-violet-500">
+                        <div className="space-y-2 mt-2">
+              <Label htmlFor="pwd-view">رمز عبور حساب کاربری</Label>
+              <Input
+                id="pwd-view"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="برای تایید هویت وارد کنید"
+                dir="ltr"
+              />
+            </div>
+            <Button onClick={handleConnect} disabled={!token.trim() || !password.trim() || connectMut.isPending} className="w-full gap-2 bg-violet-600 hover:bg-violet-500">
               {connectMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "اتصال و اعتبارسنجی"}
             </Button>
           </CardContent>
@@ -186,7 +198,18 @@ export default function WallexSettingsPage() {
                   <Button type="button" variant="outline" onClick={() => setShowTradeToken(s => !s)} className="shrink-0">{showTradeToken ? "پنهان" : "نمایش"}</Button>
                 </div>
               </div>
-              <Button onClick={handleConnectTrade} disabled={!tradeToken.trim() || connectTradeMut.isPending} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500">
+                            <div className="space-y-2 mt-2">
+                <Label htmlFor="pwd-trade">رمز عبور حساب کاربری</Label>
+                <Input
+                  id="pwd-trade"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="برای تایید هویت وارد کنید"
+                  dir="ltr"
+                />
+              </div>
+              <Button onClick={handleConnectTrade} disabled={!tradeToken.trim() || !password.trim() || connectTradeMut.isPending} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500">
                 {connectTradeMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "ذخیره توکن معاملات"}
               </Button>
             </>
