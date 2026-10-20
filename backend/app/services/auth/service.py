@@ -164,7 +164,7 @@ async def register_user(
         cleanup_guest(guest_token, merged_data.merged)
 
         # ─── JWT ───
-        token = create_user_token(str(user.id), user.email)
+        token = create_user_token(str(user.id), user.email, user.token_version)
 
         return AuthResult(
             user_token=token,
@@ -223,7 +223,7 @@ async def login_user(
     await session.commit()
 
     # ─── JWT ───
-    token = create_user_token(str(user.id), user.email)
+    token = create_user_token(str(user.id), user.email, user.token_version)
 
     return AuthResult(
         user_token=token,

@@ -48,11 +48,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 # ═══ JWT ═══
 
-def create_user_token(user_id: str, email: str) -> str:
+def create_user_token(user_id: str, email: str, token_version: int = 1) -> str:
     """ساخت JWT برای کاربر."""
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
         "sub": str(user_id),
+        "token_version": token_version,
         "email": email,
         "role": "user",
         "iat": int(now.timestamp()),
