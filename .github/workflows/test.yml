@@ -44,6 +44,7 @@ jobs:
       BCRYPT_COST: "4"
       REGISTER_IP_LIMIT_HOURS: "24"
       WALLEX_API_KEY: "dummy-wallex-api-key-for-ci"
+      WALLEX_TOKEN_ENC_KEY: "vT9R4uB6yH8nM2wS5xZ3cV7bN1lK0jI4pO8tR6eW9qY="
     steps:
       - uses: actions/checkout@v4
 
