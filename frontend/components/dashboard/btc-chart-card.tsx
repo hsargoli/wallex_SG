@@ -108,7 +108,24 @@ export function BtcChartCard() {
             </div>
             <BtcCandles candles={candles} />
             
-            </CardContent>
+            </>
+                  ) : pct < -0.5 ? (
+                    <>
+                      <strong className="text-rose-400 font-semibold">سرو خمیده:</strong> امروز باد تندی در بازار وزیده و سرو کمی خم شده است. اما به یاد داشته باش که سرو در برابر طوفان‌ها مقاوم است. اصلاح قیمت بخشی از چرخه طبیعی بازار است.
+                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: اصلاح قیمت (Pullback) فرصتی برای خرید در قیمت‌های بهتر است.</span>
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-amber-400 font-semibold">سرو آرام:</strong> بازار امروز در حال استراحت است. مثل سرو در یک روز آرام و بی‌باد، در سکوت ریشه‌های خود را محکم می‌کند. منتظر بمان و بازار را زیر نظر بگیر.
+                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: در بازار خنثی، صبر و نظاره‌گری کلید موفقیت است.</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
     </Card>
   );
 }
