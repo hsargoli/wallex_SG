@@ -135,21 +135,40 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          حساب نداری؟{" "}
-          <Link href="/register" className="font-semibold text-violet-300 hover:underline">
-            ثبت‌نام کن
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <p className="text-center text-xs text-muted-foreground">
+            حساب نداری؟{" "}
+            <Link href="/register" className="font-semibold text-violet-300 hover:underline">
+              ثبت‌نام کن
+            </Link>
+          </p>
+          <p className="text-center text-[10px] text-muted-foreground/60">
+            اگه فعلاً ثبت‌نام نمی‌خوای،{" "}
+            <Link href="/demo" className="font-medium text-violet-400/80 transition-colors hover:text-violet-300 hover:underline">
+              دموی محیط (مهمان)
+            </Link>{" "}
+            رو ببین.
+          </p>
+        </div>
       </section>
 
-      <footer className="relative z-10 border-t border-violet-500/20">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-6">
+            <footer className="relative z-10 mt-auto border-t border-violet-500/20 bg-black/40 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-8 md:flex-row">
           <div className="flex items-center gap-3">
-            <SarvLogo size={28} />
-            <p className="text-xs text-muted-foreground">SarvBots · ورود</p>
+            <SarvLogo size={32} />
+            <div>
+              <p className="text-sm font-semibold">SarvBots</p>
+              <p className="text-[10px] text-muted-foreground">رشد پایدار سبز</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 SarvBots</p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+            <Link href="/terms" className="transition-colors hover:text-violet-400">قوانین و مقررات</Link>
+            <Link href="/privacy" className="transition-colors hover:text-violet-400">حریم خصوصی</Link>
+            <Link href="/risk" className="transition-colors hover:text-violet-400">سلب مسئولیت</Link>
+          </div>
+
+          <p className="text-xs text-muted-foreground">© 2026 SarvBots · همه‌ی حقوق محفوظ است</p>
         </div>
       </footer>
     </div>

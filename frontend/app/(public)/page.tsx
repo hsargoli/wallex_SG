@@ -160,8 +160,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-violet-500/20">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-8">
+      <footer className="relative z-10 border-t border-violet-500/20 bg-black/40 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-8 md:flex-row">
           <div className="flex items-center gap-3">
             <SarvLogo size={32} />
             <div>
@@ -169,6 +169,13 @@ export default function LandingPage() {
               <p className="text-[10px] text-muted-foreground">رشد پایدار سبز</p>
             </div>
           </div>
+          
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+            <Link href="/terms" className="transition-colors hover:text-violet-400">قوانین و مقررات</Link>
+            <Link href="/privacy" className="transition-colors hover:text-violet-400">حریم خصوصی</Link>
+            <Link href="/risk" className="transition-colors hover:text-violet-400">سلب مسئولیت</Link>
+          </div>
+
           <p className="text-xs text-muted-foreground">© 2026 SarvBots · همه‌ی حقوق محفوظ است</p>
         </div>
       </footer>

@@ -202,6 +202,17 @@ export default function RegisterPage() {
           </div>
 
           {/* دکمه */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <input type="checkbox" id="terms" required className="h-4 w-4 accent-violet-500 cursor-pointer" />
+            <label htmlFor="terms" className="text-[11px] text-muted-foreground cursor-pointer select-none">
+              با{" "}
+              <Link href="/terms" className="text-violet-400 hover:underline">قوانین و مقررات</Link>{" "}
+              و{" "}
+              <Link href="/privacy" className="text-violet-400 hover:underline">حریم خصوصی</Link>{" "}
+              موافقم.
+            </label>
+          </div>
+        
           <Button
             type="submit"
             disabled={!canSubmit}
@@ -227,17 +238,18 @@ export default function RegisterPage() {
         </p>
 
         {/* امنیت پسورد */}
-        <Card className="mt-6 border-violet-500/15 bg-background/40 backdrop-blur-sm">
+        <Card className="mt-6 border-orange-500/20 bg-orange-500/5 backdrop-blur-sm">
           <CardContent className="flex items-start gap-3 p-4">
-            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />
+            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
             <div className="text-[11px] leading-relaxed text-muted-foreground">
-              <p className="mb-1 font-semibold text-violet-300">چرا پسورد قوی مهمه؟</p>
-              <p>
-                ما از bcrypt برای ذخیره‌ی پسورد استفاده می‌کنیم — حتی اگه دیتابیس ما هک شه،
-                پسوردت قابل خواندن نیست.
+              <p className="mb-1.5 font-semibold text-orange-400">هشدار امنیتی مهم</p>
+              <p className="mb-1.5 text-orange-200/80">
+                استفاده از رمزهای ساده (مثل ۱۲۳۴۵۶ یا نام خودتان) باعث می‌شود حساب شما در چند دقیقه توسط هکرها هک شود.
+                مسئولیت امنیت رمز عبور تنها بر عهده‌ی شماست و ما در قبال انتخاب رمز ضعیف هیچ مسئولیتی نمی‌پذیریم.
               </p>
-              <p className="mt-1.5">
-                پیشنهاد: یه جمله‌ی طولانی، یا از password manager استفاده کن.
+              <p>
+                ما از الگوریتم قوی bcrypt برای ذخیره‌سازی استفاده می‌کنیم، اما این فقط امنیت سرور ما را تضمین می‌کند، نه رمز ضعیف شما را.
+                پیشنهاد: از یک جمله‌ی طولانی یا Password Manager استفاده کنید.
               </p>
             </div>
           </CardContent>
@@ -255,13 +267,23 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-violet-500/20">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-6">
+            <footer className="relative z-10 mt-auto border-t border-violet-500/20 bg-black/40 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-8 md:flex-row">
           <div className="flex items-center gap-3">
-            <SarvLogo size={28} />
-            <p className="text-xs text-muted-foreground">SarvBots · ثبت‌نام</p>
+            <SarvLogo size={32} />
+            <div>
+              <p className="text-sm font-semibold">SarvBots</p>
+              <p className="text-[10px] text-muted-foreground">رشد پایدار سبز</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 SarvBots</p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+            <Link href="/terms" className="transition-colors hover:text-violet-400">قوانین و مقررات</Link>
+            <Link href="/privacy" className="transition-colors hover:text-violet-400">حریم خصوصی</Link>
+            <Link href="/risk" className="transition-colors hover:text-violet-400">سلب مسئولیت</Link>
+          </div>
+
+          <p className="text-xs text-muted-foreground">© 2026 SarvBots · همه‌ی حقوق محفوظ است</p>
         </div>
       </footer>
     </div>
