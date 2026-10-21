@@ -17,6 +17,7 @@ import {
   useDisconnectWallex,
   useConnectTradeWallex,
   useDisconnectTradeWallex,
+  useToggleTradingMode,
 } from "@/lib/queries";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api";
@@ -41,6 +42,8 @@ export default function WallexSettingsPage() {
   }, [router]);
 
   const { data, isLoading, error } = useWallexStatus();
+  const toggleTradingMut = useToggleTradingMode();
+  const [tradeModePassword, setTradeModePassword] = useState("");
   const connectMut = useConnectWallex();
   const disconnectMut = useDisconnectWallex();
   const connectTradeMut = useConnectTradeWallex();
@@ -100,8 +103,7 @@ export default function WallexSettingsPage() {
 
       {isLoading && <Card><CardContent className="py-8"><Skeleton className="h-32 w-full" /></CardContent></Card>}
       {error && <Card className="border-amber-500/30 bg-amber-500/5"><CardContent className="flex items-center gap-3 py-4 text-sm"><AlertTriangle className="h-5 w-5 text-amber-400" /> خطا در دریافت وضعیت. لطفاً صفحه رو refresh کن.</CardContent></Card>}
-
-      {/* View Token */}
+{/* View Token */}
       {!isLoading && !isViewConnected && (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Key className="h-5 w-5 text-violet-400" /> توکن View (اختیاری)</CardTitle></CardHeader>
@@ -216,6 +218,59 @@ export default function WallexSettingsPage() {
           )}
         </CardContent>
       </Card>
+
+
+      {/* Trading Mode Switch */}
+      <Card className="border-violet-500/20 bg-violet-500/5 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Shield className="h-5 w-5 text-violet-400" />
+            وضعیت معامله واقعی (Live Trading)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">فعال‌سازی معامله با پول واقعی</p>
+              <p className="text-xs text-muted-foreground">
+                {!data?.trade_connected
+                  ? "برای فعال‌سازی معامله واقعی، ابتدا باید توکن معاملاتی (Trade) خود را در بالا وارد کنید."
+                  : !data?.is_trading_enabled
+                  ? "شما توکن معاملاتی را متصل کرده‌اید. برای اینکه سفارشات شما در والکس به صورت واقعی ثبت شوند، باید این گزینه را روشن کنید."
+                  : "در حال حاضر، ربات‌ها و سفارشات دستی شما با پول واقعی در صرافی ثبت می‌شوند."}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <Input
+                type="password"
+                placeholder="رمز عبور حساب کاربری"
+                value={tradeModePassword}
+                onChange={(e) => setTradeModePassword(e.target.value)}
+                className="w-full md:w-48"
+              />
+              <Button
+                variant={data?.is_trading_enabled ? "destructive" : "default"}
+                disabled={!tradeModePassword.trim() || toggleTradingMut.isPending || (!data?.is_trading_enabled && !data?.trade_connected)}
+                onClick={() => {
+                  if (!tradeModePassword.trim()) return;
+                  toggleTradingMut.mutate({
+                    enabled: !data?.is_trading_enabled,
+                    password: tradeModePassword,
+                  });
+                }}
+              >
+                {toggleTradingMut.isPending
+                  ? "در حال اعمال..."
+                  : data?.is_trading_enabled
+                  ? "غیرفعال‌سازی"
+                  : "فعال‌سازی"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      
     </div>
   );
 }

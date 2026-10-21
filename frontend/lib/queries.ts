@@ -1155,6 +1155,7 @@ export interface WallexStatus {
   balances: WallexBalance[] | null;
   trade_connected: boolean;
   trade_connected_at: string | null;
+  is_trading_enabled: boolean;
   error?: "decrypt_failed" | "token_revoked" | "wallex_unavailable";
 }
 
@@ -1262,5 +1263,21 @@ export function useResetPassword() {
   return useMutation({
     mutationFn: (payload: { token: string; new_password: string }) =>
       api.resetPassword(payload.token, payload.new_password),
+  });
+}
+
+export function useToggleTradingMode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { enabled: boolean; password: string }) =>
+      api.toggleTradingMode(data.enabled, data.password),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallex-status"] });
+      toast.success("وضعیت معامله واقعی با موفقیت تغییر یافت.");
+    },
+    onError: (err: any) => {
+      const msg = extractErrorMessage(err);
+      toast.error(msg || "خطا در تغییر وضعیت معامله");
+    }
   });
 }

@@ -117,7 +117,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-sm font-bold tracking-tight">
-                ROSHD_SARV Bot
+                SarvBots
               </h1>
               <p className="truncate text-[10px] text-sidebar-foreground/60">
                 Micro-Scalping v0.1

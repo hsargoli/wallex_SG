@@ -37,6 +37,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     token_version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    is_trading_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # پول مجازی

@@ -27,10 +27,18 @@ from app.domain.ports.exchange import ExchangePort
 from app.domain.value_objects.order_enums import OrderSide, OrderType
 from app.presentation.api.deps import get_user_exchange
 from app.presentation.api.v1.schemas import (
+
     OrderListResponse,
     OrderResponse,
     PlaceOrderRequest,
 )
+
+import uuid
+from typing import Annotated
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.presentation.api.v1.auth import require_user_token
+from app.presentation.api.deps import get_db_session
+from app.infrastructure.db.models.user import User
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -43,15 +51,17 @@ async def trading_mode():
     return {"live_enabled": bool(getattr(Settings(), "LIVE_TRADING_ENABLED", False)), "field": "LIVE_TRADING_ENABLED"}
 
 
-def _require_live_trading(settings: Settings) -> None:
-    """چک feature flag. اگه غیرفعاله، 403."""
+def _require_live_trading(settings: Settings, db_user: User | None = None) -> None:
+    """چک feature flag و وضعیت کاربر. اگه غیرفعال باشه، 403."""
     if not settings.can_trade:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "معامله واقعی غیرفعاله. "
-                "برای فعال کردن، LIVE_TRADING_ENABLED=true در .env بگذارید."
-            ),
+            detail="معامله واقعی در سیستم غیرفعال است."
+        )
+    if not db_user or not db_user.is_trading_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="معامله واقعی برای حساب شما غیرفعال است. لطفاً از تنظیمات آن را فعال کنید."
         )
 
 
@@ -66,15 +76,18 @@ async def place_order(
     request: Request,
     payload: PlaceOrderRequest,
     response: Response,
+    user: Annotated[dict, Depends(require_user_token)],
     exchange: ExchangePort = Depends(get_user_exchange),
     settings: Settings = Depends(get_settings),
+    session: Annotated[AsyncSession, Depends(get_db_session)] = None,
 ) -> OrderResponse:
     """ثبت سفارش جدید.
 
     فقط وقتی LIVE_TRADING_ENABLED=true کار می‌کنه.
     محدودیت: ۵ درخواست در دقیقه.
     """
-    _require_live_trading(settings)
+    db_user = await session.get(User, uuid.UUID(user["sub"]))
+    _require_live_trading(settings, db_user)
 
     # client_id خودکار
     client_id = payload.client_id or f"api-{int(time.time())}-{payload.symbol[:3]}"

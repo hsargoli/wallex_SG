@@ -221,6 +221,7 @@ async def get_status(
             "connected_at": None,
             "balances": None,
             "trade_connected_at": None,
+            "is_trading_enabled": db_user.is_trading_enabled,
         }
 
     # TODO: Add unit test for Trade-only fallback (Phase 2)
@@ -245,8 +246,8 @@ async def get_status(
             "connected_at": connected_at,
             "balances": None,
             "error": "decrypt_failed",
-            "trade_connected": has_trade,
             "trade_connected_at": trade_connected_at,
+            "is_trading_enabled": db_user.is_trading_enabled,
         }
 
     # fetch balances

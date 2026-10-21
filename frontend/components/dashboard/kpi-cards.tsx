@@ -73,7 +73,7 @@ function Kpi({
               className="mt-1 inline-flex items-center gap-1 text-[10px] text-amber-500 hover:underline"
             >
               <RotateCw className="h-3 w-3" />
-              خطا در دریافت · تلاش دوباره
+              برای مشاهده، والکس را متصل کنید
             </button>
           </>
         ) : (

@@ -1010,6 +1010,9 @@ export const api = {
       .then((r) => r.data),
 
   // ---------- Wallex connection (phase 17.8) ----------
+  toggleTradingMode: (enabled: boolean, password: string) =>
+    client.post("/v1/user/wallex/trading-mode", { enabled, password }).then((r) => r.data),
+
   connectWallex: (token: string, password: string) =>
     client.post("/v1/user/wallex/connect", { token, password }).then((r) => r.data),
     connectTradeWallex: (token: string, password: string) =>

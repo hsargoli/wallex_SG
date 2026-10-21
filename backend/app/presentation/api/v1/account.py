@@ -55,8 +55,11 @@ async def get_key_assets(exchange: ExchangeDep) -> KeyBalancesResponse:
 @router.get("/portfolio", response_model=PortfolioResponse)
 async def get_portfolio(exchange: ExchangeDep) -> PortfolioResponse:
     """سبد دارایی با ارزش‌گذاری به تتر و تومان."""
-    use_case = GetPortfolioUseCase(exchange=exchange)
-    portfolio = await use_case.execute()
+    try:
+        use_case = GetPortfolioUseCase(exchange=exchange)
+        portfolio = await use_case.execute()
+    except ExchangeAuthError:
+        raise HTTPException(status_code=403, detail="توکن والکس نامعتبر است یا دسترسی ندارد. لطفاً در تنظیمات متصل شوید.")
 
     items = [
         PortfolioItemOut(

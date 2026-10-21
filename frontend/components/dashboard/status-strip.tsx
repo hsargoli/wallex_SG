@@ -2,34 +2,33 @@
 
 import Link from "next/link";
 import { Clock, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
-import { usePortfolio } from "@/lib/queries";
-import { useLiveMode } from "@/lib/hooks/use-live-mode";
+import { usePortfolio, useWallexStatus } from "@/lib/queries";
 import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function StatusStrip() {
-  const { liveOn, known, loading } = useLiveMode();
+  const { data: wallex, isLoading: wallexLoading } = useWallexStatus();
   const portfolio = usePortfolio();
   const updated = portfolio.dataUpdatedAt ? formatClock(portfolio.dataUpdatedAt / 1000) : "—";
 
-  const chip = loading ? null : !known ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-600 dark:text-amber-400">
-      <ShieldQuestion className="h-3.5 w-3.5" />
-      وضعیت معامله‌ی واقعی نامشخص
-    </span>
-  ) : liveOn ? (
+  const isTradeConnected = wallex?.trade_connected === true;
+
+  const chip = wallexLoading ? null : isTradeConnected ? (
     <Link
-      href="/order-bot"
-      className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 dark:text-red-400"
+      href="/settings/wallex"
+      className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/40 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-600 dark:text-violet-400 transition-colors hover:bg-violet-500/20"
     >
-      <ShieldAlert className="h-3.5 w-3.5" />
-      معامله‌ی واقعی فعال
+      <ShieldCheck className="h-3.5 w-3.5" />
+      توکن معاملاتی متصل است
     </Link>
   ) : (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border border-zinc-500/30 bg-zinc-500/10 px-3 py-1 text-xs text-muted-foreground")}>
-      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-      معامله‌ی واقعی غیرفعال
-    </span>
+    <Link
+      href="/settings/wallex"
+      className="inline-flex items-center gap-1.5 rounded-full border border-zinc-500/30 bg-zinc-500/10 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-zinc-500/20"
+    >
+      <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+      توکن معاملاتی متصل نیست (برای اتصال کلیک کنید)
+    </Link>
   );
 
   return (

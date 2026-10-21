@@ -37,6 +37,11 @@ class ConnectRequest(BaseModel):
     password: str = Field(..., min_length=1)
 
 
+class TradingModeRequest(BaseModel):
+    enabled: bool
+    password: str = Field(..., min_length=1)
+
+
 class ConnectTradeRequest(BaseModel):
     trade_token: str = Field(..., min_length=10, max_length=500)
     password: str = Field(..., min_length=1)
@@ -117,6 +122,28 @@ async def connect_trade(
         response_data["warning"] = "email_not_verified"
         response_data["warning_fa"] = "ایمیل شما تأیید نشده است. لطفاً برای امنیت بیشتر ایمیل خود را تأیید کنید."
     return response_data
+
+@router.post("/trading-mode")
+async def set_trading_mode(
+    payload: TradingModeRequest,
+    user: Annotated[dict, Depends(require_user_token)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """Enable or disable real trading for the user."""
+    user_id = _get_user_uuid(user)
+    db_user = await session.get(User, user_id)
+    import bcrypt
+    from sqlalchemy import update
+
+    if not db_user or not bcrypt.checkpw(payload.password.encode("utf-8"), db_user.password_hash.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
+    
+    stmt = update(User).where(User.id == user_id).values(is_trading_enabled=payload.enabled)
+    await session.execute(stmt)
+    await session.commit()
+    
+    return {"is_trading_enabled": payload.enabled, "message": "وضعیت با موفقیت تغییر یافت."}
+
 
 @router.delete("/disconnect")
 async def disconnect(
