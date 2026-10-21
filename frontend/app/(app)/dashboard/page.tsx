@@ -75,15 +75,15 @@ export default function DashboardPage() {
 
       {/* ۳) سفارش‌ها و سیستم */}
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <OrdersTimeline />
+        <div className="space-y-6">
+          <OrdersTimeline />
+          <HotMarkets />
+        </div>
         <div className="space-y-6">
           <PaperSummary />
           <BotsSummary />
         </div>
       </div>
-
-      {/* ۴) بازار */}
-      <HotMarkets />
     </div>
   );
 }
