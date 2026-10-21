@@ -15,6 +15,7 @@ import { HotMarkets } from "@/components/dashboard/hot-markets";
 import { PaperSummary } from "@/components/dashboard/paper-summary";
 import { StatusStrip } from "@/components/dashboard/status-strip";
 import { BtcChartCard } from "@/components/dashboard/btc-chart-card";
+import { SarvAnalysisCard } from "@/components/dashboard/sarv-analysis-card";
 
 export default function DashboardPage() {
   const { data } = useWallexStatus();
@@ -69,6 +70,9 @@ export default function DashboardPage() {
 
       {/* چارت بیت‌کوین */}
       <BtcChartCard />
+      
+      {/* کارت تحلیل سرو */}
+      <SarvAnalysisCard />
 
       {/* سیگنال دارایی‌های من */}
       <PortfolioSignals />
