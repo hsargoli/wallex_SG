@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
-import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown, Wallet } from "lucide-react";
+import { PieChart, ArrowUpRight, TrendingUp, TrendingDown, Minus, ArrowDown, Wallet , HelpCircle, Crown} from "lucide-react";
 import { useWallexStatus, useBatchSignals, useMarkets, useWallexPnl } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,7 +132,13 @@ export function PortfolioSignals() {
     return list.sort((a, b) => b.value - a.value);
   }, [wallex.data, marketMap, signalMap, pnlData.data]);
 
+  const [showDust, setShowDust] = useState(false);
+
   const isLoading = wallex.isLoading || markets.isLoading;
+  
+  const visibleRows = showDust ? rows : rows.filter(r => r.value >= 10000);
+  const topAssets = [...rows].sort((a, b) => Number(b.value) - Number(a.value)).slice(0, 3);
+
 
   return (
     <Card>
@@ -172,11 +180,61 @@ export function PortfolioSignals() {
 
         {!isLoading && rows.length > 0 && (
           <div className="flex flex-col gap-2">
-            {rows.map((row, idx) => {
+            {/* Top Assets Mini-Cards */}
+            {topAssets.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto pb-4 mb-2 snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {topAssets.map((asset) => {
+                  const isUp = (asset.change24 ?? 0) >= 0;
+                  return (
+                    <div key={asset.symbol} className="flex-none w-44 snap-start rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 to-transparent p-3 shadow-sm transition-all hover:border-violet-500/40">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-bold text-sm">{asset.asset}</span>
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/20 text-[10px] font-bold text-violet-300">
+                          {asset.asset.slice(0, 3)}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-mono text-sm font-bold text-foreground" dir="ltr">
+                          {formatNumber(asset.value, { maximumFractionDigits: 0 })}
+                          <span className="text-[10px] text-muted-foreground mr-1 font-normal">TMN</span>
+                        </div>
+                        <div className={cn("text-[10px] font-mono font-bold flex items-center gap-1", isUp ? "text-emerald-400" : "text-rose-400")} dir="ltr">
+                          {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                          {fmtPct(asset.change24)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Toggle Dust Button */}
+            <div className="flex justify-end mb-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowDust(!showDust)} 
+                className="text-[10px] h-6 px-2 text-muted-foreground hover:text-foreground"
+              >
+                {showDust ? "پنهان کردن دارایی‌های خرد" : "مشاهده دارایی‌های خرد (Dust)"}
+              </Button>
+            </div>
+
+            {!showDust && visibleRows.length === 0 && (
+              <div className="text-center py-6 text-xs text-muted-foreground">
+                تمام دارایی‌های شما ارزشی کمتر از ۱۰,۰۰۰ تومان دارند.
+                <Button variant="link" onClick={() => setShowDust(true)} className="text-violet-400 text-xs px-1">نمایش همه</Button>
+              </div>
+            )}
+
+            {visibleRows.map((row, idx) => {
               const sig = row.sig;
-              const action = sig?.signal ?? "hold";
+              const hasSignal = !!sig?.signal;
+              const action = sig?.signal;
               const isBuy = action === "buy";
               const isSell = action === "sell";
+              const isHold = action === "hold";
               const conf = sig?.confidence;
               const sparkData = sig?.sparkline || [];
               const isUp = (row.change24 ?? 0) >= 0;
@@ -186,8 +244,11 @@ export function PortfolioSignals() {
                 <div
                   key={row.symbol}
                   className={cn(
-                    "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-border/60 p-3 transition-all hover:border-violet-500/40",
-                    idx % 2 === 1 ? "bg-black/[0.03] dark:bg-white/[0.05]" : "bg-transparent"
+                    "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border p-3 transition-all hover:border-violet-500/40",
+                    idx < 3 
+                      ? "border-violet-500/30 bg-violet-500/5 shadow-[0_0_15px_rgba(139,92,246,0.05)]" 
+                      : "border-border/60",
+                    idx % 2 === 1 && idx >= 3 ? "bg-black/[0.03] dark:bg-white/[0.05]" : "bg-transparent"
                   )}
                 >
                   {/* ستون ۱: دارایی و موجودی */}
@@ -197,10 +258,14 @@ export function PortfolioSignals() {
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm">{row.asset}</span>
+                        <span className="font-bold text-sm flex items-center gap-1.5">
+                          {idx < 3 && !showDust && <Crown className="h-3.5 w-3.5 text-amber-400" />}
+                          {row.asset}
+                        </span>
                         {isBuy && <Badge className="bg-emerald-600/20 text-emerald-300 text-[10px] h-5 px-1.5">خرید {conf ? `${conf}%` : ""}</Badge>}
                         {isSell && <Badge className="bg-rose-600/20 text-rose-300 text-[10px] h-5 px-1.5">فروش {conf ? `${conf}%` : ""}</Badge>}
-                        {!isBuy && !isSell && <Badge variant="outline" className="text-[10px] text-muted-foreground h-5 px-1.5">نگهداری</Badge>}
+                        {isHold && <Badge variant="outline" className="text-[10px] text-muted-foreground h-5 px-1.5">نگهداری</Badge>}
+                        {!hasSignal && <Badge variant="outline" className="text-[10px] text-muted-foreground/50 border-dashed h-5 px-1.5">سیگنالی نیامده</Badge>}
                       </div>
                       <span className="text-[10px] text-muted-foreground" dir="ltr">
                         {Number(row.balance).toLocaleString("en-US", { maximumFractionDigits: 4 })} units
@@ -231,7 +296,14 @@ export function PortfolioSignals() {
                         میانگین خرید
                       </div>
                       <div className="font-mono text-xs" dir="ltr">
-                        {row.pnl?.avg_cost ? fmtPrice(row.pnl.avg_cost) : "—"}
+                        {row.pnl?.avg_cost ? (
+                          fmtPrice(row.pnl.avg_cost)
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground/60 cursor-help" title="قیمت خرید برای این دارایی در سیستم ثبت نشده است (احتمالاً از خارج منتقل شده)">
+                            <HelpCircle className="h-3 w-3" />
+                            <span className="text-[10px]">نامشخص</span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
