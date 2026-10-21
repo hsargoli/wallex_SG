@@ -109,19 +109,24 @@ export function BtcChartCard() {
             <BtcCandles candles={candles} />
             
             {/* 🌲 Sarv Tree Analysis */}
-            {pct !== null && (
-              <div className="mt-4 flex items-start gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs leading-relaxed">
-                {/* Custom Minimal Cypress Tree SVG */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-0.5">
-                  <path d="M12 22C12 22 12 19 12 16M12 16C15.5 15.5 18 12 18 8C18 4 15 1 12 1C9 1 6 4 6 8C6 12 8.5 15.5 12 16Z" stroke={pct >= 0 ? "var(--wx-up)" : pct < 0 ? "var(--wx-down)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 10C13.5 9.5 14.5 8 14.5 6C14.5 4 13.5 2.5 12 2.5C10.5 2.5 9.5 4 9.5 6C9.5 8 10.5 9.5 12 10Z" fill={pct >= 0 ? "var(--wx-up)" : pct < 0 ? "var(--wx-down)" : "currentColor"} fillOpacity="0.2"/>
-                </svg>
-                <div className="text-muted-foreground">
-                  {pct > 0.5 ? (
-                    <>
-                      <strong className="text-emerald-400 font-semibold">سرو سبز:</strong> بیت‌کوین امروز مثل یک سرو استوار، رنگ سبز را به خود گرفته است. روند کوتاه‌مدت صعودی است و خریداران دست بالا را دارند.
-                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: در روندهای صعودی، حجم معاملات معمولاً افزایش می‌یابد.</span>
-                    </>
+            <div className="mt-4 flex items-start gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 to-transparent p-4">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-1 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]">
+                <rect x="15" y="24" width="2" height="6" fill="#8B5A2B" rx="1" />
+                <polygon points="16,23 6,14 26,14" fill="#059669" />
+                <polygon points="16,17 8,9 24,9" fill="#10B981" />
+                <polygon points="16,11 10,3 22,3" fill="#34D399" />
+              </svg>
+              <div className="space-y-1.5">
+                <p className="text-sm font-bold text-foreground">
+                  بیت‌کوین هم مثل سرو همیشه سبز بوده
+                </p>
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+                  <span className="inline-block h-1 w-1 rounded-full bg-emerald-500"></span>
+                  {dailyTip}
+                </div>
+              </div>
+            </div>
+            </>
                   ) : pct < -0.5 ? (
                     <>
                       <strong className="text-rose-400 font-semibold">سرو خمیده:</strong> امروز باد تندی در بازار وزیده و سرو کمی خم شده است. اما به یاد داشته باش که سرو در برابر طوفان‌ها مقاوم است. اصلاح قیمت بخشی از چرخه طبیعی بازار است.
