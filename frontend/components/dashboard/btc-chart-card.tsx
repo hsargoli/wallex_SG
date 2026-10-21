@@ -93,6 +93,35 @@ export function BtcChartCard() {
               )}
             </div>
             <BtcCandles candles={candles} />
+            
+            {/* 🌲 Sarv Tree Analysis */}
+            {pct !== null && (
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs leading-relaxed">
+                {/* Custom Minimal Cypress Tree SVG */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-0.5">
+                  <path d="M12 22C12 22 12 19 12 16M12 16C15.5 15.5 18 12 18 8C18 4 15 1 12 1C9 1 6 4 6 8C6 12 8.5 15.5 12 16Z" stroke={pct >= 0 ? "var(--wx-up)" : pct < 0 ? "var(--wx-down)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 10C13.5 9.5 14.5 8 14.5 6C14.5 4 13.5 2.5 12 2.5C10.5 2.5 9.5 4 9.5 6C9.5 8 10.5 9.5 12 10Z" fill={pct >= 0 ? "var(--wx-up)" : pct < 0 ? "var(--wx-down)" : "currentColor"} fillOpacity="0.2"/>
+                </svg>
+                <div className="text-muted-foreground">
+                  {pct > 0.5 ? (
+                    <>
+                      <strong className="text-emerald-400 font-semibold">سرو سبز:</strong> بیت‌کوین امروز مثل یک سرو استوار، رنگ سبز را به خود گرفته است. روند کوتاه‌مدت صعودی است و خریداران دست بالا را دارند.
+                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: در روندهای صعودی، حجم معاملات معمولاً افزایش می‌یابد.</span>
+                    </>
+                  ) : pct < -0.5 ? (
+                    <>
+                      <strong className="text-rose-400 font-semibold">سرو خمیده:</strong> امروز باد تندی در بازار وزیده و سرو کمی خم شده است. اما به یاد داشته باش که سرو در برابر طوفان‌ها مقاوم است. اصلاح قیمت بخشی از چرخه طبیعی بازار است.
+                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: اصلاح قیمت (Pullback) فرصتی برای خرید در قیمت‌های بهتر است.</span>
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-amber-400 font-semibold">سرو آرام:</strong> بازار امروز در حال استراحت است. مثل سرو در یک روز آرام و بی‌باد، در سکوت ریشه‌های خود را محکم می‌کند. منتظر بمان و بازار را زیر نظر بگیر.
+                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: در بازار خنثی، صبر و نظاره‌گری کلید موفقیت است.</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </CardContent>
