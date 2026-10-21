@@ -108,42 +108,7 @@ export function BtcChartCard() {
             </div>
             <BtcCandles candles={candles} />
             
-            {/* 🌲 Sarv Tree Analysis */}
-            <div className="mt-4 flex items-start gap-4 rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 to-transparent p-4">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 mt-1 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]">
-                <rect x="15" y="24" width="2" height="6" fill="#8B5A2B" rx="1" />
-                <polygon points="16,23 6,14 26,14" fill="#059669" />
-                <polygon points="16,17 8,9 24,9" fill="#10B981" />
-                <polygon points="16,11 10,3 22,3" fill="#34D399" />
-              </svg>
-              <div className="space-y-1.5">
-                <p className="text-sm font-bold text-foreground">
-                  بیت‌کوین هم مثل سرو همیشه سبز بوده
-                </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-                  <span className="inline-block h-1 w-1 rounded-full bg-emerald-500"></span>
-                  {dailyTip}
-                </div>
-              </div>
-            </div>
-            </>
-                  ) : pct < -0.5 ? (
-                    <>
-                      <strong className="text-rose-400 font-semibold">سرو خمیده:</strong> امروز باد تندی در بازار وزیده و سرو کمی خم شده است. اما به یاد داشته باش که سرو در برابر طوفان‌ها مقاوم است. اصلاح قیمت بخشی از چرخه طبیعی بازار است.
-                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: اصلاح قیمت (Pullback) فرصتی برای خرید در قیمت‌های بهتر است.</span>
-                    </>
-                  ) : (
-                    <>
-                      <strong className="text-amber-400 font-semibold">سرو آرام:</strong> بازار امروز در حال استراحت است. مثل سرو در یک روز آرام و بی‌باد، در سکوت ریشه‌های خود را محکم می‌کند. منتظر بمان و بازار را زیر نظر بگیر.
-                      <span className="block mt-1 text-[10px] text-muted-foreground/70">🌱 آموزش: در بازار خنثی، صبر و نظاره‌گری کلید موفقیت است.</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
+            </CardContent>
     </Card>
   );
 }
