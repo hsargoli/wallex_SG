@@ -9,7 +9,6 @@ import { useWallexStatus } from "@/lib/queries";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { LiveTickerCard } from "@/components/dashboard/live-ticker-card";
 import { PortfolioSignals } from "@/components/dashboard/portfolio-signals";
-import { ActionBar } from "@/components/dashboard/action-bar";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
@@ -73,9 +72,6 @@ export default function DashboardPage() {
 
       {/* سیگنال دارایی‌های من */}
       <PortfolioSignals />
-
-      {/* ۲) فرصت‌ها */}
-      <ActionBar />
 
       {/* ۳) سفارش‌ها و سیستم */}
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
