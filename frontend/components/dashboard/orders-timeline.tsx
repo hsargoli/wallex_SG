@@ -41,11 +41,14 @@ export function OrdersTimeline() {
         )}
 
         {!paper.isLoading && openPositions.length === 0 && recentTrades.length === 0 && (
-          <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-muted-foreground">
-            <ClipboardList className="mb-2 h-8 w-8 opacity-20" />
-            <p className="text-sm">هنوز سفارشی ثبت نشده</p>
-            <Button asChild variant="outline" size="sm" className="mt-4">
-              <Link href="/guest">ثبت اولین سفارش</Link>
+          <div className="flex h-full min-h-[250px] flex-col items-center justify-center px-4 text-center text-muted-foreground">
+            <ClipboardList className="mb-3 h-10 w-10 text-violet-400/50" />
+            <p className="text-sm font-semibold text-foreground">هنوز سفارشی در Paper ثبت نشده است</p>
+            <p className="mt-2 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
+              بازار کاغذی (Paper) محیطی برای شبیه‌سازی معاملات با پول مجازی است. شما می‌توانید استراتژی‌های خود را بدون ریسک از دست دادن سرمایه واقعی تست کنید.
+            </p>
+            <Button asChild size="sm" className="mt-5 bg-violet-600 text-white hover:bg-violet-500">
+              <Link href="/paper-trading">ورود به محیط شبیه‌ساز</Link>
             </Button>
           </div>
         )}
