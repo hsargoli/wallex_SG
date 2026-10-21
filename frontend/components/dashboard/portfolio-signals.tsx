@@ -366,36 +366,7 @@ export function PortfolioSignals() {
           </div>
         )}
 
-        {/* راهنمای ستون‌ها */}
-        {!isLoading && rows.length > 0 && (
-          <div className="mt-4 rounded-lg border border-white/5 bg-white/[0.02] p-3 text-[10px] text-muted-foreground">
-            <div className="mb-2 font-bold text-[11px] text-foreground">📖 راهنمای ستون‌ها</div>
-            <div className="grid gap-1.5 sm:grid-cols-2">
-              <div>
-                <span className="font-semibold text-foreground">ارزش بازار:</span>{" "}
-                موجودی × قیمت لحظه‌ای بازار (پولی که اگه الان بفروشی به دستت میاد)
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">میانگین خرید:</span>{" "}
-                هزینه‌ی کل خرید ÷ تعداد واحد (به روش FIFO — اولین خرید اول مصرف می‌شه)
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">قیمت فعلی:</span>{" "}
-                آخرین قیمت معامله‌شده در بازار
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">تغییر ۲۴h:</span>{" "}
-                درصد تغییر قیمت بازار در ۲۴ ساعت گذشته (ربطی به سود تو نداره)
-              </div>
-              <div className="sm:col-span-2">
-                <span className="font-semibold text-emerald-400">سود/زیان:</span>{" "}
-                ارزش بازار − هزینه‌ی خرید (درصد نسبت به هزینه). مثبت = سود، منفی = ضرر.
-                اگه «نامشخص» باشه، یعنی خریدهایی قبل از تاریخچه‌ی ثبت‌شده در والکس انجام شده.
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
+        </CardContent>
     </Card>
   );
 }
