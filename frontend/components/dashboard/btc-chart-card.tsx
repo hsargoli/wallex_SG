@@ -107,7 +107,6 @@ export function BtcChartCard() {
               )}
             </div>
             <BtcCandles candles={candles} />
-            
           </>
         )}
       </CardContent>
