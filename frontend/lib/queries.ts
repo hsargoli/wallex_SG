@@ -1137,9 +1137,15 @@ export function useLogoutAll() {
   return useMutation({
     mutationFn: () => api.logoutAll(),
     onSuccess: () => {
+      toast.success("از تمام دستگاه‌ها خارج شدید.");
       qc.clear();
-      window.location.href = "/login";
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
     },
+    onError: (err: any) => {
+      toast.error("خطا در خروج از دستگاه‌ها.");
+    }
   });
 }
 

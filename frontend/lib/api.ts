@@ -1003,6 +1003,8 @@ export const api = {
 
   logout: () =>
     client.post("/v1/auth/logout").then((r) => r.data),
+  logoutAll: () =>
+    client.post("/v1/auth/logout-all").then((r) => r.data),
 
   closeGuestPosition: (symbol: string) =>
     client
