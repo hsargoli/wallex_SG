@@ -1125,6 +1125,24 @@ export function useLogin() {
   });
 }
 
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { old_password: string; new_password: string }) =>
+      api.changePassword(data.old_password, data.new_password),
+  });
+}
+
+export function useLogoutAll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.logoutAll(),
+    onSuccess: () => {
+      qc.clear();
+      window.location.href = "/login";
+    },
+  });
+}
+
 export function useLogout() {
   const qc = useQueryClient();
   return () => {
