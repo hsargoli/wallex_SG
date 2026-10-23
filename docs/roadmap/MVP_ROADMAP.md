@@ -335,7 +335,7 @@ Trade token + password reset. بقیه بعد از launch.
 - `docs/ROADMAP-PNL-ENHANCEMENTS.md` — ایده‌های PnL
 - `docs/adr/0017-wallex-token-connection.md` — View token
 - `docs/adr/0018-fifo-cost-basis.md` — FIFO
-- `HANDOFF-2026-10-17-PHASE-17.9.md` — وضعیت امروز
+- `../ai/handoffs/HANDOFF-2026-10-17-PHASE-17.9.md` — وضعیت امروز
 
 ---
 
