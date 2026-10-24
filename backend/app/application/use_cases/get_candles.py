@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from app.domain.entities.candle import Candle
 from app.domain.ports.exchange import ExchangePort
+from app.infrastructure.cache.candles import cache as _candles_cache
 
 # نگاشت تایم‌فریم‌های کاربر → (resolution والکس، تعداد کندل پایه، ثانیه)
 TIMEFRAME_MAP: dict[str, tuple[str, int, int]] = {
@@ -38,6 +39,12 @@ class GetCandlesUseCase:
         if limit <= 0 or limit > 3000:
             raise ValueError("limit must be between 1 and 3000")
 
+        # Per CTO 2026-10-24: in-memory cache (workers=1 → safe).
+        # Pattern mirrors _PNL_CACHE in services/wallex/service.py:309.
+        cached = _candles_cache.get(symbol, timeframe, limit)
+        if cached is not None:
+            return cached
+
         resolution, factor, seconds_per_candle = TIMEFRAME_MAP[timeframe]
 
         # تعداد کندل پایه‌ای که باید از والکس بگیریم
@@ -66,4 +73,6 @@ class GetCandlesUseCase:
             candles = raw_candles
 
         # آخرین limit کندل رو برگردون
-        return candles[-limit:]
+        result = candles[-limit:]
+        _candles_cache.set(symbol, timeframe, limit, result)
+        return result
