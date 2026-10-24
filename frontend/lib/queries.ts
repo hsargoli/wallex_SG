@@ -522,7 +522,7 @@ export function useAllSignals(symbols: string[], tf: string = "1h") {
         const batch = chunks.slice(i, i + CONCURRENT_BATCHES);
         const results = await Promise.all(
           batch.map((chunk) =>
-            api.getBatchSignals({ symbols: chunk, tf, limit: 200 }),
+            api.getBatchSignals({ symbols: chunk, tf, limit: 100 }),
           ),
         );
         for (const r of results) {
@@ -570,7 +570,7 @@ export function useAllSignalsWithProgress(
         const batch = chunks.slice(i, i + CONCURRENT_BATCHES);
         const results = await Promise.all(
           batch.map((chunk) =>
-            api.getBatchSignals({ symbols: chunk, tf, limit: 200 }),
+            api.getBatchSignals({ symbols: chunk, tf, limit: 100 }),
           ),
         );
         for (const r of results) {

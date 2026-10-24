@@ -12,7 +12,7 @@ from app.services.indicators import atr, rsi
 
 router = APIRouter(prefix="/scanner", tags=["Scanner"])
 
-MAX_CONCURRENT = 10
+MAX_CONCURRENT = 20
 
 
 async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h") -> dict | None:
@@ -21,7 +21,7 @@ async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h
             from decimal import Decimal as D
 
             # از 1h استفاده می‌کنیم تا تغییرات ۳/۱۲/۲۴ ساعته دقیق باشه
-            candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=200)
+            candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=100)
             if not candles or len(candles) < 100:
                 return None
 

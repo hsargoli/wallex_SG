@@ -129,7 +129,7 @@ export default function SignalsPage() {
   // با فیلتر: همه‌ی 373 نماد (چون ممکنه نتیجه خارج از صفحه باشه)
   const pageStart = (page - 1) * PAGE_SIZE;
   const symbolsToFetch = needsFilter
-    ? allSymbols
+    ? allSymbols.slice(0, 50)
     : allSymbols.slice(pageStart, pageStart + PAGE_SIZE);
 
   const batchQuery = useBatchSignals(symbolsToFetch, tf);

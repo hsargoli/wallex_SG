@@ -199,7 +199,7 @@ async def _fetch_signal_for(
             change_1y = None
             try:
                 daily = await use_case.execute(
-                    symbol=symbol, timeframe="1D", limit=400
+                    symbol=symbol, timeframe="1D", limit=100
                 )
                 if daily and len(daily) >= 31:
                     old_price = float(daily[-31].close)
@@ -250,7 +250,7 @@ async def get_batch_signals(
     - حداکثر 5 درخواست هم‌زمان به والکس (برای رعایت rate limit)
     """
     use_case = GetCandlesUseCase(exchange=exchange)
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore(15)
 
     # دریافت یک‌باره‌ی Marketها برای change_24h/7d (منبع واحد با /v1/markets)
     market_map: dict = {}
