@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Shield, AlertTriangle, ExternalLink, Key, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Shield, AlertTriangle, Key, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,8 @@ export default function WallexSettingsPage() {
   const [showToken, setShowToken] = useState(false);
   const [tradeToken, setTradeToken] = useState("");
   const [showTradeToken, setShowTradeToken] = useState(false);
-  const [password, setPassword] = useState("");
+  const [viewPassword, setViewPassword] = useState("");
+  const [tradePassword, setTradePassword] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -59,7 +60,7 @@ export default function WallexSettingsPage() {
 
   const handleConnect = () => {
     if (!token.trim()) return;
-    connectMut.mutate({ token: token.trim(), password }, { onSuccess: () => { setToken(""); setPassword(""); } });
+    connectMut.mutate({ token: token.trim(), password: viewPassword }, { onSuccess: () => { setToken(""); setViewPassword(""); } });
   };
 
   const handleDisconnect = () => {
@@ -68,8 +69,8 @@ export default function WallexSettingsPage() {
 
   const handleConnectTrade = () => {
     if (!tradeToken.trim()) return;
-    connectTradeMut.mutate({ token: tradeToken.trim(), password }, {
-      onSuccess: () => { setTradeToken(""); toast.success("توکن معاملات ذخیره شد."); },
+    connectTradeMut.mutate({ token: tradeToken.trim(), password: tradePassword }, {
+      onSuccess: () => { setTradeToken(""); setTradePassword(""); toast.success("توکن معاملات ذخیره شد."); },
       onError: (err: unknown) => toast.error(extractErrorMessage(err)),
     });
   };
@@ -78,6 +79,7 @@ export default function WallexSettingsPage() {
     if (confirm("اتصال توکن معاملات قطع بشه؟")) {
       disconnectTradeMut.mutate(undefined, {
         onSuccess: () => toast.success("اتصال توکن معاملات قطع شد."),
+        onError: (err: unknown) => toast.error(extractErrorMessage(err)),
       });
     }
   };
@@ -124,13 +126,13 @@ export default function WallexSettingsPage() {
               <Input
                 id="pwd-view"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={viewPassword}
+                onChange={(e) => setViewPassword(e.target.value)}
                 placeholder="برای تایید هویت وارد کنید"
                 dir="ltr"
               />
             </div>
-            <Button onClick={handleConnect} disabled={!token.trim() || !password.trim() || connectMut.isPending} className="w-full gap-2 bg-violet-600 hover:bg-violet-500">
+            <Button onClick={handleConnect} disabled={!token.trim() || !viewPassword.trim() || connectMut.isPending} className="w-full gap-2 bg-violet-600 hover:bg-violet-500">
               {connectMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "اتصال و اعتبارسنجی"}
             </Button>
           </CardContent>
@@ -176,7 +178,7 @@ export default function WallexSettingsPage() {
       )}
 
       {/* Trade Token Section (Exactly like View) */}
-      <Card className={`mt-8 ${data?.trade_connected ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-500/20'}`}>
+      <Card className={data?.trade_connected ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-500/20'}>
         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Shield className={`h-5 w-5 ${data?.trade_connected ? 'text-emerald-400' : 'text-emerald-500'}`} /> توکن معاملات (Trade Token)</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {data?.trade_connected ? (
@@ -194,9 +196,9 @@ export default function WallexSettingsPage() {
                 <p className="mt-1 text-muted-foreground">توکن معاملات شما با AES رمزنگاری می‌شه و فقط برای ثبت سفارش استفاده می‌شه.</p>
               </div>
               <div className="space-y-2">
-                <Label>توکن Trade والکس</Label>
+                <Label htmlFor="trade-token">توکن Trade والکس</Label>
                 <div className="flex gap-2">
-                  <Input type={showTradeToken ? "text" : "password"} value={tradeToken} onChange={(e) => setTradeToken(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" dir="ltr" className="font-mono text-xs" />
+                  <Input id="trade-token" type={showTradeToken ? "text" : "password"} value={tradeToken} onChange={(e) => setTradeToken(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" dir="ltr" className="font-mono text-xs" />
                   <Button type="button" variant="outline" onClick={() => setShowTradeToken(s => !s)} className="shrink-0">{showTradeToken ? "پنهان" : "نمایش"}</Button>
                 </div>
               </div>
@@ -205,13 +207,13 @@ export default function WallexSettingsPage() {
                 <Input
                   id="pwd-trade"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={tradePassword}
+                  onChange={(e) => setTradePassword(e.target.value)}
                   placeholder="برای تایید هویت وارد کنید"
                   dir="ltr"
                 />
               </div>
-              <Button onClick={handleConnectTrade} disabled={!tradeToken.trim() || !password.trim() || connectTradeMut.isPending} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500">
+              <Button onClick={handleConnectTrade} disabled={!tradeToken.trim() || !tradePassword.trim() || connectTradeMut.isPending} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500">
                 {connectTradeMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> در حال تماس با والکس...</> : "ذخیره توکن معاملات"}
               </Button>
             </>
@@ -246,6 +248,7 @@ export default function WallexSettingsPage() {
                 placeholder="رمز عبور حساب کاربری"
                 value={tradeModePassword}
                 onChange={(e) => setTradeModePassword(e.target.value)}
+                dir="ltr"
                 className="w-full md:w-48"
               />
               <Button
