@@ -57,12 +57,20 @@ class GetCandlesUseCase:
         # برای اطمینان، ۱۰٪ حاشیه اضافه می‌کنیم
         from_ts = int(from_ts - (now - from_ts) * 0.1)
 
-        raw_candles = await self.exchange.get_candles(
-            symbol=symbol,
-            resolution=resolution,
-            from_ts=from_ts,
-            to_ts=now,
-        )
+        try:
+            raw_candles = await self.exchange.get_candles(
+                symbol=symbol,
+                resolution=resolution,
+                from_ts=from_ts,
+                to_ts=now,
+            )
+        except Exception:
+            # Stale-while-error: on exchange failure, serve last-known-good
+            # data (even if expired). Only re-raise if we have no stale data.
+            stale = _candles_cache.get_stale(symbol, timeframe, limit)
+            if stale is not None:
+                return stale
+            raise
 
         # اگه لازم بود، ادغام کن
         if factor > 1:

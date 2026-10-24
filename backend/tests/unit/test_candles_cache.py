@@ -108,3 +108,65 @@ class TestGetCandlesUseCaseWithCache:
         asyncio.run(uc.execute("BTCTMN", "1h", 100))
         asyncio.run(uc.execute("BTCTMN", "1h", 200))
         assert ex.get_candles.await_count == 2
+
+
+class TestStaleFallback:
+    """Stale fallback: if exchange fails, return expired cache instead of raising."""
+
+    def test_get_stale_returns_expired_data(self):
+        from app.infrastructure.cache.candles import CandlesCache
+        fake_now = [1000.0]
+        c = CandlesCache(ttl_seconds=10, clock=lambda: fake_now[0])
+        c.set("BTCTMN", "1h", 100, [_c(1), _c(2)])
+        fake_now[0] = 1005.0  # fresh
+        assert c.get("BTCTMN", "1h", 100) is not None
+        fake_now[0] = 1011.0  # expired
+        assert c.get("BTCTMN", "1h", 100) is None
+        # RED: get_stale doesn't exist yet
+        assert c.get_stale("BTCTMN", "1h", 100) is not None
+        assert len(c.get_stale("BTCTMN", "1h", 100)) == 2
+
+    def test_get_stale_returns_none_when_never_cached(self):
+        from app.infrastructure.cache.candles import CandlesCache
+        c = CandlesCache()
+        assert c.get_stale("BTCTMN", "1h", 100) is None
+
+    def test_get_does_not_pop_expired(self):
+        """After expiry, entry should remain as stale (not deleted)."""
+        from app.infrastructure.cache.candles import CandlesCache
+        fake_now = [1000.0]
+        c = CandlesCache(ttl_seconds=10, clock=lambda: fake_now[0])
+        c.set("BTCTMN", "1h", 100, [_c(1)])
+        fake_now[0] = 1100.0  # expired
+        c.get("BTCTMN", "1h", 100)  # returns None
+        assert len(c) == 1  # entry still in store
+
+    def test_use_case_returns_stale_on_exchange_failure(self):
+        """RED: current code raises; new code returns stale."""
+        from app.application.use_cases.get_candles import GetCandlesUseCase
+        ex = MagicMock()
+        ex.get_candles = AsyncMock(return_value=[_c(1), _c(2)])
+        uc = GetCandlesUseCase(exchange=ex)
+        asyncio.run(uc.execute("BTCTMN", "1h", 100))  # warm cache
+        # Force-expire by shifting cache clock
+        orig_clock = cache._clock
+        cache._clock = lambda: orig_clock() + 10**6
+        try:
+            ex.get_candles = AsyncMock(side_effect=Exception("wallex down"))
+            # RED today: raises. GREEN: returns stale 2 candles
+            result = asyncio.run(uc.execute("BTCTMN", "1h", 100))
+            assert len(result) == 2
+        finally:
+            cache._clock = orig_clock
+            cache.clear()
+
+    def test_use_case_raises_when_no_stale(self):
+        """No stale data + exchange down → still raises (correct)."""
+        from app.application.use_cases.get_candles import GetCandlesUseCase
+        ex = MagicMock()
+        ex.get_candles = AsyncMock(side_effect=Exception("wallex down"))
+        uc = GetCandlesUseCase(exchange=ex)
+        cache.clear()
+        with pytest.raises(Exception):
+            asyncio.run(uc.execute("NEWTMN", "1h", 100))
+

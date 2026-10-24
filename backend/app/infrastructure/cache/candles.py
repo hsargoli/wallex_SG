@@ -48,9 +48,25 @@ class CandlesCache:
             return None
         ts, data = item
         if self._clock() - ts > self._ttl_for(timeframe):
-            self._store.pop(key, None)
+            # Keep entry as stale (fallback via get_stale). Do NOT pop.
             return None
         return data
+
+    def get_stale(self, symbol: str, timeframe: str, limit: int) -> list[Candle] | None:
+        """Return cached data even if expired (stale-while-error fallback).
+
+        Per CTO 2026-10-24: when wallex fails, serve last-known-good data
+        instead of failing the request. Caller is responsible for using
+        `get()` first (fresh) and `get_stale()` only on exchange failure.
+
+        NOTE (tech debt): entries are never evicted (memory grows with
+        symbol count, bounded in practice by ~400 symbols × small payloads).
+        LRU eviction deferred post-MVP.
+        """
+        item = self._store.get((symbol, timeframe, limit))
+        if item is None:
+            return None
+        return item[1]
 
     def set(self, symbol: str, timeframe: str, limit: int, candles: list[Candle]) -> None:
         self._store[(symbol, timeframe, limit)] = (self._clock(), candles)
