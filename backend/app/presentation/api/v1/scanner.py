@@ -12,7 +12,7 @@ from app.services.indicators import atr, rsi
 
 router = APIRouter(prefix="/scanner", tags=["Scanner"])
 
-MAX_CONCURRENT = 20
+MAX_CONCURRENT = 10
 
 
 async def _scan_one(use_case, symbol: str, sem: asyncio.Semaphore, tf: str = "1h") -> dict | None:

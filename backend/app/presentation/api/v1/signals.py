@@ -148,7 +148,14 @@ async def _fetch_signal_for(
         try:
             candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
             if not candles:
-                return {"symbol": symbol, "error": "no_data"}
+                return {
+                "symbol": symbol,
+                "error": "no_data",
+                "signal": "none",
+                "strength": "weak",
+                "confidence": 0,
+                "current_price": "0",
+            }
 
             sig = generate_signal(candles)
 
@@ -236,7 +243,14 @@ async def _fetch_signal_for(
                 "change_1y": change_1y,
             }
         except Exception as e:
-            return {"symbol": symbol, "error": str(e)[:120]}
+            return {
+                "symbol": symbol,
+                "error": str(e)[:120],
+                "signal": "none",
+                "strength": "weak",
+                "confidence": 0,
+                "current_price": "0",
+            }
 
 
 @router.post("/batch", response_model=BatchSignalsResponse)
@@ -250,7 +264,7 @@ async def get_batch_signals(
     - حداکثر 5 درخواست هم‌زمان به والکس (برای رعایت rate limit)
     """
     use_case = GetCandlesUseCase(exchange=exchange)
-    semaphore = asyncio.Semaphore(15)
+    semaphore = asyncio.Semaphore(5)
 
     # دریافت یک‌باره‌ی Marketها برای change_24h/7d (منبع واحد با /v1/markets)
     market_map: dict = {}
