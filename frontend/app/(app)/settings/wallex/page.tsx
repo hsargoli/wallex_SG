@@ -181,7 +181,9 @@ export default function WallexSettingsPage() {
       <Card className={data?.trade_connected ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-500/20'}>
         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Shield className={`h-5 w-5 ${data?.trade_connected ? 'text-emerald-400' : 'text-emerald-500'}`} /> توکن معاملات (Trade Token)</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {data?.trade_connected ? (
+          {isLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : data?.trade_connected ? (
             <div className="flex flex-wrap items-center justify-between gap-4 py-2">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 text-emerald-400" />
