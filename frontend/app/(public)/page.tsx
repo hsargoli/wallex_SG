@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, BarChart3, Radar, Zap, ArrowLeft, Sparkles, FlaskConical } from "lucide-react";
+import { Bot, BarChart3, Radar, Zap, ArrowLeft, Sparkles, FlaskConical, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ const FEATURES = [
   { icon: BarChart3, title: "تحلیل زنده",      desc: "رژیم بازار، شخصیت ارز، و سیگنال‌های لحظه‌ای" },
   { icon: Radar,     title: "اسکنر بازار",     desc: "پیدا کردن فرصت‌ها در صدها نماد، در چند ثانیه" },
   { icon: Zap,       title: "سیگنال‌ها",        desc: "نقاط ورود و خروج، با تأییدیه‌ی چندلایه" },
+  { icon: Globe,     title: "کیهان بازار",      desc: "نمای گرافیکی و کهکشانی از وضعیت لحظه‌ای بازار" },
 ];
 
 export default function LandingPage() {
@@ -67,6 +68,67 @@ export default function LandingPage() {
       <div className="relative z-10">
         <TickerTape />
       </div>
+
+      {/* Keyhan Showcase Section (Interactive & Mobile-First) */}
+      <section className="relative z-10 py-16 md:py-24">
+        <div className="mx-auto max-w-5xl px-4 md:px-6">
+          <div className="group relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0a0a0f] p-1 shadow-2xl transition-all duration-500 hover:border-violet-500/50 hover:shadow-[0_0_60px_rgba(139,92,246,0.25)]">
+            
+            {/* Animated Grid Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] transition-opacity duration-700 group-hover:opacity-70" />
+            
+            {/* Glowing Orb behind content */}
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/20 blur-[80px] transition-all duration-700 group-hover:bg-violet-600/40 group-hover:blur-[100px]" />
+
+            <div className="relative flex flex-col-reverse items-center justify-between gap-12 rounded-[2.3rem] bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:flex-row md:p-16 lg:p-20">
+              
+              {/* Text Content */}
+              <div className="flex-1 space-y-6 text-center md:text-right">
+                <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl">
+                  کیهان بازار
+                </h2>
+                <p className="text-sm leading-relaxed text-white/60 md:text-base lg:max-w-md">
+                  بازار را نه به صورت جدول، بلکه به شکل یک کهکشان زنده ببینید. هر ستاره یک ارز است، اندازه‌ی آن نشان‌دهنده حجم معاملات و رنگ آن نشان‌دهنده سیگنال بازار است.
+                </p>
+                
+                {/* Tags */}
+                <div className="flex flex-wrap justify-center gap-2 md:justify-start">
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] md:text-xs text-white/80 backdrop-blur-md">
+                    <Sparkles className="h-3 w-3 text-amber-400" /> نمای کهکشانی
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] md:text-xs text-white/80 backdrop-blur-md">
+                    <BarChart3 className="h-3 w-3 text-emerald-400" /> حجم معاملات
+                  </span>
+                </div>
+                
+                <div className="pt-4">
+                  <Button asChild size="lg" className="w-full md:w-auto gap-2 rounded-full bg-violet-600 px-8 py-6 text-base text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all duration-300 group-hover:scale-[1.02] group-hover:bg-violet-500 group-hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] active:scale-95">
+                    <Link href="/keyhan">
+                      ورود به کیهان <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Interactive Visual (Orbit + Globe) */}
+              <div className="relative flex h-48 w-48 flex-shrink-0 items-center justify-center md:h-64 md:w-64">
+                {/* Rotating Orbit Ring */}
+                <div className="absolute inset-0 animate-[spin_10s_linear_infinite] rounded-full border border-dashed border-violet-500/40 transition-colors duration-500 group-hover:border-violet-400/80 group-hover:animate-[spin_6s_linear_infinite]">
+                  {/* Orbiting Particle */}
+                  <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-300 shadow-[0_0_15px_rgba(196,181,253,1)]" />
+                </div>
+                
+                {/* Inner Ring */}
+                <div className="absolute inset-6 rounded-full border border-white/5 bg-black/40 backdrop-blur-sm" />
+                
+                {/* Central Globe Icon */}
+                <Globe className="relative z-10 h-16 w-16 text-violet-300 transition-transform duration-500 group-hover:scale-110 group-hover:text-violet-200 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="relative z-10">
         <div className="mx-auto max-w-7xl px-6 py-16">
