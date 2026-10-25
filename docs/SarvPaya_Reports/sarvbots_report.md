@@ -4,6 +4,42 @@
 
 ---
 
+## 🚀 گزارش 2026-10-25 — ساعت 17:49 (لانچ v1.1.0 — پایداری پس از اسپرینت بهینه‌سازی)
+**وضعیت:** 🟢 **Live — Stable** | **گزارش‌دهنده:** دی پرتو (مجری) / دی دریا (CTO) / حسین (رهبر)
+**تگ:** `v1.1.0-launch` | **کامیت:** `cb4c660`
+
+### 🎯 هدف
+تثبیت پایداری پس از اسپرینت multi-fix (prefetch + frontend + cleanup + signals cache).
+
+### 🛠️ تغییرات انباشته (از v1.0.0-mvp تا الان)
+- **Prefetch:** top=30، interval=5min، sequential 1h→1D، retry 2s
+- **Frontend:** LiveChart lazy-load via `dynamic` + client wrapper
+- **Cleanup:** ۸۶+۳۷ `.bak` حذف، ۴۰۰MB آزاد، ۴ `.env.bak` (root-owned، امنیت) حذف
+- **Signals:** `1h` و `1D` فقط از cache. حذف `get_markets` از `/batch`. TTL `1h`: 300→900s
+
+### 📊 نتایج (شاهد)
+| مورد | قبل | بعد |
+|---|---|---|
+| `/signals/batch` ۱۰ نماد (cold) | ۳۰s | **۰.۵۵s** (۵۴×) |
+| `/signals/batch` ۱۰ نماد (warm) | ۳۰s | **۰.۴۵s** (۶۶×) |
+| `/signals` صفحه | کند | **۰.۵۰s** |
+| `/scanner` صفحه | کند | **۰.۵۵s** |
+| noosharp.ir / hosg.ir | ۲۰۰ | **۲۰۰** (خط سرخ حفظ شد) |
+
+### ✅ تست‌ها
+- Prefetch: ۱۰/۱۰ (شامل cache-only 1h/1D)
+- Regression: ۳۹/۳۹
+- `tsc`: ۰ خطا
+- `build`: موفق
+
+### 🚧 بدهی فنی (پذیرفته‌شده)
+- cron DB برای کندل (نیاز به ADR جدا)
+- `_archive/` نگه داشته شد (تاریخچه)
+- Cosmos (ADR 0031، فاز بعد)
+- `scalp_master` cleanup
+
+---
+
 ## 🚀 گزارش 2026-10-25 — ساعت 11:59 (Frontend Perf — dynamic LiveChart)
 **وضعیت:** 🟢 **Live** | **گزارش‌دهنده:** دی پرتو (مجری) / دی دریا (CTO)
 **تگ:** `v1.0.3-frontend-perf` | **کامیت:** `7891bd2`
