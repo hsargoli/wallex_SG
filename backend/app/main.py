@@ -21,6 +21,7 @@ from app.services.bots.nooaah.scheduler import (
 from app.presentation.api.v1.realtime import TickerFanout, router as realtime_router
 from app.presentation.api.v1.router import router as v1_router
 from app.services.guest import GuestScheduler
+from app.services.prefetch import CandlePrefetcher
 
 
 @asynccontextmanager
@@ -57,6 +58,13 @@ async def lifespan(app: FastAPI):
     guest_sched.start()
     app.state.guest_scheduler = guest_sched
 
+    # Candle prefetcher: warms top-N symbol candle cache every 5 min
+    # (top_n=10, ~11% wallex duty cycle — CTO 2026-10-24).
+    prefetcher = CandlePrefetcher(exchange=exchange, top_n=10, interval_sec=300)
+    prefetch_task = asyncio.create_task(prefetcher.run())
+    app.state.prefetcher = prefetcher
+    app.state.prefetch_task = prefetch_task
+
     try:
         yield
     finally:
@@ -67,6 +75,17 @@ async def lifespan(app: FastAPI):
         ticker_client.stop()
         nooaah_sched.stop()
         await guest_sched.stop()
+        # Stop prefetcher before closing the exchange
+        prefetcher = getattr(app.state, "prefetcher", None)
+        prefetch_task = getattr(app.state, "prefetch_task", None)
+        if prefetcher is not None:
+            prefetcher.stop()
+        if prefetch_task is not None:
+            prefetch_task.cancel()
+            try:
+                await prefetch_task
+            except asyncio.CancelledError:
+                pass
         await exchange.aclose()
 
 
