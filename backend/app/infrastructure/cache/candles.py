@@ -17,7 +17,7 @@ from app.domain.entities.candle import Candle
 # TTL per timeframe (seconds)
 DEFAULT_TTL: dict[str, int] = {
     "15m": 60,      # 1 min
-    "1h": 300,      # 5 min
+    "1h": 900,      # 15 min (CTO 2026-10-25: reduce cold start)
     "4h": 600,      # 10 min
     "1D": 3600,     # 1 hour
 }
