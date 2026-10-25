@@ -117,7 +117,11 @@ class CandlePrefetcher:
                     except asyncio.CancelledError:
                         raise
                     except Exception as exc:
-                        last_err = exc
+                        # asyncio.TimeoutError str() is "" — use explicit label.
+                        if isinstance(exc, asyncio.TimeoutError):
+                            last_err = f"timeout_{int(call_timeout)}s"
+                        else:
+                            last_err = type(exc).__name__ + ": " + str(exc)[:120]
                         if attempt == 1:
                             await asyncio.sleep(2)  # brief backoff
                 logger.warning(

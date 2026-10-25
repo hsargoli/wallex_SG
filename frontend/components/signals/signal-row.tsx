@@ -36,6 +36,15 @@ const SIGNAL_CONFIG = {
     rail: "border-r-zinc-500/30",
     hover: "hover:border-r-zinc-500/60 hover:bg-zinc-500/[0.04]",
   },
+  none: {
+    label: "در حال آماده‌سازی...",
+    icon: AlertCircle,
+    text: "text-amber-400",
+    bg: "bg-amber-500/15 border-amber-500/30",
+    bar: "bg-amber-500",
+    rail: "border-r-amber-500/50",
+    hover: "hover:border-r-amber-500/80 hover:bg-amber-500/[0.04]",
+  },
 } as const;
 
 const STRENGTH_LABELS: Record<string, string> = {

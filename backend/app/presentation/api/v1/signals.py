@@ -147,16 +147,32 @@ async def _fetch_signal_for(
     """
     async with semaphore:
         try:
-            candles = await use_case.execute(symbol=symbol, timeframe=tf, limit=limit)
+            # 1h from cache only (no fetch; CTO 2026-10-25). Prefetch fills cache.
+            # Fallback to stale if fresh expired — UI shows last-known-good.
+            candles = (
+                _candles_cache.get(symbol, tf, limit)
+                or _candles_cache.get_stale(symbol, tf, limit)
+            )
             if not candles:
                 return {
-                "symbol": symbol,
-                "error": "no_data",
-                "signal": "none",
-                "strength": "weak",
-                "confidence": 0,
-                "current_price": "0",
-            }
+                    "symbol": symbol,
+                    "signal": "none",
+                    "strength": "weak",
+                    "confidence": 0,
+                    "current_price": "0",
+                    "reasons": [],
+                    "buy_score": 0,
+                    "sell_score": 0,
+                    "stop_loss": None,
+                    "take_profit": None,
+                    "risk_reward": None,
+                    "sparkline": [],
+                    "change_24h": None,
+                    "change_7d": None,
+                    "change_1h": None,
+                    "change_1m": None,
+                    "change_1y": None,
+                }
 
             sig = generate_signal(candles)
 
