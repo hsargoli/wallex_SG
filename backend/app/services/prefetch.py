@@ -9,15 +9,16 @@ Per CTO 2026-10-24:
 from __future__ import annotations
 
 import asyncio
-import logging
+import structlog
 
 from app.application.use_cases.get_candles import GetCandlesUseCase
 from app.domain.ports.exchange import ExchangePort
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 TIMEFRAMES: tuple[str, ...] = ("1h", "1D")
-FETCH_LIMIT = 100
+FETCH_LIMIT = 100        # 1h — matches frontend (queries.ts limit=100)
+FETCH_LIMIT_1D = 31      # 1D — minimum for change_1m (needs daily[-31])
 SEMAPHORE_LIMIT = 5
 
 
@@ -98,8 +99,9 @@ class CandlePrefetcher:
         async def _one(symbol: str, timeframe: str) -> None:
             async with self._sem:
                 try:
+                    limit = FETCH_LIMIT_1D if timeframe == "1D" else FETCH_LIMIT
                     await self._use_case.execute(
-                        symbol=symbol, timeframe=timeframe, limit=FETCH_LIMIT
+                        symbol=symbol, timeframe=timeframe, limit=limit
                     )
                 except asyncio.CancelledError:
                     raise
@@ -113,12 +115,12 @@ class CandlePrefetcher:
                         },
                     )
 
-        tasks = [
-            _one(str(m.symbol), tf)
-            for m in top
-            for tf in TIMEFRAMES
-        ]
-        await asyncio.gather(*tasks)
+        # Sequential per timeframe: 1h first (fast, cache-warm), then 1D
+        # (slower). Parallel 1h+1D starves 1h via Semaphore(5) when 1D is slow,
+        # causing 1h timeouts and empty cache (observed 2026-10-25).
+        for tf in TIMEFRAMES:
+            tasks = [_one(str(m.symbol), tf) for m in top]
+            await asyncio.gather(*tasks)
 
         logger.info(
             "prefetcher.cycle_done",

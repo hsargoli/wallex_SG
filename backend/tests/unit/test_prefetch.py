@@ -108,6 +108,15 @@ class TestCandlePrefetcher:
         symbols = {k[0] for k in cache._store.keys()}
         assert symbols == {"BTCTMN"}
 
+    def test_refresh_top_uses_limit_31_for_1d(self):
+        """1D uses limit=31 (minimum for change_1m which needs daily[-31])."""
+        p, ex = self._mk(top_n=1)
+        asyncio.run(p._refresh_top())
+        keys = list(cache._store.keys())
+        by_tf = {k[1]: k[2] for k in keys}
+        assert by_tf["1h"] == 100, f"1h limit should be 100, got {by_tf.get('1h')}"
+        assert by_tf["1D"] == 31, f"1D limit should be 31, got {by_tf.get('1D')}"
+
     def test_run_cancels_cleanly(self):
         p, ex = self._mk(top_n=1, interval_sec=10_000)
         async def scenario():

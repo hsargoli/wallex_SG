@@ -206,7 +206,7 @@ async def _fetch_signal_for(
             change_1y = None
             try:
                 daily = await use_case.execute(
-                    symbol=symbol, timeframe="1D", limit=100
+                    symbol=symbol, timeframe="1D", limit=31
                 )
                 if daily and len(daily) >= 31:
                     old_price = float(daily[-31].close)
