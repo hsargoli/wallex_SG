@@ -4,6 +4,26 @@
 
 ---
 
+## 🚀 گزارش 2026-10-25 — ساعت 11:59 (Frontend Perf — dynamic LiveChart)
+**وضعیت:** 🟢 **Live** | **گزارش‌دهنده:** دی پرتو (مجری) / دی دریا (CTO)
+**تگ:** `v1.0.3-frontend-perf` | **کامیت:** `7891bd2`
+
+### 🎯 هدف
+کاهش حجم bundle اولیه صفحه اصلی با Lazy-Loading چارت‌ها (`lightweight-charts` ~168K).
+
+### 🛠️ راه‌حل
+- ساخت Client Wrapper (`live-chart-dynamic.tsx`) چون `next/dynamic` با `ssr: false` در Server Component مجاز نیست.
+- `loading: () => <Skeleton className="h-[400px]" />` برای جلوگیری از CLS.
+
+### 📊 نتایج (شاهد)
+| مورد | قبل | بعد |
+|---|---|---|
+| `lightweight-charts` در HTML اولیه | ✅ بود | ❌ حذف شد (Lazy) |
+| CLS | — | ❌ صفر (Skeleton هم‌ارتفاع) |
+| شاهد بصری | — | ✅ `/scanner` + `/signals` سالم |
+
+---
+
 ## 🚀 گزارش 2026-10-25 — ساعت 11:38 (Prefetch — ۹۶٪ cache hit)
 **وضعیت:** 🟢 **Live** | **گزارش‌دهنده:** دی پرتو (مجری) / دی دریا (CTO)
 **تگ:** `v1.0.2-prefetch` | **کامیت:** `c0eda11`
