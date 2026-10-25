@@ -98,22 +98,29 @@ class CandlePrefetcher:
 
         async def _one(symbol: str, timeframe: str) -> None:
             async with self._sem:
-                try:
-                    limit = FETCH_LIMIT_1D if timeframe == "1D" else FETCH_LIMIT
-                    await self._use_case.execute(
-                        symbol=symbol, timeframe=timeframe, limit=limit
-                    )
-                except asyncio.CancelledError:
-                    raise
-                except Exception as exc:
-                    logger.warning(
-                        "prefetcher.symbol_error",
-                        extra={
-                            "symbol": symbol,
-                            "timeframe": timeframe,
-                            "err": str(exc),
-                        },
-                    )
+                limit = FETCH_LIMIT_1D if timeframe == "1D" else FETCH_LIMIT
+                # Retry once on failure (wallex can be flaky; 2026-10-25)
+                last_err: Exception | None = None
+                for attempt in (1, 2):
+                    try:
+                        await self._use_case.execute(
+                            symbol=symbol, timeframe=timeframe, limit=limit
+                        )
+                        return
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception as exc:
+                        last_err = exc
+                        if attempt == 1:
+                            await asyncio.sleep(2)  # brief backoff
+                logger.warning(
+                    "prefetcher.symbol_error",
+                    extra={
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "err": str(last_err),
+                    },
+                )
 
         # Sequential per timeframe: 1h first (fast, cache-warm), then 1D
         # (slower). Parallel 1h+1D starves 1h via Semaphore(5) when 1D is slow,
@@ -122,7 +129,8 @@ class CandlePrefetcher:
             tasks = [_one(str(m.symbol), tf) for m in top]
             await asyncio.gather(*tasks)
 
+        total_calls = len(top) * len(TIMEFRAMES)
         logger.info(
             "prefetcher.cycle_done",
-            extra={"symbols": len(top), "calls": len(tasks)},
+            extra={"symbols": len(top), "calls": total_calls},
         )
