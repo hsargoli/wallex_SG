@@ -60,7 +60,11 @@ async def lifespan(app: FastAPI):
 
     # Candle prefetcher: warms top-N symbol candle cache every 5 min
     # (top_n=10, ~11% wallex duty cycle — CTO 2026-10-24).
-    prefetcher = CandlePrefetcher(exchange=exchange, top_n=10, interval_sec=300)
+    prefetcher = CandlePrefetcher(
+        exchange=exchange,
+        top_n=settings.PREFETCH_TOP_N,
+        interval_sec=settings.PREFETCH_INTERVAL_SEC,
+    )
     prefetch_task = asyncio.create_task(prefetcher.run())
     app.state.prefetcher = prefetcher
     app.state.prefetch_task = prefetch_task

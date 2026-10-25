@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     WALLEX_API_KEY: str = Field(..., min_length=10)
     ANALYSIS_CLASSIFIER: str = Field(default="rule_based")
     WALLEX_TIMEOUT_SECONDS: int = Field(default=15, ge=1, le=60)
+
+    # Candle prefetcher (CTO 2026-10-25: top_n=50, interval=10min, ~26% duty)
+    PREFETCH_TOP_N: int = Field(default=50, ge=1, le=200)
+    PREFETCH_INTERVAL_SEC: int = Field(default=600, ge=60, le=3600)
     WALLEX_MAX_CONNECTIONS: int = Field(default=20, ge=1, le=100)
 
     # --- Wallex Token Encryption (phase 17.8) ---
