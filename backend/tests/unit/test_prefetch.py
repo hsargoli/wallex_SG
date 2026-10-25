@@ -130,3 +130,45 @@ class TestCandlePrefetcher:
             return True
         assert asyncio.run(scenario()) is True
         assert len(cache) >= 1
+
+class TestBatchFetchSignal:
+    """Batch fetch must NOT hit wallex for 1D (only cache)."""
+
+    @pytest.fixture(autouse=True)
+    def _reset(self):
+        cache.clear()
+        yield
+        cache.clear()
+
+    def test_1d_from_cache_only_when_absent(self):
+        """If 1D is not in cache, change_1m/y are None — no wallex call."""
+        from app.presentation.api.v1.signals import _fetch_signal_for
+        from unittest.mock import AsyncMock, MagicMock
+        import asyncio as _asyncio
+
+        # 1h returns candles (mock); 1D would fail if called (we track calls)
+        ex = MagicMock()
+        ex.get_markets = AsyncMock(return_value=[])
+        candles_1h = [_mk_candle(i) for i in range(60)]
+        calls = {"1h": 0, "1D": 0}
+        async def fake_get_candles(symbol, resolution, from_ts, to_ts):
+            # resolution "60" = 1h, "D" = 1D
+            if resolution == "D":
+                calls["1D"] += 1
+                raise Exception("wallex 1D timeout (should NOT be called)")
+            calls["1h"] += 1
+            return candles_1h
+        ex.get_candles = AsyncMock(side_effect=fake_get_candles)
+
+        from app.application.use_cases.get_candles import GetCandlesUseCase
+        uc = GetCandlesUseCase(exchange=ex)
+        sem = _asyncio.Semaphore(5)
+
+        # cache is empty for 1D
+        result = _asyncio.run(_fetch_signal_for(uc, "BTCTMN", "1h", 60, sem, None))
+
+        assert calls["1D"] == 0, f"1D should NOT be fetched (got {calls['1D']})"
+        assert result["change_1m"] is None
+        assert result["change_1y"] is None
+        # signal is a valid enum (buy/sell/hold) — value depends on candles
+        assert "signal" in result

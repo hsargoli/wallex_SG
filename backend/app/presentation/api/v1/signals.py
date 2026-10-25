@@ -18,6 +18,7 @@ from app.services.indicators import (
 )
 from app.services.levels import find_swing_levels, pivot_from_candles
 from app.services.signal_engine import generate_signal
+from app.infrastructure.cache.candles import cache as _candles_cache
 
 router = APIRouter(prefix="/signals", tags=["Signals"])
 
@@ -201,27 +202,24 @@ async def _fetch_signal_for(
                         (float(candles[-1].close) - old_price) / old_price * 100, 2
                     )
 
-            # تغییر 1m و 1y — از کندل روزانه (والکس 400 روز می‌ده)
+            # تغییر 1m و 1y — فقط از cache (no fetch; CTO 2026-10-25)
+            # 1D fetch از wallex کند/ناپایدار است. Prefetch پس‌زمینه cache را
+            # پر می‌کند. اگر cache خالی باشد، change_1m/y = None (UI: —).
             change_1m = None
             change_1y = None
-            try:
-                daily = await use_case.execute(
-                    symbol=symbol, timeframe="1D", limit=31
-                )
-                if daily and len(daily) >= 31:
-                    old_price = float(daily[-31].close)
-                    if old_price > 0:
-                        change_1m = round(
-                            (float(daily[-1].close) - old_price) / old_price * 100, 2
-                        )
-                if daily and len(daily) >= 366:
-                    old_price = float(daily[-366].close)
-                    if old_price > 0:
-                        change_1y = round(
-                            (float(daily[-1].close) - old_price) / old_price * 100, 2
-                        )
-            except Exception:
-                pass  # fallback: هر دو None می‌مونن
+            daily = _candles_cache.get_stale(symbol, "1D", 31)
+            if daily and len(daily) >= 31:
+                old_price = float(daily[-31].close)
+                if old_price > 0:
+                    change_1m = round(
+                        (float(daily[-1].close) - old_price) / old_price * 100, 2
+                    )
+            if daily and len(daily) >= 366:
+                old_price = float(daily[-366].close)
+                if old_price > 0:
+                    change_1y = round(
+                        (float(daily[-1].close) - old_price) / old_price * 100, 2
+                    )
 
             return {
                 "symbol": symbol,

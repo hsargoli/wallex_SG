@@ -101,11 +101,18 @@ class CandlePrefetcher:
                 limit = FETCH_LIMIT_1D if timeframe == "1D" else FETCH_LIMIT
                 # Retry once on failure (wallex can be flaky; 2026-10-25)
                 last_err: Exception | None = None
+                # 1D: timeout 10s (wallex slow/flaky; CTO 2026-10-25)
+                # 1h: full timeout (fast, cache warm is critical)
+                call_timeout = 10.0 if timeframe == "1D" else None
                 for attempt in (1, 2):
                     try:
-                        await self._use_case.execute(
+                        coro = self._use_case.execute(
                             symbol=symbol, timeframe=timeframe, limit=limit
                         )
+                        if call_timeout is not None:
+                            await asyncio.wait_for(coro, timeout=call_timeout)
+                        else:
+                            await coro
                         return
                     except asyncio.CancelledError:
                         raise
