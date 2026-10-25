@@ -280,16 +280,12 @@ async def get_batch_signals(
     use_case = GetCandlesUseCase(exchange=exchange)
     semaphore = asyncio.Semaphore(5)
 
-    # دریافت یک‌باره‌ی Marketها برای change_24h/7d (منبع واحد با /v1/markets)
-    market_map: dict = {}
-    try:
-        markets = await exchange.get_markets()
-        market_map = {str(m.symbol).upper(): m for m in markets}
-    except Exception:
-        pass  # fallback به محاسبه از کندل‌ها
-
+    # NOTE (CTO 2026-10-25): get_markets() here added ~8s to every /batch.
+    # Removed: change_24h/7d now fall back to candles (already supported in
+    # _fetch_signal_for). Trade-off: 24h/7d may differ slightly from /v1/markets
+    # source until /v1/markets is cached by a separate task (debt).
     tasks = [
-        _fetch_signal_for(use_case, sym, payload.tf, payload.limit, semaphore, market_map)
+        _fetch_signal_for(use_case, sym, payload.tf, payload.limit, semaphore, None)
         for sym in payload.symbols
     ]
     results = await asyncio.gather(*tasks)
