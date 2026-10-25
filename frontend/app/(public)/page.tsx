@@ -3,7 +3,7 @@ import { Bot, BarChart3, Radar, Zap, ArrowLeft, Sparkles, FlaskConical } from "l
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LiveChart } from "@/components/landing/live-chart";
+import { LiveChartDynamic } from "@/components/landing/live-chart-dynamic";
 import { BackgroundFX } from "@/components/landing/background-fx";
 import { TickerTape } from "@/components/landing/ticker-tape";
 import { SarvLogo } from "@/components/landing/sarv-logo";
@@ -58,7 +58,7 @@ export default function LandingPage() {
             </div>
 
             <div className="float-y">
-              <LiveChart className="w-full" />
+              <LiveChartDynamic className="w-full" />
             </div>
           </div>
         </div>
