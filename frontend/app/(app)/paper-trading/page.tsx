@@ -7,7 +7,6 @@ import {
   RotateCcw,
   Zap,
   Loader2,
-  RefreshCw,
 } from "lucide-react";
 import {
   usePaperV3Status,
@@ -21,13 +20,24 @@ import { getSimulationSymbols } from "@/lib/api";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PaperKpiCards } from "@/components/paper-trading/kpi-cards";
 import { CheckCountdown } from "@/components/paper-trading/countdown";
 import { PaperEventLog } from "@/components/paper-trading/event-log";
 import { PaperEquityChart } from "@/components/paper-trading/equity-chart";
 import { PaperPositionsCard } from "@/components/paper-trading/positions-card";
 import { PaperTradesTable } from "@/components/paper-trading/trades-table";
+
+interface SymbolOption {
+  symbol: string;
+  name_fa?: string;
+  base?: string;
+}
+
+interface BotOption {
+  slug: string;
+  name: string;
+  name_en: string;
+}
 
 export default function PaperTradingPage() {
   const status = usePaperV3Status();
@@ -37,7 +47,7 @@ export default function PaperTradingPage() {
   const resetBot = useResetPaperV3();
   const bots = useBots();
 
-  const [symbols, setSymbols] = useState<any[]>([]);
+  const [symbols, setSymbols] = useState<SymbolOption[]>([]);
   const [symbol, setSymbol] = useState<string>("ADATMN");
   const [symbolSearch, setSymbolSearch] = useState<string>("");
   const [timeframe, setTimeframe] = useState<string>("1h");
@@ -64,7 +74,8 @@ export default function PaperTradingPage() {
       .then((res) => {
         if (res && res.symbols && res.symbols.length > 0) {
           setSymbols(res.symbols);
-          if (!symbol) setSymbol(res.symbols[0].symbol);
+          // Functional setter: no 'symbol' in deps (prevents re-fetch loop)
+          setSymbol((prev) => prev || res.symbols[0].symbol);
         }
       })
       .catch((err) => console.error("Symbols load error:", err));
@@ -188,7 +199,7 @@ export default function PaperTradingPage() {
                   onChange={(e) => setBotSlug(e.target.value)}
                   className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm outline-none focus:border-amber-500"
                 >
-                  {botOptions.map((b: any) => (
+                  {botOptions.map((b: BotOption) => (
                     <option key={b.slug} value={b.slug} className="bg-slate-900">
                       {b.name} — {b.name_en}
                     </option>
@@ -216,7 +227,7 @@ export default function PaperTradingPage() {
                     {filteredSymbols.length === 0 && (
                       <option value="">نتیجه‌ای یافت نشد</option>
                     )}
-                    {filteredSymbols.map((s: any) => (
+                    {filteredSymbols.map((s: SymbolOption) => (
                       <option key={s.symbol} value={s.symbol} className="bg-slate-900">
                         {s.name_fa} ({s.base})
                       </option>
