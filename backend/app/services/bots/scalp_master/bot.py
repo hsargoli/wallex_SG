@@ -28,6 +28,7 @@ class ScalpState:
     check_count: int = 0
     recent_signals: list[dict] = field(default_factory=list)
     open_positions: list[PaperPosition] = field(default_factory=list)
+    capital: float = 300_000.0  # TMN — paper starting capital (P2b-pre)
     _task: asyncio.Task | None = None
 
 
