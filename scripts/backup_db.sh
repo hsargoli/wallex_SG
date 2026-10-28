@@ -6,7 +6,7 @@ export DATABASE_URL=$(grep '^DATABASE_URL=' /home/deploy/wallex/.env | cut -d '=
 # Replace asyncpg with standard postgresql for pg_dump
 DB_URL=${DATABASE_URL/postgresql+asyncpg/postgresql}
 
-BACKUP_DIR="/home/deploy/backups"
+BACKUP_DIR="/var/backups/wallex"
 mkdir -p "$BACKUP_DIR"
 
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
