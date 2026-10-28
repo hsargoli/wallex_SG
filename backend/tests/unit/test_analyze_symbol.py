@@ -10,6 +10,15 @@ import pytest
 from app.application.use_cases.analyze_symbol import AnalyzeSymbolUseCase
 from app.domain.entities.candle import Candle
 from app.infrastructure.analysis.rule_based_classifier import RuleBasedClassifier
+from app.infrastructure.cache.candles import cache as _candles_cache
+
+import pytest
+
+@pytest.fixture(autouse=True)
+def clear_candles_cache():
+    _candles_cache.clear()
+    yield
+    _candles_cache.clear()
 
 
 class FakeExchange:

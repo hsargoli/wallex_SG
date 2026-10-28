@@ -23,6 +23,7 @@ from app.domain.entities.candle import Candle
 from app.domain.ports.exchange import ExchangePort
 from app.services.bots.nooaah.config import NooaahConfig
 from app.services.bots.nooaah.strategy import TradeProposal, decide
+from app.services.bots.base import BaseBot, BotInfo, BotStatus
 
 log = structlog.get_logger("nooaah.bot")
 
@@ -38,7 +39,7 @@ class NooaahRunResult:
     error: str | None = None
 
 
-class NooaahBot:
+class NooaahBot(BaseBot):
     """ربات Nooaah — انتخاب بهترین نماد trending_up."""
 
     def __init__(
@@ -121,3 +122,32 @@ class NooaahBot:
             symbols_analyzed=list(candles_map.keys()),
             proposal=proposal,
         )
+
+    # --- BaseBot Interface (Minimal Implementation) ---
+    @property
+    def info(self) -> BotInfo:
+        return BotInfo(
+            slug="nooaah",
+            name="نوح",
+            name_en="Nooaah",
+            version="1.0.0",
+            description="ربات جامع ML و Regime",
+            capabilities=["paper", "live", "backtest"],
+            tier="production",
+        )
+
+    @property
+    def status(self) -> BotStatus:
+        return BotStatus.RUNNING
+
+    async def start(self, exchange) -> dict:
+        return {"status": "started", "message": "Nooaah is managed by runner"}
+
+    async def stop(self) -> dict:
+        return {"status": "stopped"}
+
+    def reset(self) -> dict:
+        return {"status": "reset"}
+
+    def get_status(self) -> dict:
+        return {"slug": "nooaah", "status": "running", "tier": "production"}

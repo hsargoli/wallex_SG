@@ -19,6 +19,20 @@ router = APIRouter(prefix="/bots", tags=["Bots"])
 
 
 @router.get(
+    "/list",
+    summary="لیست ربات‌ها (قابل فیلتر بر اساس tier)",
+)
+async def list_bots(tier: str | None = None):
+    """لیست ربات‌های ثبت‌شده."""
+    # در این نسخه‌ی MVP، متادیتای هسته‌ی اصلی را برمی‌گردانیم.
+    return {
+        "count": 1,
+        "items": [
+            {"slug": "nooaah", "tier": "production", "name": "نوح", "name_en": "Nooaah"}
+        ]
+    }
+
+@router.get(
     "/budgets",
     response_model=BotBudgetListResponse,
     summary="لیست بودجه‌ی همه ربات‌ها",

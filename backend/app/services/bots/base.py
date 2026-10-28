@@ -23,6 +23,7 @@ class BotInfo:
     description: str
     tags: list[str] = field(default_factory=list)
     capabilities: list[str] = field(default_factory=list)  # paper, live, backtest
+    tier: str = "experimental"  # "production" | "experimental"
     author: str = "ROSHD_SARV"
 
 
