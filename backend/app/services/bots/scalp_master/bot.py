@@ -183,6 +183,8 @@ class ScalpMasterBot(BaseBot):
 
                 if signal and signal.should_trade:
                     self._log_signal(symbol, signal)
+                    if self.state.paper_mode:  # P2c: paper entry
+                        self._paper_entry(symbol, signal)
             except Exception:
                 continue
 
