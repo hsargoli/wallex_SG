@@ -23,14 +23,20 @@ router = APIRouter(prefix="/bots", tags=["Bots"])
     summary="لیست ربات‌ها (قابل فیلتر بر اساس tier)",
 )
 async def list_bots(tier: str | None = None):
-    """لیست ربات‌های ثبت‌شده."""
-    # در این نسخه‌ی MVP، متادیتای هسته‌ی اصلی را برمی‌گردانیم.
-    return {
-        "count": 1,
-        "items": [
-            {"slug": "nooaah", "tier": "production", "name": "نوح", "name_en": "Nooaah"}
-        ]
-    }
+    """لیست ربات‌های ثبت‌شده — داینامیک از registry + nooaah (scheduler-based)."""
+    items = [
+        {"slug": "nooaah", "tier": "production", "name": "نوح", "name_en": "Nooaah"}
+    ]
+    for info in bot_registry.list_all():
+        items.append({
+            "slug": info.slug,
+            "tier": info.tier,
+            "name": info.name,
+            "name_en": info.name_en,
+        })
+    if tier:
+        items = [x for x in items if x["tier"] == tier]
+    return {"count": len(items), "items": items}
 
 @router.get(
     "/budgets",
