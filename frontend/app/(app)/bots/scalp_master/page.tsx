@@ -47,6 +47,8 @@ export default function ScalpMasterPage() {
   type ScalpSignal = { symbol?: string; [k: string]: unknown };
   type ScalpStatus = {
     is_running: boolean;
+    paper_mode?: boolean;
+    capital?: number;
     started_at: number;
     last_check_at: number;
     check_count: number;
@@ -100,9 +102,16 @@ export default function ScalpMasterPage() {
                   <h1 className="text-2xl font-bold tracking-tight">
                     {info.data.name}
                   </h1>
-                  <p className="text-xs text-muted-foreground">
-                    {info.data.name_en} • v{info.data.version}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {info.data.name_en} • v{info.data.version}
+                    </p>
+                    {data?.paper_mode && (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px]">
+                        Paper Mode
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -218,7 +227,7 @@ export default function ScalpMasterPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">تعداد چک</p>
                 <p className="font-mono text-2xl font-bold text-blue-400">
@@ -233,10 +242,22 @@ export default function ScalpMasterPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">آخرین چک</p>
-                <p className="font-mono text-sm">
+                <p className="font-mono text-sm mt-1.5">
                   {data.last_check_at
                     ? new Date(data.last_check_at * 1000).toLocaleTimeString("en-GB", { hour12: false })
                     : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">سرمایه مجازی</p>
+                <p className="font-mono text-sm font-bold text-emerald-400 mt-1.5">
+                  {(data.capital ?? 0).toLocaleString()} TMN
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">دوره اسکن</p>
+                <p className="font-mono text-sm mt-1.5">
+                  {Math.round((data.config?.check_interval_sec ?? 1800) / 60)} دقیقه
                 </p>
               </div>
             </div>
