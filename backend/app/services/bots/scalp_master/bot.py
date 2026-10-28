@@ -21,6 +21,7 @@ class ScalpState:
     """State اسکالپ‌مستر."""
 
     is_running: bool = False
+    paper_mode: bool = True
     started_at: int = 0
     last_check_at: int = 0
     check_count: int = 0
