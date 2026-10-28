@@ -4,6 +4,63 @@
 
 ---
 
+## 🚀 گزارش 2026-10-28 — فاز امنیت و پایداری (نهایی)
+
+**وضعیت:** 🟢 **Live — Production Ready** | **گزارش‌دهنده:** دی پرتو (معمار فنی) / دی دریا (CTO)
+**تگ:** `v1.2.2-bots-arch` → `v1.2.3-security`
+
+### 🎯 دستاوردهای فاز
+
+#### ۱. بکاپ‌گیری دیتابیس (Bakup)
+- **اسکریپت:** `scripts/backup_db.sh`
+- **مسیر:** `/var/backups/wallex/` (طبق دستور CTO)
+- **زمان‌بندی:** `cron` هر شب ۳ بامداد (`0 3 * * *`)
+- **Rotation:** ۷ روز (`find -mtime +7 -delete`)
+- **فرمت:** `pg_dump | gzip` (`.sql.gz`)
+- **شاهد:** ۹ فایل بکاپ (۸ قدیمی + ۱ جدید)، هر کدام ~۵KB
+
+#### ۲. امنیت (Security)
+- **`.env`:** `-rw-------` (600) owned by `deploy`
+- **توکن‌های والکس:** رمزنگاری با Fernet (AES-128-CBC + HMAC-SHA256)
+- **کلید رمزنگاری:** `WALLEX_TOKEN_ENC_KEY` (44 char base64)
+- **Fail-fast:** اگر کلید نباشه، برنامه بالا نمیاد
+- **ستون‌ها:** `users.wallex_token_encrypted` و `users.wallex_trade_token_encrypted`
+
+#### ۳. مستندسازی معماری (Documentation)
+- **فایل:** `docs/ARCHITECTURE.md`
+- **نسخه:** v1.0 (2026-10-02) → **v1.1 (2026-10-28)**
+- **بخش‌های جدید:**
+  - **کش درون‌حافظه‌ای:** MarketsCache (TTL=1h), CandlesCache (TTL per TF), CandlePrefetcher
+  - **معماری ربات‌ها (Dual-Tier):** Production vs Experimental, BaseBot, BotRegistry
+  - **بکاپ دیتابیس:** اسکریپت + cron + rotation
+
+### 📊 نتایج کلیدی (از فازهای قبلی)
+| Endpoint | قبل | بعد |
+|---|---|---|
+| `/v1/markets` | ~۸ ثانیه | **۱۶ میلی‌ثانیه** |
+| `/signals/batch` ۱۰ نماد | ~۳۰ ثانیه | **~۰.۵ ثانیه** |
+| Nooaah cycle | — | **۲.۵ میلی‌ثانیه** |
+
+### ✅ تست‌ها
+- **۲۶۳ تست Unit:** همه PASS
+- **تست‌های جدید:** `test_bot_architecture.py` (3 tests), `test_bear_hunter_audit.py` (2 tests)
+- **Coverage:** ربات‌های Production (nooaah, bear_hunter, scalp_master)
+
+### 🚧 بدهی‌های فنی باقی‌مانده (برای فاز بعد)
+1. **`pre_flight.py`:** ۲۰+ چک در ۵ فاز (شاید قابل merge).
+2. **`Scalp Master`:** تست integration (paper mode) ندارد.
+3. **`experimental bots`:** هیچ‌کدام تست integration ندارند.
+4. **SMTP:** سرویس ایرانی (نیاز به تأیید).
+5. **Cron DB (کش دیتابیسی کندل‌ها):** نیاز به ADR جدا.
+
+### 🌿 دستاورد
+با این فاز، سروباتس از یک «پروژه‌ی شخصی خوب» به یک **«محصول تجاری بالغ»** تبدیل شد:
+- **سرعت:** ۱۶ms (از ۸s)
+- **پایداری:** بکاپ روزانه + rotation
+- **امنیت:** Fernet + `.env` 600
+- **مستندسازی:** ARCHITECTURE.md v1.1
+
+---
 ## 🚀 گزارش 2026-10-28 — ساعت 08:53 (معماری ربات‌ها)
 **وضعیت:** 🟢 **Live — Stable** | **گزارش‌دهنده:** دی پرتو (مجری) / دی صحرا (مشاور)
 **تگ:** `v1.2.2-bots-arch`
