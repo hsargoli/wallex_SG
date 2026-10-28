@@ -8,28 +8,14 @@
 
 import asyncio
 import time
-from dataclasses import dataclass, field
 
 from app.domain.entities.candle import Candle
 from app.domain.entities.paper_position import PaperPosition
 from app.services.bots.base import BaseBot, BotInfo, BotStatus
 from app.services.bots.scalp_master.config import ScalpMasterConfig
+from app.services.bots.scalp_master.state import ScalpState
+from app.services.bots.scalp_master.store import ScalpStore
 from app.services.bots.scalp_master.strategy import evaluate_entry
-
-
-@dataclass
-class ScalpState:
-    """State اسکالپ‌مستر."""
-
-    is_running: bool = False
-    paper_mode: bool = True
-    started_at: int = 0
-    last_check_at: int = 0
-    check_count: int = 0
-    recent_signals: list[dict] = field(default_factory=list)
-    open_positions: list[PaperPosition] = field(default_factory=list)
-    capital: float = 300_000.0  # TMN — paper starting capital (P2b-pre)
-    _task: asyncio.Task | None = None
 
 
 class ScalpMasterBot(BaseBot):
@@ -37,8 +23,19 @@ class ScalpMasterBot(BaseBot):
 
     def __init__(self, config: ScalpMasterConfig | None = None):
         self.config = config or ScalpMasterConfig()
-        self.state = ScalpState()
+        self.store = ScalpStore()
+        self._states: dict[str, ScalpState] = {}
         self._status = BotStatus.IDLE
+
+    def _get_state(self, user_id: str) -> ScalpState:
+        if user_id not in self._states:
+            self._states[user_id] = self.store.load(user_id)
+        return self._states[user_id]
+
+    @property
+    def state(self) -> ScalpState:
+        """Backward-compat: default user's state."""
+        return self._get_state("default")
 
     @property
     def info(self) -> BotInfo:
@@ -57,20 +54,22 @@ class ScalpMasterBot(BaseBot):
     def status(self) -> BotStatus:
         return self._status
 
-    async def start(self, exchange) -> dict:
+    async def start(self, exchange, user_id: str = "default") -> dict:
         """شروع چک دوره‌ای."""
-        if self.state.is_running:
+        state = self._get_state(user_id)
+        if state.is_running:
             return {"status": "already_running"}
 
         self._status = BotStatus.RUNNING
-        self.state.is_running = True
-        self.state.started_at = int(time.time())
+        state.is_running = True
+        state.started_at = int(time.time())
+        self.store.save(user_id, state)
 
         # اولین چک
-        await self._check_symbols(exchange)
+        await self._check_symbols(exchange, user_id=user_id)
 
         # loop
-        self.state._task = asyncio.create_task(self._loop(exchange))
+        state._task = asyncio.create_task(self._loop(exchange, user_id=user_id))
 
         return {
             "status": "started",
@@ -79,23 +78,26 @@ class ScalpMasterBot(BaseBot):
             "interval_sec": self.config.check_interval_sec,
         }
 
-    async def stop(self) -> dict:
+    async def stop(self, user_id: str = "default") -> dict:
         """توقف."""
+        state = self._get_state(user_id)
         self._status = BotStatus.STOPPED
-        self.state.is_running = False
+        state.is_running = False
+        self.store.save(user_id, state)
 
-        if self.state._task and not self.state._task.done():
-            self.state._task.cancel()
+        if state._task and not state._task.done():
+            state._task.cancel()
             try:
-                await self.state._task
+                await state._task
             except asyncio.CancelledError:
                 pass
 
         return {"status": "stopped"}
 
-    def reset(self) -> dict:
+    def reset(self, user_id: str = "default") -> dict:
         """ریست."""
-        self.state = ScalpState()
+        self._states[user_id] = ScalpState()
+        self.store.save(user_id, self._states[user_id])
         self._status = BotStatus.IDLE
         return {"status": "reset"}
 
@@ -108,9 +110,9 @@ class ScalpMasterBot(BaseBot):
         self.config.symbols = symbols
         return {"status": "ok", "symbols": symbols}
 
-    def get_status(self) -> dict:
+    def get_status(self, user_id: str = "default") -> dict:
         """وضعیت کامل."""
-        s = self.state
+        s = self._get_state(user_id)
         from dataclasses import asdict
         return {
             "is_running": s.is_running,
@@ -155,22 +157,24 @@ class ScalpMasterBot(BaseBot):
 
     # ─── Internals ───
 
-    async def _loop(self, exchange) -> None:
+    async def _loop(self, exchange, user_id: str = "default") -> None:
         """Loop چک دوره‌ای."""
-        while self.state.is_running:
+        state = self._get_state(user_id)
+        while state.is_running:
             try:
                 await asyncio.sleep(self.config.check_interval_sec)
-                if not self.state.is_running:
+                if not state.is_running:
                     break
-                await self._check_symbols(exchange)
+                await self._check_symbols(exchange, user_id=user_id)
             except asyncio.CancelledError:
                 break
             except Exception:
                 await asyncio.sleep(60)
 
-    async def _check_symbols(self, exchange) -> None:
+    async def _check_symbols(self, exchange, user_id: str = "default") -> None:
         """چک همه نمادها."""
         from app.application.use_cases.get_candles import GetCandlesUseCase
+        state = self._get_state(user_id)
 
         for symbol in self.config.symbols:
             try:
@@ -187,23 +191,25 @@ class ScalpMasterBot(BaseBot):
                 signal = evaluate_entry(candles, self.config)
 
                 if signal and signal.should_trade:
-                    self._log_signal(symbol, signal)
-                    if self.state.paper_mode:  # P2c: paper entry
-                        self._paper_entry(symbol, signal)
+                    self._log_signal(symbol, signal, user_id=user_id)
+                    if state.paper_mode:  # P2c: paper entry
+                        self._paper_entry(symbol, signal, user_id=user_id)
             except Exception:
                 continue
 
-        self.state.last_check_at = int(time.time())
-        self.state.check_count += 1
+        state.last_check_at = int(time.time())
+        state.check_count += 1
+        self.store.save(user_id, state)
 
-    def _paper_entry(self, symbol: str, signal) -> "PaperPosition | None":
+    def _paper_entry(self, symbol: str, signal, user_id: str = "default") -> "PaperPosition | None":
         """Create + append a virtual PaperPosition (paper mode only, no exchange call)."""
-        if not self.state.paper_mode:
+        state = self._get_state(user_id)
+        if not state.paper_mode:
             return None
         entry_price = float(signal.entry_price)
         if entry_price <= 0:
             return None  # fail-safe: invalid price
-        alloc_tmn = self.state.capital * (self.config.position_size_pct / 100)
+        alloc_tmn = state.capital * (self.config.position_size_pct / 100)
         quantity = alloc_tmn / entry_price  # TMN allocation → units
         pos = PaperPosition(
             symbol=symbol,
@@ -213,15 +219,17 @@ class ScalpMasterBot(BaseBot):
             tp=float(signal.take_profit),
             sl=float(signal.stop_loss),
             entry_time=int(time.time()),
-            entry_idx=self.state.check_count,
+            entry_idx=state.check_count,
             reason=signal.reason,
             bot_slug="scalp_master",
         )
-        self.state.open_positions.append(pos)
+        state.open_positions.append(pos)
+        self.store.save(user_id, state)
         return pos
 
-    def _log_signal(self, symbol: str, signal) -> None:
+    def _log_signal(self, symbol: str, signal, user_id: str = "default") -> None:
         """ذخیره سیگنال."""
+        state = self._get_state(user_id)
         entry = {
             "symbol": symbol,
             "action": signal.action,
@@ -233,6 +241,7 @@ class ScalpMasterBot(BaseBot):
             "rsi": signal.rsi,
             "time": int(time.time()),
         }
-        self.state.recent_signals.insert(0, entry)
-        if len(self.state.recent_signals) > self.config.max_signals:
-            self.state.recent_signals = self.state.recent_signals[: self.config.max_signals]
+        state.recent_signals.insert(0, entry)
+        if len(state.recent_signals) > self.config.max_signals:
+            state.recent_signals = state.recent_signals[: self.config.max_signals]
+        self.store.save(user_id, state)

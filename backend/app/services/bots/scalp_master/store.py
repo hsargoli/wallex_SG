@@ -3,7 +3,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict
-from app.services.bots.scalp_master.bot import ScalpState
+from app.services.bots.scalp_master.state import ScalpState
 from app.services.bots.scalp_master.paths import user_state_path, USERS_DIR
 
 class ScalpStore:
@@ -16,10 +16,13 @@ class ScalpStore:
 
     def save(self, user_id: str, state: ScalpState) -> None:
         path = self._path(user_id)
-        # Ensure we don't serialize internal _task or non-serializable objects
-        d = asdict(state)
-        d.pop("_task", None)
-        
+        # Temporarily clear _task (asyncio.Task is not deepcopy-able by asdict)
+        task = state._task
+        state._task = None
+        try:
+            d = asdict(state)
+        finally:
+            state._task = task
         with open(path, "w", encoding="utf-8") as f:
             json.dump(d, f, ensure_ascii=False, indent=2)
 
