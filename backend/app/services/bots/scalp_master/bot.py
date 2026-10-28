@@ -189,6 +189,30 @@ class ScalpMasterBot(BaseBot):
         self.state.last_check_at = int(time.time())
         self.state.check_count += 1
 
+    def _paper_entry(self, symbol: str, signal) -> "PaperPosition | None":
+        """Create + append a virtual PaperPosition (paper mode only, no exchange call)."""
+        if not self.state.paper_mode:
+            return None
+        entry_price = float(signal.entry_price)
+        if entry_price <= 0:
+            return None  # fail-safe: invalid price
+        alloc_tmn = self.state.capital * (self.config.position_size_pct / 100)
+        quantity = alloc_tmn / entry_price  # TMN allocation → units
+        pos = PaperPosition(
+            symbol=symbol,
+            side="BUY",
+            entry_price=entry_price,
+            quantity=quantity,
+            tp=float(signal.take_profit),
+            sl=float(signal.stop_loss),
+            entry_time=int(time.time()),
+            entry_idx=self.state.check_count,
+            reason=signal.reason,
+            bot_slug="scalp_master",
+        )
+        self.state.open_positions.append(pos)
+        return pos
+
     def _log_signal(self, symbol: str, signal) -> None:
         """ذخیره سیگنال."""
         entry = {
