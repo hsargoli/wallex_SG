@@ -1,6 +1,8 @@
 """Bot Registry endpoints."""
 
-from fastapi import APIRouter, HTTPException, Request, status
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from app.presentation.api.v1.auth import require_user_token
 
 from app.domain.models.budget import (
     BotBudgetListResponse,
@@ -158,20 +160,27 @@ async def get_bot_info(slug: str):
 
 
 @router.get("/{slug}/status")
-async def get_bot_status(slug: str):
-    """وضعیت کامل یک ربات."""
+async def get_bot_status(
+    slug: str,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """وضعیت کامل یک ربات (per-user)."""
     bot = bot_registry.get(slug)
     if bot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"ربات '{slug}' پیدا نشد",
         )
-    return bot.get_status()
+    return bot.get_status(user_id=user["sub"])
 
 
 @router.post("/{slug}/start")
-async def start_bot(slug: str, request: Request):
-    """شروع یک ربات."""
+async def start_bot(
+    slug: str,
+    request: Request,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """شروع یک ربات (per-user)."""
     bot = bot_registry.get(slug)
     if bot is None:
         raise HTTPException(
@@ -179,19 +188,22 @@ async def start_bot(slug: str, request: Request):
             detail=f"ربات '{slug}' پیدا نشد",
         )
     exchange = request.app.state.exchange
-    return await bot.start(exchange)
+    return await bot.start(exchange, user_id=user["sub"])
 
 
 @router.post("/{slug}/stop")
-async def stop_bot(slug: str):
-    """توقف یک ربات."""
+async def stop_bot(
+    slug: str,
+    user: Annotated[dict, Depends(require_user_token)],
+):
+    """توقف یک ربات (per-user)."""
     bot = bot_registry.get(slug)
     if bot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"ربات '{slug}' پیدا نشد",
         )
-    return await bot.stop()
+    return await bot.stop(user_id=user["sub"])
 
 
 @router.post("/{slug}/timeframe")
