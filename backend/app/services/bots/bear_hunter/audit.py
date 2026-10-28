@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Any
 
+from app.services.bots.bear_hunter.paths import DATA_DIR
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -20,8 +22,8 @@ class AuditEntry:
     dry_run_result: Optional[dict] = None
 
 class AuditTrail:
-    def __init__(self, file_path: str = "backend/data/bots/bear_hunter/audit.jsonl"):
-        self.path = Path(file_path)
+    def __init__(self, file_path: str | Path | None = None):
+        self.path = Path(file_path) if file_path is not None else (DATA_DIR / "audit.jsonl")
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     async def _append(self, entry_dict: dict) -> None:
