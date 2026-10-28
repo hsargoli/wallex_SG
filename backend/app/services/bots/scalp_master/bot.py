@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass, field
 
 from app.domain.entities.candle import Candle
+from app.domain.entities.paper_position import PaperPosition
 from app.services.bots.base import BaseBot, BotInfo, BotStatus
 from app.services.bots.scalp_master.config import ScalpMasterConfig
 from app.services.bots.scalp_master.strategy import evaluate_entry
@@ -26,6 +27,7 @@ class ScalpState:
     last_check_at: int = 0
     check_count: int = 0
     recent_signals: list[dict] = field(default_factory=list)
+    open_positions: list[PaperPosition] = field(default_factory=list)
     _task: asyncio.Task | None = None
 
 
