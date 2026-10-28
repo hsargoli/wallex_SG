@@ -49,7 +49,8 @@ class ScalpMasterBot(BaseBot):
             version="0.1.0",
             description="خرید پس از سقوط و فروش با سود کم (اسکالپ نزولی)",
             tags=["scalping", "dip_buy", "mean_reversion"],
-            capabilities=["monitor", "signal", "display"],
+            capabilities=["monitor", "signal", "display", "paper"],
+            tier="production",
         )
 
     @property
@@ -110,8 +111,12 @@ class ScalpMasterBot(BaseBot):
     def get_status(self) -> dict:
         """وضعیت کامل."""
         s = self.state
+        from dataclasses import asdict
         return {
             "is_running": s.is_running,
+            "paper_mode": s.paper_mode,
+            "capital": s.capital,
+            "open_positions": [asdict(p) for p in s.open_positions],
             "started_at": s.started_at,
             "last_check_at": s.last_check_at,
             "check_count": s.check_count,

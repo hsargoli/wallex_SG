@@ -36,8 +36,8 @@ class TestBotContract:
         assert "monitor" in info.capabilities
         assert "signal" in info.capabilities
         assert "display" in info.capabilities
-        # CRITICAL: monitor-only contract — no trade capabilities
-        assert "paper" not in info.capabilities
+        # Contract evolution (P5): paper is now allowed, live is still forbidden.
+        assert "paper" in info.capabilities
         assert "live" not in info.capabilities
 
     def test_reset_clears_state(self):
