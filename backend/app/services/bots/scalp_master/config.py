@@ -43,7 +43,7 @@ class ScalpMasterConfig:
     symbols: list[str] = None
 
     # چک کردن
-    check_interval_sec: int = 180  # هر ۳ دقیقه
+    check_interval_sec: int = 1800  # هر ۳۰ دقیقه (P8)
     max_signals: int = 50
 
     def __post_init__(self):
