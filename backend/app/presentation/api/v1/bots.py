@@ -3,6 +3,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.presentation.api.v1.auth import require_user_token
+from app.infrastructure.db.session import SessionLocal
+from app.infrastructure.db.models.user_bot_config import UserBotConfig
+from sqlalchemy import select
+import uuid as _uuid
+from decimal import Decimal as _Decimal
 
 from app.domain.models.budget import (
     BotBudgetListResponse,
@@ -174,6 +179,34 @@ async def get_bot_status(
     return bot.get_status(user_id=user["sub"])
 
 
+async def _ensure_user_config(user_id: str, slug: str) -> None:
+    """Create default UserBotConfig if missing (paper, 300k)."""
+    try:
+        user_uuid = _uuid.UUID(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "invalid_sub", "message": "sub نامعتبر در توکن"},
+        )
+    async with SessionLocal() as session:
+        res = await session.execute(
+            select(UserBotConfig).where(
+                UserBotConfig.user_id == user_uuid,
+                UserBotConfig.bot_slug == slug,
+            )
+        )
+        cfg = res.scalar_one_or_none()
+        if cfg is None:
+            cfg = UserBotConfig(
+                user_id=user_uuid,
+                bot_slug=slug,
+                mode="paper",
+                capital_allocated=_Decimal("300000.00"),
+            )
+            session.add(cfg)
+            await session.commit()
+
+
 @router.post("/{slug}/start")
 async def start_bot(
     slug: str,
@@ -187,8 +220,10 @@ async def start_bot(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"ربات '{slug}' پیدا نشد",
         )
+    user_id = user["sub"]
+    await _ensure_user_config(user_id, slug)
     exchange = request.app.state.exchange
-    return await bot.start(exchange, user_id=user["sub"])
+    return await bot.start(exchange, user_id=user_id)
 
 
 @router.post("/{slug}/stop")

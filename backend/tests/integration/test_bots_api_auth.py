@@ -9,7 +9,10 @@ from app.presentation.api.v1.auth import require_user_token
 from app.services.bots import bot_registry
 
 
-def _fake_user(user_id: str = "user-a") -> dict:
+VALID_UID = "550e8400-e29b-41d4-a716-446655440000"
+
+
+def _fake_user(user_id: str = VALID_UID) -> dict:
     return {"sub": user_id}
 
 
@@ -27,10 +30,10 @@ class TestBotsApiAuth:
     def test_start_passes_user_id_to_bot(self):
         bot = bot_registry.get("scalp_master")
         assert bot is not None
-
         fake_exchange = object()
-        with patch.object(bot, "start", new=AsyncMock(return_value={"status": "started"})) as mock_start:
-            app.dependency_overrides[require_user_token] = lambda: _fake_user("user-a")
+        with patch.object(bot, "start", new=AsyncMock(return_value={"status": "started"})) as mock_start, \
+             patch("app.presentation.api.v1.bots._ensure_user_config", new=AsyncMock()) as mock_cfg:
+            app.dependency_overrides[require_user_token] = lambda: _fake_user(VALID_UID)
             try:
                 with TestClient(app) as client:
                     client.app.state.exchange = fake_exchange
@@ -38,6 +41,7 @@ class TestBotsApiAuth:
                     assert r.status_code == 200, r.text
                     assert mock_start.called
                     _, kwargs = mock_start.call_args
-                    assert kwargs.get("user_id") == "user-a", f"user_id not passed: {kwargs}"
+                    assert kwargs.get("user_id") == VALID_UID, f"user_id not passed: {kwargs}"
+                    assert mock_cfg.called
             finally:
                 app.dependency_overrides.clear()
