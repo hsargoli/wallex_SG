@@ -2,8 +2,8 @@
 
 > معماری کامل سیستم، لایه‌ها، جریان داده، و تصمیمات طراحی.
 
-**آخرین به‌روزرسانی:** ۲۰۲۶-۱۰-۰۲
-**نسخه:** 1.0
+**آخرین به‌روزرسانی:** ۲۰۲۶-۱۰-۲۸
+**نسخه:** 1.1
 **وضعیت:** فعال
 
 ---
@@ -623,6 +623,104 @@ Decimal("0.1") + Decimal("0.2")  # = Decimal('0.3')
 قبلاً ۱۱ router پنهان بودن چون `main.py` فقط ۳ تا رو include می‌کرد. الان تنها نقطه‌ی مدیریت `router.py` هست.
 
 ---
+
+
+---
+
+## کش درون‌حافظه‌ای
+
+**هدف:** کاهش فشار روی والکس و جلوگیری از Timeout (۵۰۴).
+
+### MarketsCache
+- **فایل:** `app/infrastructure/cache/markets.py`
+- **کلید:** یکتا (کل لیست markets)
+- **TTL:** ۳۶۰۰ ثانیه (۱ ساعت) — markets به ندرت تغییر می‌کنند
+- **الگو:** مشابه `_PNL_CACHE` در `services/wallex/service.py`
+
+### CandlesCache
+- **فایل:** `app/infrastructure/cache/candles.py`
+- **کلید:** `(symbol, timeframe, limit)`
+- **TTL per timeframe:** 15m=60s، 1h=900s (۱۵ دقیقه)، 4h=600s، 1D=3600s
+- **Stale Fallback:** در صورت خطای والکس، داده‌ی قدیمی (stale) برگردانده می‌شود
+
+### CandlePrefetcher
+- **فایل:** `app/services/prefetch.py`
+- **عملکرد:** هر ۵ دقیقه، ۳۰ نماد برتر را warm می‌کند
+- **بار والکس:** ~۲۶٪ (تأیید CTO)
+
+### نتیجه
+| Endpoint | قبل | بعد |
+|---|---|---|
+| `/v1/markets` | ~۸ ثانیه | **۱۶ میلی‌ثانیه** |
+| `/signals/batch` ۱۰ نماد | ~۳۰ ثانیه | **~۰.۵ ثانیه** |
+
+---
+
+## معماری ربات‌ها (Dual-Tier)
+
+### تفکیک Production / Experimental
+
+| Tier | ربات‌ها | کاربرد |
+|---|---|---|
+| **Production** | `nooaah`, `bear_hunter`, `scalp_master` | پول واقعی، پایدار |
+| **Experimental** | `trend_follow`, `volatility_hunter`, `volatility_hunter_v2`, `mean_revert`, `grid_bot`, `smart_portfolio` | آزمایشگاهی |
+
+### BaseBot Interface
+
+همه‌ی ربات‌ها از `BaseBot` ارث‌بری می‌کنند:
+
+```python
+class BaseBot(ABC):
+    @property
+    @abstractmethod
+    def info(self) -> BotInfo: ...
+
+    @property
+    @abstractmethod
+    def status(self) -> BotStatus: ...
+
+    @abstractmethod
+    async def start(self, exchange) -> dict: ...
+
+    @abstractmethod
+    async def stop(self) -> dict: ...
+
+    @abstractmethod
+    def reset(self) -> dict: ...
+
+    @abstractmethod
+    def get_status(self) -> dict: ...
+
+BotRegistry
+
+    فایل: app/services/bots/registry.py
+
+    عملکرد: ثبت و کشف ربات‌ها (singleton)
+
+    API: GET /v1/bots/list?tier=production|experimental
+
+Audit Trail (Bear Hunter)
+
+    الگو: Write-Ahead Log (WAL)
+
+    ترتیب: intent → success/failure
+
+    مسیر: paths.DATA_DIR / "audit.jsonl" (absolute)
+
+بکاپ دیتابیس
+
+    اسکریپت: scripts/backup_db.sh
+
+    مسیر: /var/backups/wallex/
+
+    زمان‌بندی: cron هر شب ۳ بامداد (0 3 * * *)
+
+    Rotation: ۷ روز (find -mtime +7 -delete)
+
+    فرمت: pg_dump | gzip (.sql.gz)
+
+    نمونه: wallex_db_2026-10-28_03-00.sql.gz (~۵KB)
+
 
 ## محدودیت‌ها و بدهی فنی
 
