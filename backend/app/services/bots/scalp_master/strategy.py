@@ -36,12 +36,40 @@ def _last(values):
     return None
 
 
+def is_uptrend_unfavorable(
+    candles: list[Candle],
+    config: ScalpMasterConfig,
+) -> bool:
+    """True if price is in strong uptrend (bad for dip-buying)."""
+    if not config.trend_filter_enabled:
+        return False
+    if len(candles) < config.trend_ema_period + 5:
+        return False
+    ema_vals = ema(candles, config.trend_ema_period)
+    ema_now = _last(ema_vals)
+    if ema_now is None or float(ema_now) <= 0:
+        return False
+    price = float(candles[-1].close)
+    gap_pct = (price - float(ema_now)) / float(ema_now) * 100.0
+    lookback = min(10, len(ema_vals) - 1)
+    if lookback <= 0:
+        return False
+    ema_prev = ema_vals[-(lookback + 1)]
+    if ema_prev is None or float(ema_prev) <= 0:
+        return False
+    slope_pct = (float(ema_now) - float(ema_prev)) / float(ema_prev) * 100.0
+    return gap_pct > config.trend_ema_gap_pct and slope_pct > 0
+
+
 def evaluate_entry(
     candles: list[Candle],
     config: ScalpMasterConfig,
 ) -> ScalpSignal | None:
     """تصمیم ورود با تأیید برگشت."""
     if len(candles) < config.warmup_candles:
+        return None
+
+    if is_uptrend_unfavorable(candles, config):
         return None
 
     current = candles[-1]

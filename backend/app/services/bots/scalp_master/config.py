@@ -29,6 +29,11 @@ class ScalpMasterConfig:
     # فیلتر سقوط آزاد
     max_dist_from_ema: float = 5.0
 
+    # فیلتر رژیم (Phase 2B-1)
+    trend_filter_enabled: bool = False
+    trend_ema_period: int = 50
+    trend_ema_gap_pct: float = 3.0
+
     # Timeout
     timeout_candles: int = 24
 
