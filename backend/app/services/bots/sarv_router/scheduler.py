@@ -1,15 +1,11 @@
-"""SarvRouterScheduler — tick SarvRouter every N minutes (like nooaah)."""
+"""SarvRouterScheduler — tick SarvRouter every N minutes using exchange data."""
 from __future__ import annotations
-
-import csv
-from datetime import datetime, timezone
-from decimal import Decimal
-from pathlib import Path
 
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.domain.entities.candle import Candle
+from app.application.use_cases.get_candles import GetCandlesUseCase
+from app.domain.ports.exchange import ExchangePort
 from app.services.bots.sarv_router.audit import AuditTrail
 from app.services.bots.sarv_router.bot import SarvRouter
 from app.services.bots.sarv_router.config import SarvRouterConfig
@@ -17,16 +13,25 @@ from app.services.bots.sarv_router.store import SarvStore
 
 log = structlog.get_logger("sarv_router.scheduler")
 
-_BACKEND = Path(__file__).resolve().parent.parent.parent.parent.parent
-_CSV = _BACKEND / "data" / "candles" / "historical" / "BTCUSDT_1h.csv"
-
 
 class SarvRouterScheduler:
-    """Tick SarvRouter every N minutes. Single-worker only."""
+    """Tick SarvRouter every N minutes. Uses exchange data (not CSV)."""
 
-    def __init__(self, interval_minutes: int = 30, user_id: str = "production-default"):
+    def __init__(
+        self,
+        exchange: ExchangePort,
+        interval_minutes: int = 30,
+        user_id: str = "production-default",
+        symbol: str = "BTCTMN",
+        timeframe: str = "1h",
+        candle_limit: int = 300,
+    ):
+        self._exchange = exchange
         self._interval = interval_minutes
         self._user_id = user_id
+        self._symbol = symbol
+        self._timeframe = timeframe
+        self._candle_limit = candle_limit
         self._scheduler: AsyncIOScheduler | None = None
         self._last_result: dict | None = None
         self._last_error: str | None = None
@@ -51,10 +56,15 @@ class SarvRouterScheduler:
 
     async def _job(self) -> None:
         try:
-            candles = _load_recent(300)
+            uc = GetCandlesUseCase(exchange=self._exchange)
+            candles = await uc.execute(
+                symbol=self._symbol,
+                timeframe=self._timeframe,
+                limit=self._candle_limit,
+            )
             if not candles:
                 self._last_error = "no candles loaded"
-                log.error("sarv_router.no_candles")
+                log.error("sarv_router.no_candles", symbol=self._symbol)
                 return
 
             router = SarvRouter(
@@ -73,6 +83,7 @@ class SarvRouterScheduler:
                 action=result.get("action"),
                 regime=result.get("regime"),
                 active_bots=result.get("active_bots"),
+                candles=len(candles),
             )
         except Exception as exc:
             self._last_error = str(exc)
@@ -89,20 +100,3 @@ class SarvRouterScheduler:
     @property
     def running(self) -> bool:
         return self._scheduler is not None and self._scheduler.running
-
-
-def _load_recent(n: int = 300) -> list[Candle]:
-    if not _CSV.exists():
-        return []
-    out = []
-    with open(_CSV) as f:
-        for row in csv.DictReader(f):
-            ts = int(row["open_time"])
-            if ts > 10_000_000_000:
-                ts //= 1000
-            out.append(Candle(
-                time=ts, open=Decimal(row["open"]), high=Decimal(row["high"]),
-                low=Decimal(row["low"]), close=Decimal(row["close"]),
-                volume=Decimal(row["volume"]),
-            ))
-    return out[-n:]
