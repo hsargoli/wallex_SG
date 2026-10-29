@@ -15,7 +15,7 @@ from app.services.bots.base import BaseBot, BotInfo, BotStatus
 from app.services.bots.scalp_master.config import ScalpMasterConfig
 from app.services.bots.scalp_master.state import ScalpState
 from app.services.bots.scalp_master.store import ScalpStore
-from app.services.bots.scalp_master.strategy import evaluate_entry
+from app.services.bots.scalp_master.strategy import evaluate_entry, evaluate_exit
 
 
 class ScalpMasterBot(BaseBot):
@@ -171,12 +171,24 @@ class ScalpMasterBot(BaseBot):
             except Exception:
                 await asyncio.sleep(60)
 
+    def _tf_to_sec(self) -> int:
+        tf = self.config.timeframe
+        if tf.endswith("m"):
+            return int(tf[:-1]) * 60
+        if tf.endswith("h"):
+            return int(tf[:-1]) * 3600
+        if tf.endswith("d"):
+            return int(tf[:-1]) * 86400
+        return 3600
+
     async def _check_symbols(self, exchange, user_id: str = "default") -> None:
-        """چک همه نمادها."""
+        """چک همه نمادها — ابتدا exit، سپس entry."""
         from app.application.use_cases.get_candles import GetCandlesUseCase
         state = self._get_state(user_id)
+        tf_sec = self._tf_to_sec()
+        scan = set(self.config.symbols) | {p.symbol for p in state.open_positions}
 
-        for symbol in self.config.symbols:
+        for symbol in scan:
             try:
                 uc = GetCandlesUseCase(exchange=exchange)
                 candles = await uc.execute(
@@ -188,11 +200,35 @@ class ScalpMasterBot(BaseBot):
                 if not candles or len(candles) < self.config.warmup_candles:
                     continue
 
-                signal = evaluate_entry(candles, self.config)
+                # 1) Exit check for open positions on this symbol
+                exited = False
+                now_ts = int(time.time())
+                for pos in list(state.open_positions):
+                    if pos.symbol != symbol:
+                        continue
+                    candles_in = max(0, (now_ts - int(pos.entry_time)) // tf_sec)
+                    should_exit, exit_price, reason = evaluate_exit(
+                        candles,
+                        float(pos.entry_price),
+                        float(pos.sl),
+                        float(pos.tp),
+                        candles_in,
+                        self.config,
+                    )
+                    if should_exit:
+                        self._paper_exit(symbol, exit_price, reason, user_id=user_id)
+                        exited = True
 
+                if exited:
+                    continue  # don't re-enter in the same tick
+
+                # 2) Entry check (only for configured symbols)
+                if symbol not in self.config.symbols:
+                    continue
+                signal = evaluate_entry(candles, self.config)
                 if signal and signal.should_trade:
                     self._log_signal(symbol, signal, user_id=user_id)
-                    if state.paper_mode:  # P2c: paper entry
+                    if state.paper_mode:
                         self._paper_entry(symbol, signal, user_id=user_id)
             except Exception:
                 continue
