@@ -1,0 +1,78 @@
+{
+  "Q2-2022": {
+    "label": "Q2-2022",
+    "start": "2022-04-01",
+    "end": "2022-07-01",
+    "trades": 33,
+    "wins": 11,
+    "losses": 22,
+    "win_rate": 33.33,
+    "pnl": -15724.69,
+    "pnl_pct": -1.57,
+    "profit_factor": 0.6,
+    "exit_counts": {
+      "SL": 8,
+      "TP": 3,
+      "TIMEOUT": 16,
+      "trailing": 6
+    },
+    "timeout_stats": {}
+  },
+  "Q3-2022": {
+    "label": "Q3-2022",
+    "start": "2022-07-01",
+    "end": "2022-10-01",
+    "trades": 42,
+    "wins": 15,
+    "losses": 27,
+    "win_rate": 35.71,
+    "pnl": -33645.65,
+    "pnl_pct": -3.36,
+    "profit_factor": 0.4,
+    "exit_counts": {
+      "SL": 14,
+      "TP": 3,
+      "TIMEOUT": 21,
+      "trailing": 4
+    },
+    "timeout_stats": {}
+  },
+  "Q1-2023": {
+    "label": "Q1-2023",
+    "start": "2023-01-01",
+    "end": "2023-04-01",
+    "trades": 43,
+    "wins": 10,
+    "losses": 33,
+    "win_rate": 23.26,
+    "pnl": -41701.37,
+    "pnl_pct": -4.17,
+    "profit_factor": 0.18,
+    "exit_counts": {
+      "SL": 14,
+      "TP": 3,
+      "TIMEOUT": 22,
+      "trailing": 4
+    },
+    "timeout_stats": {}
+  },
+  "Q4-2023": {
+    "label": "Q4-2023",
+    "start": "2023-10-01",
+    "end": "2024-01-01",
+    "trades": 44,
+    "wins": 13,
+    "losses": 31,
+    "win_rate": 29.55,
+    "pnl": -29990.1,
+    "pnl_pct": -3.0,
+    "profit_factor": 0.33,
+    "exit_counts": {
+      "SL": 15,
+      "TP": 3,
+      "TIMEOUT": 24,
+      "trailing": 2
+    },
+    "timeout_stats": {}
+  }
+}
