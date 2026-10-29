@@ -38,5 +38,6 @@ class ScalpState:
     recent_signals: list[dict] = field(default_factory=list)
     open_positions: list[PaperPosition] = field(default_factory=list)
     closed_trades: list[ClosedTrade] = field(default_factory=list)
+    watchlist: dict[str, dict] = field(default_factory=dict)
     capital: float = 300_000.0
     _task: asyncio.Task | None = None

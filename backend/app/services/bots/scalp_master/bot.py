@@ -15,7 +15,9 @@ from app.services.bots.base import BaseBot, BotInfo, BotStatus
 from app.services.bots.scalp_master.config import ScalpMasterConfig
 from app.services.bots.scalp_master.state import ScalpState
 from app.services.bots.scalp_master.store import ScalpStore
-from app.services.bots.scalp_master.strategy import evaluate_entry, evaluate_exit
+from app.services.bots.scalp_master.strategy import (
+    evaluate_entry, evaluate_exit, evaluate_entry_with_watchlist,
+)
 
 
 class ScalpMasterBot(BaseBot):
@@ -225,7 +227,10 @@ class ScalpMasterBot(BaseBot):
                 # 2) Entry check (only for configured symbols)
                 if symbol not in self.config.symbols:
                     continue
-                signal = evaluate_entry(candles, self.config)
+                signal = evaluate_entry_with_watchlist(
+                    symbol, candles, self.config, state.watchlist,
+                    now_ts=int(candles[-1].time),
+                )
                 if signal and signal.should_trade:
                     self._log_signal(symbol, signal, user_id=user_id)
                     if state.paper_mode:

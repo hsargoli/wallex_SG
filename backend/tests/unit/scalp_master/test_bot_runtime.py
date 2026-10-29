@@ -80,7 +80,7 @@ class TestBotRuntime:
             drop_pct = 3.0
             rsi = 35.0
 
-        monkeypatch.setattr(bot_mod, "evaluate_entry", lambda c, cfg: _Sig())
+        monkeypatch.setattr(bot_mod, "evaluate_entry_with_watchlist", lambda *a, **k: _Sig())
 
         bot = ScalpMasterBot()
         bot.config.symbols = ["TESTSYMBOL"]

@@ -30,7 +30,7 @@ def _patch_uc(monkeypatch, candles):
 
 
 def _patch_entry(monkeypatch):
-    monkeypatch.setattr(bot_mod, "evaluate_entry", lambda c, cfg: _Sig())
+    monkeypatch.setattr(bot_mod, "evaluate_entry_with_watchlist", lambda *a, **k: _Sig())
 
 
 def _candles(n=70):
