@@ -4,7 +4,7 @@ Safety rules baked in (non-negotiable):
   1. SL mandatory (sl_atr_mult > 0)
   2. Position size <= 20% (hard check in __post_init__)
   3. Daily loss limit <= 10% (hard cap)
-  4. Max leverage = 3x (hard cap)
+  4. Max leverage = 4x (hard cap, riskier)
 """
 from dataclasses import dataclass
 
@@ -16,16 +16,16 @@ class SarvTigerConfig:
     timeframe: str = "4h"
 
     # Position — risky but controlled
-    leverage: int = 3
-    max_leverage: int = 3          # HARD CAP
-    position_size_pct: float = 15.0  # 15% of capital per entry
+    leverage: int = 4
+    max_leverage: int = 4          # HARD CAP (riskier)
+    position_size_pct: float = 20.0  # 20% (at safety limit)
     max_positions: int = 1
 
     # Safety (SL/TP/daily/DD)
-    sl_atr_mult: float = 1.5        # SL = 1.5 × ATR (mandatory)
-    tp_atr_mult: float = 6.0        # TP = 6.0 × ATR → R/R = 4:1
-    daily_loss_limit_pct: float = 5.0
-    max_drawdown_pct: float = 20.0
+    sl_atr_mult: float = 1.2        # SL = 1.2 × ATR (tighter, more stops but smaller)
+    tp_atr_mult: float = 8.0        # TP = 8.0 × ATR → R/R = 6.67:1
+    daily_loss_limit_pct: float = 7.0
+    max_drawdown_pct: float = 25.0
 
     # Bollinger Squeeze
     bb_period: int = 20
@@ -38,8 +38,8 @@ class SarvTigerConfig:
 
     # Pyramiding
     pyramiding_enabled: bool = True
-    pyramiding_add_pct: float = 25.0   # add 25% of initial size
-    pyramiding_step_atr: float = 2.0   # at each +2 ATR from entry
+    pyramiding_add_pct: float = 30.0   # add 30% of initial size
+    pyramiding_step_atr: float = 1.5   # at each +1.5 ATR from entry
 
     # Trailing
     trailing_enabled: bool = True
