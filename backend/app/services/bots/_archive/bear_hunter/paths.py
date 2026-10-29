@@ -1,7 +1,7 @@
 """Absolute paths for bear_hunter runtime data. Works from any cwd."""
 from pathlib import Path
 
-_BACKEND = Path(__file__).resolve().parent.parent.parent.parent.parent
+_BACKEND = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
 DATA_DIR = _BACKEND / "data" / "bots" / "bear_hunter"
 USERS_DIR = DATA_DIR / "users"
 USERS_DIR.mkdir(parents=True, exist_ok=True)

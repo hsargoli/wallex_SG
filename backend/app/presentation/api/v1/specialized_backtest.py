@@ -4,8 +4,8 @@ from decimal import Decimal
 from pydantic import BaseModel
 from typing import Optional
 
-from app.services.bots.bear_hunter.backtest import run_backtest as run_bear_bt
-from app.services.bots.bear_hunter.paths import USERS_DIR
+from app.services.bots._archive.bear_hunter.backtest import run_backtest as run_bear_bt
+from app.services.bots._archive.bear_hunter.paths import USERS_DIR
 
 router = APIRouter(prefix="/specialized-backtest", tags=["Specialized Backtest"])
 
@@ -30,7 +30,7 @@ async def backtest_bear_hunter(
         symbol_map = {"BTCTMN": "BTCUSDT", "ETHTMN": "ETHUSDT", "SOLTMN": "SOLUSDT"}
         file_symbol = symbol_map.get(symbol, "BTCUSDT")
         
-        from app.services.bots.bear_hunter.paths import DATA_DIR
+        from app.services.bots._archive.bear_hunter.paths import DATA_DIR
         csv_path = DATA_DIR / "historical" / f"{file_symbol}_1h.csv"
         
         if not csv_path.exists():

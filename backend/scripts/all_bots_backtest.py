@@ -46,27 +46,6 @@ def _load_candles_csv(path: Path, start: str, end: str) -> list[Candle]:
 
 # ─── Standardizers ──────────────────────────────────────────────────
 
-def standardize_bear(period: str, r: dict) -> dict:
-    if "error" in r:
-        return {"bot": "bear_hunter", "period": period,
-                "trades": 0, "win_rate": 0.0, "pnl_pct": 0.0,
-                "pf": None, "max_dd_pct": 0.0, "error": r["error"]}
-    n = r.get("total_trades", 0)
-    wins = r.get("wins", 0)
-    win_rate = (wins / n * 100.0) if n > 0 else 0.0
-    # PF approximation for bear_hunter (avg_win / |avg_loss|)
-    avg_win = abs(r.get("avg_win", 0) or 0)
-    avg_loss = abs(r.get("avg_loss", 0) or 0)
-    pf = (avg_win * wins / (avg_loss * (n - wins))) if (n - wins) > 0 and avg_loss > 0 else None
-    return {
-        "bot": "bear_hunter", "period": period,
-        "trades": n, "win_rate": round(win_rate, 2),
-        "pnl_pct": round(r.get("total_pnl_pct", 0.0), 2),
-        "pf": round(pf, 2) if pf is not None else None,
-        "max_dd_pct": 0.0,  # bear bt doesn't return dd
-    }
-
-
 def standardize_nooaah(period: str, r) -> dict:
     return {
         "bot": "nooaah", "period": period,
@@ -79,21 +58,6 @@ def standardize_nooaah(period: str, r) -> dict:
 
 
 # ─── Runners ────────────────────────────────────────────────────────
-
-def run_bear(period: str) -> dict:
-    from app.services.bots.bear_hunter.backtest import run_backtest as run_bear_bt
-    start, end = PERIODS[period]
-    csv_path = DATA_DIR / "BTCUSDT_1h.csv"
-    try:
-        r = run_bear_bt(str(csv_path), initial_capital=Decimal("1000000"),
-                        human_direction="bearish",
-                        start_date=start, end_date=end)
-        return standardize_bear(period, r)
-    except Exception as e:
-        return {"bot": "bear_hunter", "period": period,
-                "trades": 0, "win_rate": 0.0, "pnl_pct": 0.0,
-                "pf": None, "max_dd_pct": 0.0, "error": f"{type(e).__name__}: {e}"}
-
 
 def run_nooaah(period: str) -> dict:
     from app.services.bots.nooaah.backtest import run_nooaah_backtest
@@ -120,7 +84,7 @@ def run_nooaah(period: str) -> dict:
                 "pf": None, "max_dd_pct": 0.0, "error": f"{type(e).__name__}: {e}"}
 
 
-BOT_RUNNERS = {"bear_hunter": run_bear, "nooaah": run_nooaah}
+BOT_RUNNERS = {"nooaah": run_nooaah}
 
 
 def run_all(periods: list[str] | None = None) -> list[dict]:

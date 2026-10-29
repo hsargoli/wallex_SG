@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.presentation.api.v1.auth import require_user_token
-from app.services.bots.bear_hunter.state import BearHunterState, StateStore
-from app.services.bots.bear_hunter.paths import user_state_path, user_audit_path
-from app.services.bots.bear_hunter.backtest import run_backtest
+from app.services.bots._archive.bear_hunter.state import BearHunterState, StateStore
+from app.services.bots._archive.bear_hunter.paths import user_state_path, user_audit_path
+from app.services.bots._archive.bear_hunter.backtest import run_backtest
 from pathlib import Path
 
 log = structlog.get_logger("live_bot.api")
