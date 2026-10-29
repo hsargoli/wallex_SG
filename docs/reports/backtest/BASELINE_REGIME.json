@@ -2,7 +2,7 @@
   "Q2-2022": {
     "label": "Q2-2022",
     "candles": 2184,
-    "switches": 13,
+    "switches": 8,
     "pct": {
       "unknown": 22.9,
       "range": 22.5,
@@ -13,7 +13,7 @@
   "Q4-2023": {
     "label": "Q4-2023",
     "candles": 2208,
-    "switches": 18,
+    "switches": 7,
     "pct": {
       "unknown": 19.0,
       "uptrend": 33.0,
@@ -24,7 +24,7 @@
   "Q1-2024": {
     "label": "Q1-2024",
     "candles": 2184,
-    "switches": 20,
+    "switches": 12,
     "pct": {
       "unknown": 20.7,
       "downtrend": 14.8,

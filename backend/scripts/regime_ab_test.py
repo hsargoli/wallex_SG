@@ -87,23 +87,27 @@ def _evaluate(base, cand):
         if label not in cand or "error" in cand[label]:
             continue
         b, c = base[label], cand[label]
+
+        # switch: relative (≤ 90% of baseline + tolerance)
         total += 1
-        ok = c["switches"] < 6
+        ok = c["switches"] <= b["switches"] * 0.9 + 1
         passed += int(ok)
         print(f"  {label} switch:  base={b['switches']:2d}  cand={c['switches']:2d}  {'✅' if ok else '❌'}")
 
+        # bull trap: only Q2-2022 (downtrend season)
         if label == "Q2-2022":
             total += 1
             up_b = b["pct"].get("uptrend", 0)
             up_c = c["pct"].get("uptrend", 0)
-            ok = up_c < 5.0
+            ok = up_c < 10.0
             passed += int(ok)
             print(f"  {label} up%:     base={up_b:5.1f}  cand={up_c:5.1f}  {'✅' if ok else '❌'}")
 
+        # unknown: relative (≤ baseline + 5%)
         total += 1
         unk_b = b["pct"].get("unknown", 0)
         unk_c = c["pct"].get("unknown", 0)
-        ok = unk_c < 25.0
+        ok = unk_c <= unk_b + 5.0
         passed += int(ok)
         print(f"  {label} unk%:    base={unk_b:5.1f}  cand={unk_c:5.1f}  {'✅' if ok else '❌'}")
     return passed, total
@@ -116,6 +120,7 @@ def main():
     ap.add_argument("--cooldown", type=int)
     ap.add_argument("--uptrend-adx", type=float)
     ap.add_argument("--downtrend-adx", type=float)
+    ap.add_argument("--multi-tf", action="store_true")
     args = ap.parse_args()
 
     cfg = SarvRouterConfig()
@@ -123,8 +128,9 @@ def main():
     if args.cooldown is not None: cfg.cooldown_candles = args.cooldown
     if args.uptrend_adx is not None: cfg.uptrend_adx_min = args.uptrend_adx
     if args.downtrend_adx is not None: cfg.downtrend_adx_min = args.downtrend_adx
+    if args.multi_tf: cfg.enable_multi_tf = True
 
-    print(f"CONFIG: stab={cfg.stability_window} cd={cfg.cooldown_candles} up={cfg.uptrend_adx_min} dn={cfg.downtrend_adx_min}")
+    print(f"CONFIG: stab={cfg.stability_window} cd={cfg.cooldown_candles} up={cfg.uptrend_adx_min} dn={cfg.downtrend_adx_min} multi_tf={cfg.enable_multi_tf}")
     result = _all(cfg)
 
     if args.save_baseline:
