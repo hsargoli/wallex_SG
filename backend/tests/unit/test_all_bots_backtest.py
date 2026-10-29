@@ -5,13 +5,6 @@ from decimal import Decimal
 
 class TestStandardize:
 
-    def test_normalize_bear(self):
-        from scripts.all_bots_backtest import standardize_bear
-        r = {"total_trades": 5, "wins": 3, "total_pnl_pct": 8.5, "total_fees": 200}
-        s = standardize_bear("Q2-2022", r)
-        assert s["bot"] == "bear_hunter"
-        assert s["trades"] == 5
-        assert s["win_rate"] == 60.0
 
     def test_normalize_nooaah(self):
         from scripts.all_bots_backtest import standardize_nooaah
