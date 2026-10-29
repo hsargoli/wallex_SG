@@ -462,3 +462,21 @@ if open_pct > 30 (absolute) → Q4-2023 gate=۲۶.۱٪ رد شد. اما uptrend
 آخرین آپدیت: 2026-10-29
 نسخه: 4.0
 نویسنده: دی کویر (بازسازی از V2.0 دی برکه) + تیم سروباتس
+
+---
+
+## AP-36 (2026-10-29) — Investigate: لاگ ممکن است در journald نباشد
+
+**Problem:** در Investigate دیپلوی SarvRouter، `journalctl -u wallex-backend | grep sarv_router` **خالی** بود. تصور شد scheduler start نشده.
+
+**Root cause:** سرویس `wallex-backend.service` با `StandardOutput=append:/var/log/wallex-backend.log` تعریف شده (نه journald). لاگ‌ها در فایل هستند.
+
+**Fix:** قبل از نتیجه‌گیری «لاگ خالی است»:
+1. `systemctl cat <service> | grep -E 'StandardOutput|StandardError'`
+2. یا `systemctl status <service>` → مسیر log
+3. یا `find /var/log -name '<project>*' -mmin -10`
+
+**Lesson:**
+> قبل از هر Investigate، مسیر لاگ سرویس را چک کن. journald پیش‌فرض نیست.
+
+**Applied in:** SarvRouter deploy (2026-10-29).
