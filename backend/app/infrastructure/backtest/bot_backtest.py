@@ -4,6 +4,7 @@ from app.domain.entities.candle import Candle
 from app.services.bots.scalp_master.config import ScalpMasterConfig
 from app.services.bots.scalp_master.strategy import (
     evaluate_entry, evaluate_exit, evaluate_entry_with_watchlist,
+    evaluate_entry_range,
 )
 
 
@@ -66,9 +67,12 @@ def run_scalp_backtest(
 
         # ── ورود ──
         if pos is None:
-            sig = evaluate_entry_with_watchlist(
-                "", window, cfg, watchlist, t
-            )
+            if getattr(cfg, "strategy_mode", "dip") == "range":
+                sig = evaluate_entry_range(window, cfg)
+            else:
+                sig = evaluate_entry_with_watchlist(
+                    "", window, cfg, watchlist, t
+                )
             if sig is not None and sig.should_trade:
                 signals += 1
                 size = cash * (position_size_pct / 100)
