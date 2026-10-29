@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     set_scheduler(nooaah_sched)
 
     # SarvRouter scheduler (Phase 2A: ticks every 30min)
-    sarv_sched = SarvRouterScheduler(interval_minutes=30)
+    sarv_sched = SarvRouterScheduler(exchange=exchange, interval_minutes=30)
     sarv_sched.start()
     app.state.sarv_scheduler = sarv_sched
 
