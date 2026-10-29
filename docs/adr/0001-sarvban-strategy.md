@@ -152,3 +152,23 @@
 **نتیجه:** `enable_multi_tf=True` در production.
 
 **درس AP-32:** A/B thresholds باید relative و regime-aware باشند، نه absolute. (`switch < 6`، `up% < 5` نتیجه‌ی درست را رد می‌کردند.)
+
+### ۷. Gate Integration (Phase 2A — 2026-10-29)
+
+**مسئله:** SarvRouter باید ورودهای nooaah را کنترل کند، بدون این‌که پوزیشن‌های باز orphan شوند.
+
+**راه‌حل:** Shared Gate File (zero coupling)
+- `data/sarv_router/gate.json` — `{allow_new_entries: bool, regime: str, updated_at}`
+- SarvRouter `write_gate()` در هر tick
+- nooaah `read_gate()` در `_job()` و پاس به `run_cycle(entries_allowed=...)`
+- `run_cycle` همیشه exit می‌کند (SL/TP/timeout)، فقط entry گیت دارد
+
+**Fail-safe:** فایل نبود یا JSON خراب → `allow=True` (رفتار فعلی nooaah حفظ می‌شود)
+
+**نتیجه:** در رژیم نزولی، nooaah ورود جدید نمی‌کند، ولی پوزیشن‌های موجود با SL/TP بسته می‌شوند.
+
+**درس AP-33:** قبل از استفاده از هر enum/symbol در تغییر، import را چک کن (Regime NameError → ۱۳ تست fail).
+
+**درس AP-34:** Monkeypatch signature باید دقیقاً با production match کند (kwarg name + type).
+
+**Tests:** ۵ gate + ۲ integration + 257 total
