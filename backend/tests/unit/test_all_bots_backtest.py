@@ -4,14 +4,6 @@ from decimal import Decimal
 
 
 class TestStandardize:
-    def test_normalize_scalp(self):
-        from scripts.all_bots_backtest import standardize_scalp
-        r = {"total_trades": 10, "win_rate": 40.0, "total_pnl_pct": -5.0,
-             "profit_factor": 0.8, "max_drawdown_pct": 12.0}
-        s = standardize_scalp("Q2-2022", r)
-        assert s["bot"] == "scalp_master"
-        assert s["trades"] == 10
-        assert s["pf"] == 0.8
 
     def test_normalize_bear(self):
         from scripts.all_bots_backtest import standardize_bear

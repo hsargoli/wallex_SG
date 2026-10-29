@@ -107,3 +107,9 @@ backend/data/guests/
 # generated candle CSVs
 backend/data/candles/*.csv
 backend/data/candles/*.bak*
+
+# Allow _archive dirs
+!backend/app/services/bots/_archive/
+!backend/app/services/bots/_archive/**
+!backend/tests/unit/_archive/
+!backend/tests/unit/_archive/**

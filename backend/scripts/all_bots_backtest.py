@@ -46,18 +46,6 @@ def _load_candles_csv(path: Path, start: str, end: str) -> list[Candle]:
 
 # ─── Standardizers ──────────────────────────────────────────────────
 
-def standardize_scalp(period: str, r: dict) -> dict:
-    pf = r.get("profit_factor")
-    return {
-        "bot": "scalp_master", "period": period,
-        "trades": r.get("total_trades", 0),
-        "win_rate": r.get("win_rate", 0.0),
-        "pnl_pct": r.get("total_pnl_pct", 0.0),
-        "pf": float(pf) if isinstance(pf, (int, float)) else None,
-        "max_dd_pct": r.get("max_drawdown_pct", 0.0),
-    }
-
-
 def standardize_bear(period: str, r: dict) -> dict:
     if "error" in r:
         return {"bot": "bear_hunter", "period": period,
@@ -91,19 +79,6 @@ def standardize_nooaah(period: str, r) -> dict:
 
 
 # ─── Runners ────────────────────────────────────────────────────────
-
-def run_scalp(period: str) -> dict:
-    from app.infrastructure.backtest.bot_backtest import run_scalp_backtest
-    from app.services.bots.scalp_master.config import ScalpMasterConfig
-    start, end = PERIODS[period]
-    candles = _load_candles_csv(DATA_DIR / "BTCUSDT_1h.csv", start, end)
-    cfg = ScalpMasterConfig(strategy_mode="dip", watchlist_enabled=False,
-                            trend_filter_enabled=False)
-    r = run_scalp_backtest(candles, initial_capital=1_000_000,
-                           position_size_pct=50, fee_pct=0.2,
-                           slippage_pct=0.1, spread_pct=0.05, config=cfg)
-    return standardize_scalp(period, r)
-
 
 def run_bear(period: str) -> dict:
     from app.services.bots.bear_hunter.backtest import run_backtest as run_bear_bt
@@ -145,7 +120,7 @@ def run_nooaah(period: str) -> dict:
                 "pf": None, "max_dd_pct": 0.0, "error": f"{type(e).__name__}: {e}"}
 
 
-BOT_RUNNERS = {"scalp_master": run_scalp, "bear_hunter": run_bear, "nooaah": run_nooaah}
+BOT_RUNNERS = {"bear_hunter": run_bear, "nooaah": run_nooaah}
 
 
 def run_all(periods: list[str] | None = None) -> list[dict]:
