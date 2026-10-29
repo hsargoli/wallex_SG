@@ -34,6 +34,11 @@ class ScalpMasterConfig:
     trend_ema_period: int = 50
     trend_ema_gap_pct: float = 3.0
 
+    # Watchlist / Wait-for-Confirmation (Phase 2C)
+    watchlist_enabled: bool = False
+    watchlist_max_candles: int = 6
+    watchlist_extra_drop_pct: float = 2.0
+
     # Timeout
     timeout_candles: int = 24
 

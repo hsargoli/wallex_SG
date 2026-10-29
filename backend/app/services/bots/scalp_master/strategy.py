@@ -36,6 +36,101 @@ def _last(values):
     return None
 
 
+def _drop_pct_at(candles, idx, lookback_high):
+    if idx < lookback_high:
+        return 0.0
+    window = candles[idx - lookback_high + 1:idx + 1]
+    recent_high = max(float(c.high) for c in window)
+    current = float(candles[idx].close)
+    if recent_high <= 0:
+        return 0.0
+    return (recent_high - current) / recent_high * 100.0
+
+
+def _is_fresh_dip(candles, config):
+    if len(candles) < config.lookback_high + 2:
+        return False
+    curr = _drop_pct_at(candles, len(candles) - 1, config.lookback_high)
+    prev = _drop_pct_at(candles, len(candles) - 2, config.lookback_high)
+    return curr >= config.drop_threshold_pct and prev < config.drop_threshold_pct
+
+
+def _count_recent_greens(candles, limit=10):
+    count = 0
+    for c in reversed(candles):
+        if float(c.close) > float(c.open):
+            count += 1
+            if count >= limit:
+                break
+        else:
+            break
+    return count
+
+
+def _build_confirmation_signal(candles, config, drop_pct):
+    current = candles[-1]
+    entry = float(current.close)
+    atr_vals = atr(candles, 14)
+    atr_val = _last(atr_vals) or 0
+    atr_float = float(atr_val)
+    sl = entry - config.sl_atr_mult * atr_float
+    tp = entry + config.tp_atr_mult * atr_float
+    min_sl_price = entry * (1 - config.min_sl_pct / 100)
+    if sl > min_sl_price:
+        sl = min_sl_price
+    rsi_vals = rsi(candles, config.rsi_period)
+    current_rsi = _last(rsi_vals)
+    rsi_float = float(current_rsi) if current_rsi else 50.0
+    atr_pct = atr_float / entry * 100 if entry > 0 else 0.0
+    return ScalpSignal(
+        should_trade=True, action="buy",
+        entry_price=entry, take_profit=tp, stop_loss=sl,
+        reason=f"watchlist_confirm (drop={drop_pct:.1f}%)",
+        drop_pct=round(drop_pct, 2),
+        rsi=round(rsi_float, 1),
+        atr_pct=round(atr_pct, 2),
+    )
+
+
+def evaluate_entry_with_watchlist(symbol, candles, config, watchlist, now_ts):
+    if not config.watchlist_enabled:
+        return evaluate_entry(candles, config)
+    if len(candles) < config.warmup_candles:
+        return None
+
+    if symbol in watchlist:
+        entry = watchlist[symbol]
+        detected_px = entry["detected_px"]
+        current = float(candles[-1].close)
+        if detected_px > 0:
+            extra = (detected_px - current) / detected_px * 100.0
+            if extra >= config.watchlist_extra_drop_pct:
+                del watchlist[symbol]
+                return None
+        greens = _count_recent_greens(candles)
+        if greens >= 2:
+            drop_pct = _drop_pct_at(candles, len(candles) - 1, config.lookback_high)
+            sig = _build_confirmation_signal(candles, config, drop_pct)
+            del watchlist[symbol]
+            return sig
+        entry["candles_since"] += 1
+        if entry["candles_since"] >= config.watchlist_max_candles:
+            del watchlist[symbol]
+        return None
+
+    if _is_fresh_dip(candles, config):
+        drop_pct = _drop_pct_at(candles, len(candles) - 1, config.lookback_high)
+        watchlist[symbol] = {
+            "detected_px": float(candles[-1].close),
+            "detected_ts": now_ts,
+            "detected_drop_pct": round(drop_pct, 2),
+            "candles_since": 0,
+        }
+        return None
+
+    return evaluate_entry(candles, config)
+
+
 def is_uptrend_unfavorable(
     candles: list[Candle],
     config: ScalpMasterConfig,
