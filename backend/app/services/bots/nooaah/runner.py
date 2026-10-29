@@ -73,7 +73,7 @@ class NooaahRunner:
     # ============================================================
     # Main cycle
     # ============================================================
-    async def run_cycle(self) -> dict:
+    async def run_cycle(self, entries_allowed: bool = True) -> dict:
         """یه چرخه‌ی کامل. return: خلاصه."""
         t0 = time.monotonic()
         self._state.reset_daily_if_needed()
@@ -107,6 +107,14 @@ class NooaahRunner:
 
         # ۱. مدیریت پوزیشن‌های باز
         closed = await self._manage_open_positions()
+
+        # Phase 2A: SarvRouter gate — exits only when closed
+        if not entries_allowed:
+            return self._log_and_summarize(
+                t0, status="exits_only", action="exits_only",
+                reason_fa="SarvRouter gate closed — exits only, no new entries",
+                extra={"closed": closed} if closed else None,
+            )
 
         # ۲. اگه جا هست → proposal جدید
         opened = None

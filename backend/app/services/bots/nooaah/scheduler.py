@@ -77,7 +77,9 @@ class NooaahScheduler:
                 max_concurrent_positions=int(rc.get("max_concurrent_positions", 1)),
             )
             runner = NooaahRunner(exchange=self._exchange, config=cfg)
-            result = await runner.run_cycle()
+            from app.services.bots.sarv_router.gate import read_gate
+            gate = read_gate()
+            result = await runner.run_cycle(entries_allowed=gate.allow_new_entries)
             self._last_result = result
             self._last_error = None
             log.info(

@@ -7,7 +7,8 @@ from app.services.bots.sarv_router.audit import AuditEntry, AuditTrail
 from app.services.bots.sarv_router.bot_lifecycle import BotLifecycleManager
 from app.services.bots.sarv_router.capital_allocator import allocate_capital
 from app.services.bots.sarv_router.config import SarvRouterConfig
-from app.services.bots.sarv_router.regime import detect_regime, detect_regime_multi_tf
+from app.services.bots.sarv_router.gate import write_gate
+from app.services.bots.sarv_router.regime import Regime, detect_regime, detect_regime_multi_tf
 from app.services.bots.sarv_router.store import SarvState, SarvStore
 
 
@@ -86,6 +87,8 @@ class SarvRouter:
         else:
             regime = detect_regime(candles, self.config)
         regime_str = regime.value if hasattr(regime, "value") else str(regime)
+        # Write gate: only uptrend allows new entries (Phase 2A)
+        write_gate(allow_new_entries=(regime == Regime.UPTREND), regime=regime_str)
         prev_regime = state.current_regime
         prev_bots = list(self.lifecycle.active_bots)
 
