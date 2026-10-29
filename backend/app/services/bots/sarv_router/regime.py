@@ -20,16 +20,10 @@ def _last(values):
     return None
 
 
-def detect_regime(candles: list[Candle], config: SarvRouterConfig) -> Regime:
-    """Classify current regime from last N candles.
-
-    Rules:
-      - adx > uptrend_adx_min and price > EMA50 → UPTREND
-      - adx > downtrend_adx_min and price < EMA50 → DOWNTREND
-      - adx < range_adx_max → RANGE
-      - else (20 <= adx <= 25) → UNKNOWN
-    """
-    if len(candles) < config.warmup_candles:
+def detect_regime(candles: list[Candle], config: SarvRouterConfig, warmup: int | None = None) -> Regime:
+    """Classify regime. Optional `warmup` overrides config.warmup_candles (for 4h)."""
+    w = warmup if warmup is not None else config.warmup_candles
+    if len(candles) < w:
         return Regime.UNKNOWN
 
     adx_vals = adx(candles, config.adx_period)
@@ -52,4 +46,20 @@ def detect_regime(candles: list[Candle], config: SarvRouterConfig) -> Regime:
         return Regime.DOWNTREND
     if adx_f < config.range_adx_max:
         return Regime.RANGE
+    return Regime.UNKNOWN
+
+
+def detect_regime_multi_tf(candles_1h: list[Candle], config: SarvRouterConfig) -> Regime:
+    """Multi-TF: 1h AND 4h must agree. Disagreement → UNKNOWN."""
+    from app.services.bots.sarv_router.resample import resample_4h
+
+    r1h = detect_regime(candles_1h, config)
+    if r1h == Regime.UNKNOWN:
+        return Regime.UNKNOWN
+
+    c4h = resample_4h(candles_1h)
+    r4h = detect_regime(c4h, config, warmup=config.ema_period + 5)
+
+    if r1h == r4h:
+        return r1h
     return Regime.UNKNOWN

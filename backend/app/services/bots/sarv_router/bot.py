@@ -7,7 +7,7 @@ from app.services.bots.sarv_router.audit import AuditEntry, AuditTrail
 from app.services.bots.sarv_router.bot_lifecycle import BotLifecycleManager
 from app.services.bots.sarv_router.capital_allocator import allocate_capital
 from app.services.bots.sarv_router.config import SarvRouterConfig
-from app.services.bots.sarv_router.regime import detect_regime
+from app.services.bots.sarv_router.regime import detect_regime, detect_regime_multi_tf
 from app.services.bots.sarv_router.store import SarvState, SarvStore
 
 
@@ -81,7 +81,10 @@ class SarvRouter:
             }
 
         # 3) Detect regime + lifecycle
-        regime = detect_regime(candles, self.config)
+        if getattr(self.config, "enable_multi_tf", False):
+            regime = detect_regime_multi_tf(candles, self.config)
+        else:
+            regime = detect_regime(candles, self.config)
         regime_str = regime.value if hasattr(regime, "value") else str(regime)
         prev_regime = state.current_regime
         prev_bots = list(self.lifecycle.active_bots)
