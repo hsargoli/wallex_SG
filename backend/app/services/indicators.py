@@ -231,3 +231,59 @@ def atr(candles: list[Candle], period: int = 14) -> list[Num]:
         result[i] = prev
 
     return result
+
+def adx(candles: list[Candle], period: int = 14) -> list[Num]:
+    """Average Directional Index (Wilder's smoothing). Returns None where insufficient data."""
+    n = len(candles)
+    out: list[Num] = [None] * n
+    if n < period * 2 + 1:
+        return out
+
+    tr_v = [0.0] * n
+    plus_dm = [0.0] * n
+    minus_dm = [0.0] * n
+
+    for i in range(1, n):
+        h = float(candles[i].high)
+        l = float(candles[i].low)
+        ph = float(candles[i-1].high)
+        pl = float(candles[i-1].low)
+        pc = float(candles[i-1].close)
+        tr_v[i] = max(h - l, abs(h - pc), abs(l - pc))
+        up_move = h - ph
+        down_move = pl - l
+        if up_move > down_move and up_move > 0:
+            plus_dm[i] = up_move
+        if down_move > up_move and down_move > 0:
+            minus_dm[i] = down_move
+
+    sm_tr = sum(tr_v[1:period+1])
+    sm_plus = sum(plus_dm[1:period+1])
+    sm_minus = sum(minus_dm[1:period+1])
+
+    dx_vals: list[Num] = [None] * n
+    for i in range(period, n):
+        if i > period:
+            sm_tr = sm_tr - (sm_tr / period) + tr_v[i]
+            sm_plus = sm_plus - (sm_plus / period) + plus_dm[i]
+            sm_minus = sm_minus - (sm_minus / period) + minus_dm[i]
+        if sm_tr > 0:
+            di_p = 100.0 * sm_plus / sm_tr
+            di_m = 100.0 * sm_minus / sm_tr
+            denom = di_p + di_m
+            if denom > 0:
+                dx_vals[i] = 100.0 * abs(di_p - di_m) / denom
+            else:
+                dx_vals[i] = 0.0  # no directional movement → no trend
+
+    first_window = [v for v in dx_vals[period:2*period] if v is not None]
+    if len(first_window) < period:
+        return out
+    adx_val = sum(first_window) / len(first_window)
+    out[2*period - 1] = adx_val
+    for i in range(2*period, n):
+        if dx_vals[i] is not None:
+            adx_val = (adx_val * (period - 1) + dx_vals[i]) / period
+            out[i] = adx_val
+
+    return out
