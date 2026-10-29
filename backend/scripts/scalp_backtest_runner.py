@@ -110,13 +110,17 @@ def main(argv=None) -> int:
     ap.add_argument("--fee-pct", type=float, default=0.2)
     ap.add_argument("--slippage-pct", type=float, default=0.1)
     ap.add_argument("--spread-pct", type=float, default=0.05)
+    ap.add_argument("--strategy", choices=["dip", "range"], default="dip")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
 
     candles_all = load_candles_csv(Path(args.csv))
     results = []
     from app.services.bots.scalp_master.config import ScalpMasterConfig
-    cfg = ScalpMasterConfig(watchlist_enabled=True, trend_filter_enabled=True)
+    if args.strategy == "range":
+        cfg = ScalpMasterConfig(strategy_mode="range")
+    else:
+        cfg = ScalpMasterConfig(watchlist_enabled=True, trend_filter_enabled=True, strategy_mode="dip")
 
     for p in args.period:
         s_ts, e_ts = _parse_period(p)
@@ -133,6 +137,7 @@ def main(argv=None) -> int:
     print("=" * 78)
     print(f"SCALP MASTER BACKTEST — {Path(args.csv).name}")
     print(f"Costs: fee={args.fee_pct}%  slip={args.slippage_pct}%  spread={args.spread_pct}%")
+    print(f"Strategy: {args.strategy.upper()}")
     print("=" * 78)
     for r in results:
         print(f"\n>> {r['label']}  ({r['candles']} candles)")
