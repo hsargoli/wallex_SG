@@ -39,6 +39,13 @@ class ScalpMasterConfig:
     watchlist_max_candles: int = 6
     watchlist_extra_drop_pct: float = 2.0
 
+    # Range strategy (Phase 2D-2)
+    strategy_mode: str = "dip"  # "dip" | "range"
+    range_adx_max: float = 20.0
+    range_rsi_max: float = 30.0
+    range_volume_mult: float = 2.0
+    range_green_body_pct: float = 0.5
+
     # Timeout
     timeout_candles: int = 24
 

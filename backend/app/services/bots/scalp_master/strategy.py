@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from app.domain.entities.candle import Candle
 from app.services.bots.scalp_master.config import ScalpMasterConfig
-from app.services.indicators import atr, ema, rsi
+from app.services.indicators import adx, atr, ema, rsi, volume_sma
 
 
 @dataclass(slots=True)
@@ -338,3 +338,59 @@ def diagnose_entry(candles: list[Candle], config: ScalpMasterConfig) -> list[dic
     add("ema", "فاصله از EMA", dist <= config.max_dist_from_ema, round(dist, 2), config.max_dist_from_ema)
 
     return checks
+
+
+def evaluate_entry_range(candles: list[Candle], config: ScalpMasterConfig) -> ScalpSignal | None:
+    """Range-mode entry: only in ADX<max + RSI<max + volume spike + green body."""
+    if len(candles) < config.warmup_candles:
+        return None
+
+    # Gate 1: ADX < threshold (range market, not trending)
+    adx_now = _last(adx(candles, 14))
+    if adx_now is None or float(adx_now) >= config.range_adx_max:
+        return None
+
+    # Gate 2: RSI < threshold (oversold)
+    rsi_now = _last(rsi(candles, config.rsi_period))
+    if rsi_now is None or float(rsi_now) >= config.range_rsi_max:
+        return None
+
+    # Gate 3: Volume spike >= mult × avg
+    vol_avg = _last(volume_sma(candles, 20))
+    if vol_avg is None or float(vol_avg) <= 0:
+        return None
+    if float(candles[-1].volume) < config.range_volume_mult * float(vol_avg):
+        return None
+
+    # Gate 4: green candle with body >= threshold
+    curr = candles[-1]
+    o = float(curr.open)
+    c = float(curr.close)
+    if c <= o or o <= 0:
+        return None
+    body_pct = (c - o) / o * 100.0
+    if body_pct < config.range_green_body_pct:
+        return None
+
+    # Build signal with ATR-based SL/TP (R/R = tp_mult/sl_mult = 2:1)
+    atr_now = _last(atr(candles, 14))
+    if atr_now is None or float(atr_now) <= 0:
+        return None
+    atr_float = float(atr_now)
+    entry_price = c
+    sl = entry_price - config.sl_atr_mult * atr_float
+    tp = entry_price + config.tp_atr_mult * atr_float
+    min_sl_price = entry_price * (1 - config.min_sl_pct / 100)
+    if sl > min_sl_price:
+        sl = min_sl_price
+
+    rsi_float = float(rsi_now)
+    atr_pct = atr_float / entry_price * 100 if entry_price > 0 else 0.0
+    return ScalpSignal(
+        should_trade=True, action="buy",
+        entry_price=entry_price, take_profit=tp, stop_loss=sl,
+        reason=f"range_mode: ADX={float(adx_now):.1f} RSI={rsi_float:.0f} body={body_pct:.2f}%",
+        drop_pct=0.0,
+        rsi=round(rsi_float, 1),
+        atr_pct=round(atr_pct, 2),
+    )
