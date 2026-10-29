@@ -70,7 +70,8 @@ def _parse_period(s: str) -> tuple[int, int]:
 
 
 def run_period(candles: list[Candle], label: str, initial_capital: float,
-               fee_pct: float, slippage_pct: float, spread_pct: float) -> dict:
+               fee_pct: float, slippage_pct: float, spread_pct: float,
+               config=None) -> dict:
     from app.infrastructure.backtest.bot_backtest import run_scalp_backtest
     bt = run_scalp_backtest(
         candles,
@@ -79,6 +80,7 @@ def run_period(candles: list[Candle], label: str, initial_capital: float,
         fee_pct=fee_pct,
         slippage_pct=slippage_pct,
         spread_pct=spread_pct,
+        config=config,
     )
     bh = buy_and_hold(candles, initial_capital, fee_pct=fee_pct)
     cash = cash_baseline(initial_capital)
@@ -113,11 +115,15 @@ def main(argv=None) -> int:
 
     candles_all = load_candles_csv(Path(args.csv))
     results = []
+    from app.services.bots.scalp_master.config import ScalpMasterConfig
+    cfg = ScalpMasterConfig(watchlist_enabled=True, trend_filter_enabled=True)
+
     for p in args.period:
         s_ts, e_ts = _parse_period(p)
         sub = filter_by_date(candles_all, s_ts, e_ts)
         results.append(run_period(sub, p, args.initial_capital,
-                                  args.fee_pct, args.slippage_pct, args.spread_pct))
+                                  args.fee_pct, args.slippage_pct, args.spread_pct,
+                                  config=cfg))
 
     if args.json:
         import json as _json
