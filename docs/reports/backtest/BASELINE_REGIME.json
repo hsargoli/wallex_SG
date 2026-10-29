@@ -1,0 +1,35 @@
+{
+  "Q2-2022": {
+    "label": "Q2-2022",
+    "candles": 2184,
+    "switches": 13,
+    "pct": {
+      "unknown": 22.9,
+      "range": 22.5,
+      "downtrend": 38.1,
+      "uptrend": 16.4
+    }
+  },
+  "Q4-2023": {
+    "label": "Q4-2023",
+    "candles": 2208,
+    "switches": 18,
+    "pct": {
+      "unknown": 19.0,
+      "uptrend": 33.0,
+      "downtrend": 20.2,
+      "range": 27.8
+    }
+  },
+  "Q1-2024": {
+    "label": "Q1-2024",
+    "candles": 2184,
+    "switches": 20,
+    "pct": {
+      "unknown": 20.7,
+      "downtrend": 14.8,
+      "uptrend": 27.4,
+      "range": 37.1
+    }
+  }
+}
