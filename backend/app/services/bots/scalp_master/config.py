@@ -41,10 +41,10 @@ class ScalpMasterConfig:
 
     # Range strategy (Phase 2D-2)
     strategy_mode: str = "dip"  # "dip" | "range"
-    range_adx_max: float = 20.0
-    range_rsi_max: float = 30.0
-    range_volume_mult: float = 2.0
-    range_green_body_pct: float = 0.5
+    range_adx_max: float = 25.0       # loosened: 20→25
+    range_rsi_max: float = 40.0       # loosened: 30→40
+    range_volume_mult: float = 1.5    # loosened: 2.0→1.5
+    range_green_body_pct: float = 0.3  # loosened: 0.5→0.3
 
     # Timeout
     timeout_candles: int = 24
