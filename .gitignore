@@ -113,3 +113,6 @@ backend/data/candles/*.bak*
 !backend/app/services/bots/_archive/**
 !backend/tests/unit/_archive/
 !backend/tests/unit/_archive/**
+
+# Runtime state (SarvRouter + gate)
+backend/data/sarv_router/

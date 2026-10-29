@@ -18,6 +18,7 @@ from app.services.bots.nooaah.scheduler import (
     NooaahScheduler,
     set_scheduler,
 )
+from app.services.bots.sarv_router.scheduler import SarvRouterScheduler
 from app.presentation.api.v1.realtime import TickerFanout, router as realtime_router
 from app.presentation.api.v1.router import router as v1_router
 from app.services.guest import GuestScheduler
@@ -47,6 +48,11 @@ async def lifespan(app: FastAPI):
     nooaah_sched.start()
     app.state.nooaah_scheduler = nooaah_sched
     set_scheduler(nooaah_sched)
+
+    # SarvRouter scheduler (Phase 2A: ticks every 30min)
+    sarv_sched = SarvRouterScheduler(interval_minutes=30)
+    sarv_sched.start()
+    app.state.sarv_scheduler = sarv_sched
 
     # Guest Mode — paper engines + shared scheduler
     app.state.guest_engines = {}
@@ -78,6 +84,7 @@ async def lifespan(app: FastAPI):
         await chase_manager.stop_all()
         ticker_client.stop()
         nooaah_sched.stop()
+        app.state.sarv_scheduler.stop()
         await guest_sched.stop()
         # Stop prefetcher before closing the exchange
         prefetcher = getattr(app.state, "prefetcher", None)
