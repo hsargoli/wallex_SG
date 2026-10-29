@@ -10,10 +10,16 @@ def run_scalp_backtest(
     initial_capital: float = 1000.0,
     position_size_pct: float = 50.0,
     fee_pct: float = 0.2,
+    slippage_pct: float = 0.1,
+    spread_pct: float = 0.05,
     config: ScalpMasterConfig | None = None,
 ) -> dict:
     cfg = config or ScalpMasterConfig()
     fee = fee_pct / 100
+    slippage = slippage_pct / 100
+    half_spread = (spread_pct / 100) / 2.0
+    entry_adj = fee + slippage + half_spread
+    exit_adj = fee + slippage + half_spread
 
     cash = initial_capital
     pos: dict | None = None
@@ -35,7 +41,7 @@ def run_scalp_backtest(
                 window, pos["entry"], pos["sl"], pos["tp"], held, cfg
             )
             if done:
-                exit_net = px * (1 - fee)
+                exit_net = px * (1 - exit_adj)
                 revenue = pos["qty"] * exit_net
                 cost = pos["qty"] * pos["entry"]
                 pnl = revenue - cost
@@ -61,7 +67,7 @@ def run_scalp_backtest(
             if sig is not None and sig.should_trade:
                 signals += 1
                 size = cash * (position_size_pct / 100)
-                entry_net = float(sig.entry_price) * (1 + fee)
+                entry_net = float(sig.entry_price) * (1 + entry_adj)
                 if size > 0:
                     pos = {
                         "symbol": "",
@@ -85,7 +91,7 @@ def run_scalp_backtest(
     # پوزیشن باز در انتها: با close آخر بسته می‌شود
     if pos is not None:
         last = candles[-1]
-        exit_net = float(last.close) * (1 - fee)
+        exit_net = float(last.close) * (1 - exit_adj)
         revenue = pos["qty"] * exit_net
         cost = pos["qty"] * pos["entry"]
         cash += revenue
