@@ -82,23 +82,25 @@ class SarvRouter:
 
         # 3) Detect regime + lifecycle
         regime = detect_regime(candles, self.config)
+        regime_str = regime.value if hasattr(regime, "value") else str(regime)
         prev_regime = state.current_regime
         prev_bots = list(self.lifecycle.active_bots)
+
+        # Always track detected regime (even on no_change/pending)
+        state.current_regime = regime_str
         action = self.lifecycle.update(regime, now_idx)
 
-        # 4) On switch: allocate + persist + audit
+        # 4) On switch: allocate
         if action.get("action") == "switched":
             alloc = allocate_capital(state.total_capital, regime, self.config)
-            state.current_regime = alloc["regime"]
             state.active_bots = alloc["active_bots"]
             state.allocations = alloc["allocations"]
             state.cash = alloc["cash"]
             state.last_switch_idx = now_idx
-            self.store.save(user_id, state)
             self.audit.log(user_id, AuditEntry(
                 type="switch",
                 from_regime=prev_regime,
-                to_regime=alloc["regime"],
+                to_regime=regime_str,
                 from_bots=prev_bots,
                 to_bots=alloc["active_bots"],
                 reason="lifecycle_switch",
@@ -106,4 +108,6 @@ class SarvRouter:
                 cash=alloc["cash"],
             ))
 
+        # Always persist (regime + any switch changes)
+        self.store.save(user_id, state)
         return action
