@@ -12,7 +12,7 @@ class SarvRouterConfig:
     uptrend_adx_min: float = 25.0
     downtrend_adx_min: float = 25.0
     range_adx_max: float = 20.0
-    stability_window: int = 24    # candles regime must be stable
+    stability_window: int = 36    # candles regime must be stable
     cooldown_candles: int = 12    # candles after switch
     warmup_candles: int = 100     # min candles for indicators
 

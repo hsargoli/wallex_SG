@@ -11,7 +11,7 @@ class TestSarvRouterConfig:
         assert c.uptrend_adx_min == 25.0
         assert c.downtrend_adx_min == 25.0
         assert c.range_adx_max == 20.0
-        assert c.stability_window == 24
+        assert c.stability_window == 36
         assert c.cooldown_candles == 12
         # Capital allocation
         assert c.uptrend_capital_pct == 60.0

@@ -103,3 +103,25 @@
 | 6 | backtest Q2-2022 + Q4-2023 | — |
 
 **مهلت:** ۳ روز کاری.
+
+---
+
+## Known Limitations (2026-10-29)
+
+### ۱. ADX/EMA lagging
+`detect_regime()` از ADX(14) + EMA(50) استفاده می‌کند. هر دو **lagging** هستند:
+- **Bull trap:** در دل نزول، rebound موقت → UPTREND کاذب (شاهد: ۱۶.۴٪ uptrend در Q2-2022).
+- **Bear rally:** در دل صعود، pullback موقت → DOWNTREND کاذب.
+- **Whipsaw:** بازار choppy → switch‌های پشت‌سرهم (شاهد: ۲۰ switch در Q1-2024).
+
+### ۲. راه‌حل‌های موقت (پیاده‌شده)
+- `stability_window=36`: کاهش switch از ۱۳-۲۰ به ۸-۱۲ (~۳۸-۶۱٪).
+- A/B در حال انجام: `uptrend_adx_min: 25 → 30`.
+
+### ۳. راه‌حل بلندمدت (Phase 2)
+- Multi-timeframe (1h + 4h).
+- ساختار HH/HL.
+- ML-based RegimeDetector (مثل nooaah با PF=۱.۳۲ در Q4-2023).
+
+### ۴. اصل پنهان
+هیچ اندیکاتور lagging جای ML را نمی‌گیرد.
