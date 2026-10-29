@@ -227,6 +227,45 @@ class ScalpMasterBot(BaseBot):
         self.store.save(user_id, state)
         return pos
 
+    def _paper_exit(self, symbol: str, exit_price: float, exit_reason: str, user_id: str = "default"):
+        """Close matching open PaperPosition; compute net PnL (with fees); update state."""
+        from app.services.bots.scalp_master.state import ClosedTrade
+        state = self._get_state(user_id)
+        # Find latest open position for this symbol
+        idx = None
+        for i, pos in enumerate(state.open_positions):
+            if pos.symbol == symbol:
+                idx = i
+                break
+        if idx is None:
+            return None
+        pos = state.open_positions.pop(idx)
+
+        gross = (float(exit_price) - float(pos.entry_price)) * float(pos.quantity)
+        notional = float(pos.entry_price) * float(pos.quantity)
+        fee = (self.config.fee_pct / 100.0) * notional * 2  # entry + exit
+        net = gross - fee
+
+        state.capital += net
+
+        ct = ClosedTrade(
+            symbol=pos.symbol,
+            side=pos.side,
+            entry_price=pos.entry_price,
+            exit_price=float(exit_price),
+            quantity=pos.quantity,
+            tp=pos.tp,
+            sl=pos.sl,
+            entry_time=pos.entry_time,
+            exit_time=int(time.time()),
+            pnl_net=net,
+            exit_reason=exit_reason,
+            bot_slug=pos.bot_slug,
+        )
+        state.closed_trades.append(ct)
+        self.store.save(user_id, state)
+        return ct
+
     def _log_signal(self, symbol: str, signal, user_id: str = "default") -> None:
         """ذخیره سیگنال."""
         state = self._get_state(user_id)
