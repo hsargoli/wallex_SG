@@ -7,7 +7,7 @@ class SarvRouterConfig:
     """Config برای SarvRouter (Regime-Based Bot Orchestrator)."""
 
     # ── Regime detection ──
-    enable_multi_tf: bool = False  # Phase 1J
+    enable_multi_tf: bool = True   # Phase 1J.2 (soft veto, A/B: 7/7)
     adx_period: int = 14
     ema_period: int = 50
     uptrend_adx_min: float = 25.0

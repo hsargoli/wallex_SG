@@ -134,3 +134,21 @@
 - **switch:** بدون تغییر معنادار.
 
 **نتیجه:** REVERT شد (طبق معیار A/B). راه‌حل ریشه‌ای: **multi-timeframe** (فاز ۱J).
+
+### ۶. نتیجه soft multi-TF (2026-10-29) — Accepted
+
+**A/B (stability=36 + soft multi-TF):**
+- switch: −۲۵٪ نسبت به baseline (8→6, 7→5, 12→10)
+- bull trap (up% Q2-2022): 16.4% → 8.9% (**−۴۶٪**)
+- unknown: 22.9→27.6, 19→21.6, 20.7→23.6 (**+۳-۵٪، قابل قبول**)
+- **A/B verdict: ۷/۷ PASSED**
+
+**منطق `_decide_regime_multi_tf` (pure function):**
+- UP + DOWN → UNKNOWN (وتوی قوی)
+- UP + RANGE → RANGE (degrade، نه UPTREND)
+- 4h=UNKNOWN → trust 1h
+- سایر → 1h حاکم
+
+**نتیجه:** `enable_multi_tf=True` در production.
+
+**درس AP-32:** A/B thresholds باید relative و regime-aware باشند، نه absolute. (`switch < 6`، `up% < 5` نتیجه‌ی درست را رد می‌کردند.)
