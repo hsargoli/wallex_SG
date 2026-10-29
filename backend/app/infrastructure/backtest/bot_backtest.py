@@ -2,7 +2,9 @@
 
 from app.domain.entities.candle import Candle
 from app.services.bots.scalp_master.config import ScalpMasterConfig
-from app.services.bots.scalp_master.strategy import evaluate_entry, evaluate_exit
+from app.services.bots.scalp_master.strategy import (
+    evaluate_entry, evaluate_exit, evaluate_entry_with_watchlist,
+)
 
 
 def run_scalp_backtest(
@@ -28,6 +30,7 @@ def run_scalp_backtest(
     peak = initial_capital
     max_dd = 0.0
     signals = 0
+    watchlist: dict = {}
 
     for i in range(cfg.warmup_candles, len(candles)):
         window = candles[: i + 1]  # فقط گذشته تا همین کندل
@@ -63,7 +66,9 @@ def run_scalp_backtest(
 
         # ── ورود ──
         if pos is None:
-            sig = evaluate_entry(window, cfg)
+            sig = evaluate_entry_with_watchlist(
+                "", window, cfg, watchlist, t
+            )
             if sig is not None and sig.should_trade:
                 signals += 1
                 size = cash * (position_size_pct / 100)

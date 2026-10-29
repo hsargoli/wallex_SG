@@ -27,14 +27,14 @@ def _run_with(monkeypatch, slippage: float, spread: float) -> dict:
     import app.infrastructure.backtest.bot_backtest as bt
     state = {"n": 0}
 
-    def fake_entry(window, cfg):
+    def fake_entry_wl(symbol, window, cfg, watchlist, now_ts):
         state["n"] += 1
         return _Sig() if state["n"] == 1 else None
 
     def fake_exit(window, entry, sl, tp, held, cfg):
         return True, 105.0, "take_profit"
 
-    monkeypatch.setattr(bt, "evaluate_entry", fake_entry)
+    monkeypatch.setattr(bt, "evaluate_entry_with_watchlist", fake_entry_wl)
     monkeypatch.setattr(bt, "evaluate_exit", fake_exit)
     return bt.run_scalp_backtest(
         _candles(), initial_capital=10_000.0, position_size_pct=100.0,
