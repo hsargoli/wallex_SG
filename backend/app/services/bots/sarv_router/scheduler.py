@@ -1,6 +1,8 @@
 """SarvRouterScheduler — tick SarvRouter every N minutes using exchange data."""
 from __future__ import annotations
 
+import time
+
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -35,6 +37,15 @@ class SarvRouterScheduler:
         self._scheduler: AsyncIOScheduler | None = None
         self._last_result: dict | None = None
         self._last_error: str | None = None
+        # ── Singleton router: lifecycle state MUST persist across ticks ──
+        self._router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None,
+            stop_bot=lambda s: None,
+            stop_all=lambda: None,
+            store=SarvStore(),
+            audit=AuditTrail(),
+        )
 
     def start(self) -> None:
         if self._scheduler is not None:
@@ -54,28 +65,22 @@ class SarvRouterScheduler:
             self._scheduler = None
             log.info("sarv_router.scheduler_stopped")
 
+    async def _job_internal_tick(self, t: int) -> dict:
+        """Internal tick — takes wall clock time t (seconds). For testing."""
+        uc = GetCandlesUseCase(exchange=self._exchange)
+        candles = await uc.execute(
+            symbol=self._symbol,
+            timeframe=self._timeframe,
+            limit=self._candle_limit,
+        )
+        if not candles:
+            return {"action": "no_candles", "regime": "unknown"}
+        now_idx = t // 3600
+        return self._router.tick(self._user_id, candles, now_idx=now_idx)
+
     async def _job(self) -> None:
         try:
-            uc = GetCandlesUseCase(exchange=self._exchange)
-            candles = await uc.execute(
-                symbol=self._symbol,
-                timeframe=self._timeframe,
-                limit=self._candle_limit,
-            )
-            if not candles:
-                self._last_error = "no candles loaded"
-                log.error("sarv_router.no_candles", symbol=self._symbol)
-                return
-
-            router = SarvRouter(
-                config=SarvRouterConfig(),
-                start_bot=lambda s: None,
-                stop_bot=lambda s: None,
-                stop_all=lambda: None,
-                store=SarvStore(),
-                audit=AuditTrail(),
-            )
-            result = router.tick(self._user_id, candles, now_idx=len(candles) - 1)
+            result = await self._job_internal_tick(int(time.time()))
             self._last_result = result
             self._last_error = None
             log.info(
@@ -83,7 +88,7 @@ class SarvRouterScheduler:
                 action=result.get("action"),
                 regime=result.get("regime"),
                 active_bots=result.get("active_bots"),
-                candles=len(candles),
+                now_idx=int(time.time()) // 3600,
             )
         except Exception as exc:
             self._last_error = str(exc)

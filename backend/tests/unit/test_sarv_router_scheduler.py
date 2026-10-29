@@ -48,7 +48,7 @@ class TestSarvRouterScheduler:
 
     @pytest.mark.asyncio
     async def test_job_handles_no_candles(self):
-        """_job must not crash if no candles."""
+        """_job must not crash if no candles; _last_result reports no_candles."""
         ex = _fake_exchange()
         sched = SarvRouterScheduler(exchange=ex, interval_minutes=30)
 
@@ -61,4 +61,6 @@ class TestSarvRouterScheduler:
 
             await sched._job()  # must not raise
 
-            assert sched._last_error == "no candles loaded"
+            assert sched._last_result is not None
+            assert sched._last_result.get("action") == "no_candles"
+            assert sched._last_error is None  # no candles is not an error
