@@ -49,8 +49,31 @@ def detect_regime(candles: list[Candle], config: SarvRouterConfig, warmup: int |
     return Regime.UNKNOWN
 
 
+def _decide_regime_multi_tf(r1h: Regime, r4h: Regime) -> Regime:
+    """Pure decision logic for multi-TF combination (soft veto).
+
+    Rules:
+      - both same → that regime
+      - UP vs DOWN (or DOWN vs UP) → UNKNOWN (strong veto)
+      - 4h=RANGE → RANGE (no strong 4h trend; degrade 1h)
+      - 4h=UNKNOWN (insufficient data) → trust 1h
+      - fallback: 1h wins
+    """
+    if r1h == r4h:
+        return r1h
+    if r1h == Regime.UPTREND and r4h == Regime.DOWNTREND:
+        return Regime.UNKNOWN
+    if r1h == Regime.DOWNTREND and r4h == Regime.UPTREND:
+        return Regime.UNKNOWN
+    if r4h == Regime.RANGE:
+        return Regime.RANGE
+    if r4h == Regime.UNKNOWN:
+        return r1h
+    return r1h
+
+
 def detect_regime_multi_tf(candles_1h: list[Candle], config: SarvRouterConfig) -> Regime:
-    """Multi-TF: 1h AND 4h must agree. Disagreement → UNKNOWN."""
+    """Multi-TF: combine 1h regime with 4h confirmation (soft veto)."""
     from app.services.bots.sarv_router.resample import resample_4h
 
     r1h = detect_regime(candles_1h, config)
@@ -60,6 +83,4 @@ def detect_regime_multi_tf(candles_1h: list[Candle], config: SarvRouterConfig) -
     c4h = resample_4h(candles_1h)
     r4h = detect_regime(c4h, config, warmup=config.ema_period + 5)
 
-    if r1h == r4h:
-        return r1h
-    return Regime.UNKNOWN
+    return _decide_regime_multi_tf(r1h, r4h)
