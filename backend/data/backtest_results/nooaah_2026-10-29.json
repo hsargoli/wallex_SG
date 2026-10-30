@@ -1,0 +1,12 @@
+{
+  "nooaah": {
+    "source": "BACKTEST_2026-10-29.md (di_koyar)",
+    "note": "Data extracted from official backtest report",
+    "periods": {
+      "Q2-2022": {"trades": 20,  "win_rate_pct": 25.0, "pnl_pct": -10.34, "pf": 0.49, "dd_pct": 11.9},
+      "Q4-2023": {"trades": 109, "win_rate_pct": 42.2, "pnl_pct":  30.25, "pf": 1.32, "dd_pct": 15.9},
+      "Q1-2024": {"trades": 85,  "win_rate_pct": 43.5, "pnl_pct":   5.49, "pf": 1.10, "dd_pct": 11.2}
+    },
+    "verdict": "profit in uptrend regimes (Q4-2023, Q1-2024); loss in downtrend (Q2-2022)"
+  }
+}
