@@ -240,7 +240,7 @@ async def _ensure_user_config(user_id: str, slug: str) -> None:
                 user_id=user_uuid,
                 bot_slug=slug,
                 mode="paper",
-                capital_allocated=_Decimal("300000.00"),
+                capital_allocated=_Decimal("10000000.00"),  # ۱۰ میلیون (Per Hosein 2026-10-30)
             )
             session.add(cfg)
             await session.commit()

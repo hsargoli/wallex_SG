@@ -36,7 +36,7 @@ class StartRequest(BaseModel):
     bot_slug: str = "scalp_master"
     symbols: list[str] = ["NEARTMN"]
     timeframe: str = "1h"
-    initial_capital: float = 3_000_000.0
+    initial_capital: float = 10_000_000.0  # ۱۰ میلیون (Per Hosein 2026-10-30)
     check_interval_sec: int = 180
     position_size_pct: float = 50.0
 
@@ -80,7 +80,7 @@ def _empty_status() -> dict:
     """وضعیت پیش‌فرض وقتی engine نیست."""
     return {
         "is_running": False,
-        "initial_capital": 3_000_000.0,
+        "initial_capital": 10_000_000.0,
         "capital": 3_000_000.0,
         "equity": 3_000_000.0,
         "peak_capital": 3_000_000.0,
