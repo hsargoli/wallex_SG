@@ -45,6 +45,7 @@ type BotItem = {
   description: string;
   tags: string[];
   capabilities: string[];
+  archived?: boolean;
 };
 
 const score = (slug: string) =>
@@ -161,9 +162,20 @@ function BotCard({ bot }: { bot: BotItem }) {
                 <CardDescription className="text-xs">{bot.name_en}</CardDescription>
               </div>
             </div>
-            <Badge variant="outline" className="text-[10px]">
-              v{bot.version}
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge variant="outline" className="text-[10px]">
+                v{bot.version}
+              </Badge>
+              {bot.archived ? (
+                <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-400">
+                  آرشیو
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[10px] text-emerald-400">
+                  فعال (Paper)
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">

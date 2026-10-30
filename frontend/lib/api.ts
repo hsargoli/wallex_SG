@@ -568,6 +568,7 @@ export interface BotInfo {
   capabilities: string[];
   author: string;
   status?: "idle" | "running" | "stopped" | "error";
+  archived?: boolean;
 }
 
 export interface BotsListResponse {

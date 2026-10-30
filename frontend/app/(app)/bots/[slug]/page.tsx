@@ -6,6 +6,7 @@ import { use } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Archive,
   Bot,
   Play,
   Square,
@@ -29,6 +30,7 @@ import {
   useResetBot,
 } from "@/lib/queries";
 import { formatNumber, formatPrice, formatPct } from "@/lib/format";
+import { hasUserToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -99,37 +101,72 @@ export default function BotDetailPage({
           ) : null}
         </div>
 
-        {/* Controls */}
+        {/* Controls — per Hosein 2026-10-30: archived → register/view; scheduler → view status */}
         <div className="flex items-center gap-2">
-          {!isRunning ? (
+          {info.data?.archived ? (
+            hasUserToken() ? (
+              <Button
+                onClick={() => document.getElementById("paper-section")?.scrollIntoView({ behavior: "smooth" })}
+                variant="outline"
+                className="gap-2"
+              >
+                <Archive className="h-4 w-4" />
+                مشاهده‌ی آمار (آرشیو)
+              </Button>
+            ) : (
+              <Link href="/register">
+                <Button className="gap-2 bg-amber-600 hover:bg-amber-700">
+                  ثبت‌نام برای دسترسی (۱۰M)
+                </Button>
+              </Link>
+            )
+          ) : (slug === "nooaah" || slug === "sarv_router") ? (
             <Button
-              onClick={() => startBot.mutate(slug)}
-              disabled={startBot.isPending}
+              onClick={() => document.getElementById("paper-section")?.scrollIntoView({ behavior: "smooth" })}
               className="gap-2 bg-emerald-600 hover:bg-emerald-700"
             >
-              <Play className="h-4 w-4" />
-              شروع
+              <Activity className="h-4 w-4" />
+              مشاهده‌ی وضعیت
             </Button>
+          ) : hasUserToken() ? (
+            <>
+              {!isRunning ? (
+                <Button
+                  onClick={() => startBot.mutate(slug)}
+                  disabled={startBot.isPending}
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Play className="h-4 w-4" />
+                  شروع
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => stopBot.mutate(slug)}
+                  disabled={stopBot.isPending}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  <Square className="h-4 w-4" />
+                  توقف
+                </Button>
+              )}
+              <Button
+                onClick={() => resetBot.mutate(slug)}
+                variant="outline"
+                size="icon"
+                disabled={resetBot.isPending || isRunning}
+                title="ریست"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </>
           ) : (
-            <Button
-              onClick={() => stopBot.mutate(slug)}
-              disabled={stopBot.isPending}
-              variant="destructive"
-              className="gap-2"
-            >
-              <Square className="h-4 w-4" />
-              توقف
-            </Button>
+            <Link href="/register">
+              <Button className="gap-2 bg-amber-600 hover:bg-amber-700">
+                ثبت‌نام برای دسترسی (۱۰M)
+              </Button>
+            </Link>
           )}
-          <Button
-            onClick={() => resetBot.mutate(slug)}
-            variant="outline"
-            size="icon"
-            disabled={resetBot.isPending || isRunning}
-            title="ریست"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
@@ -453,9 +490,11 @@ export default function BotDetailPage({
           </Card>
         </div>
       )}
-      {info.data && (
-        <BotReportsSection data={info.data as any} />
-      )}
+      <div id="paper-section">
+        {info.data && (
+          <BotReportsSection data={info.data as any} />
+        )}
+      </div>
     </div>
   );
 }
