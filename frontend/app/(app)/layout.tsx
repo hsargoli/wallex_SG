@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { getUserToken } from "@/lib/auth";
+import { canAccessAppPath, getUserToken } from "@/lib/auth";
 import { useWallexStatus } from "@/lib/queries";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -21,8 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
 
-    const hasToken = !!getUserToken();
-    if (!hasToken) {
+    // Per Hosein 2026-10-30:
+    //   - user token → all app routes ✅
+    //   - guest token → only /bots, /bots/[slug] ✅ (SarvRouter/dashboard/... blocked)
+    //   - none → /login
+    if (!canAccessAppPath(pathname)) {
       router.replace("/login");
       return;
     }
@@ -39,7 +42,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   if (!mounted) return spinner;
-  if (!getUserToken()) return spinner;
+  if (!canAccessAppPath(pathname)) return spinner;
 
   if (pathname.startsWith("/settings") || pathname === "/bear-hunter") {
     return <AppShell>{children}</AppShell>;

@@ -5,6 +5,8 @@
  * اگه user_token وجود داشت، guest_token نادیده گرفته می‌شه.
  */
 
+import { getGuestToken } from "./guest";
+
 const TOKEN_KEY = "sarvbots_user_token";
 const INFO_KEY = "sarvbots_user_info";
 
@@ -65,3 +67,31 @@ export function fullLogout(): void {
   // guest_token هم پاک کن — کاربر دیگه مهمان نیست
   localStorage.removeItem("sarvbots_guest_token");
 }
+
+// ═══ Access control (per Hosein 2026-10-30: guest allowed for /bots) ═══
+
+/**
+ * مسیرهای app که مهمان می‌تواند ببیند (بدون login).
+ * /learn در (public) است — نیازی به اینجا نیست.
+ * /sarvrouter, /dashboard, /orders, ... هنوز نیاز به login دارند.
+ */
+export const GUEST_ALLOWED_APP_PATHS = ["/bots"] as const;
+
+export function isGuestAllowedPath(pathname: string): boolean {
+  return GUEST_ALLOWED_APP_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+}
+
+/**
+ * آیا کاربر می‌تواند به این مسیر app دسترسی داشته باشد؟
+ *   - user token دارد → همه‌جا ✅
+ *   - guest token دارد → فقط /bots, /bots/[slug] ✅
+ *   - هیچ‌کدام → ❌ (باید به /login برود)
+ */
+export function canAccessAppPath(pathname: string): boolean {
+  if (hasUserToken()) return true;
+  if (!getGuestToken()) return false;
+  return isGuestAllowedPath(pathname);
+}
+
