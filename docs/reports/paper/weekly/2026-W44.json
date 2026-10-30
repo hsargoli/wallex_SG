@@ -1,0 +1,39 @@
+{
+  "gate_now": {
+    "allow_new_entries": false,
+    "regime": "range"
+  },
+  "sarv_router": {
+    "users": 1,
+    "states": [
+      {
+        "user": "production-default",
+        "total_capital": 1000000.0,
+        "current_regime": "range",
+        "active_bots": [],
+        "allocations": {},
+        "cash": 1000000.0,
+        "last_switch_idx": null,
+        "regime_since_idx": null,
+        "daily_pnl_pct": 0.0,
+        "daily_reset_day": "",
+        "kill_switch_manual": false,
+        "kill_switch_auto": false
+      }
+    ]
+  },
+  "nooaah": {
+    "available": true,
+    "capital": 100000.0,
+    "open_positions": 0,
+    "closed_trades": 24,
+    "daily_pnl_pct": -3.320000000000012,
+    "killed": false
+  },
+  "gate_history_7d": {
+    "hours": 168,
+    "total_switches": 0,
+    "regimes": {},
+    "gate_open_pct": 0
+  }
+}
