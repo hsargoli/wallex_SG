@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { use } from "react";
 import Link from "next/link";
 import {
@@ -37,6 +39,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+const BotReportsSection = dynamic(
+  () => import("@/components/bots/BotReportsSection").then((m) => m.BotReportsSection),
+  { loading: () => <Skeleton className="h-40 w-full mt-6" /> },
+);
 
 export default function BotDetailPage({
   params,
@@ -445,6 +452,9 @@ export default function BotDetailPage({
             </CardContent>
           </Card>
         </div>
+      )}
+      {info.data && (
+        <BotReportsSection data={info.data as any} />
       )}
     </div>
   );
