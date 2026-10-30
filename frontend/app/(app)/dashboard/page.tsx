@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallexStatus } from "@/lib/queries";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
+import { CapitalCard } from "@/components/dashboard/capital-card";
 import { LiveTickerCard } from "@/components/dashboard/live-ticker-card";
 import { PortfolioSignals } from "@/components/dashboard/portfolio-signals";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
@@ -63,7 +64,10 @@ export default function DashboardPage() {
       )}
 
       {/* ۱) پول من */}
-      <KpiCards />
+      <div className="grid gap-4 md:grid-cols-2">
+        <KpiCards />
+        <CapitalCard />
+      </div>
 
       {/* تیکر زنده بیت‌کوین */}
       <LiveTickerCard symbol="BTCTMN" />

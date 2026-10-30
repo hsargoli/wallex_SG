@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { SarvFooter } from "@/components/layout/sarv-footer";
 import { canAccessAppPath, getUserToken } from "@/lib/auth";
 import { useWallexStatus } from "@/lib/queries";
 
@@ -45,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!canAccessAppPath(pathname)) return spinner;
 
   if (pathname.startsWith("/settings") || pathname === "/bear-hunter") {
-    return <AppShell>{children}</AppShell>;
+    return <AppShell>{children}<SarvFooter /></AppShell>;
   }
 
   if (isLoading || !data) return spinner;
