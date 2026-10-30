@@ -32,17 +32,36 @@ router = APIRouter(prefix="/bots", tags=["Bots"])
     summary="لیست ربات‌ها (قابل فیلتر بر اساس tier)",
 )
 async def list_bots(tier: str | None = None):
-    """لیست ربات‌های ثبت‌شده — داینامیک از registry + nooaah (scheduler-based)."""
-    items = [
-        {"slug": "nooaah", "tier": "production", "name": "نوح", "name_en": "Nooaah"}
-    ]
+    """لیست همه‌ی ۱۱ ربات (scheduler + registry + archived stubs)."""
+    items = []
+
+    for slug, info in _SCHEDULER_BOTS.items():
+        items.append({
+            "slug": slug,
+            "tier": "production",
+            "name": info["name"],
+            "name_en": info["name_en"],
+            "archived": False,
+        })
+
     for info in bot_registry.list_all():
         items.append({
             "slug": info.slug,
             "tier": info.tier,
             "name": info.name,
             "name_en": info.name_en,
+            "archived": info.slug in _ARCHIVED_SET,
         })
+
+    for slug, info in _ARCHIVED_STUBS.items():
+        items.append({
+            "slug": slug,
+            "tier": "experimental",
+            "name": info["name"],
+            "name_en": info["name_en"],
+            "archived": True,
+        })
+
     if tier:
         items = [x for x in items if x["tier"] == tier]
     return {"count": len(items), "items": items}
@@ -155,6 +174,12 @@ def _load_bot_report(slug: str, kind: str) -> dict:
 
 
 # Bots not in registry but shown on platform (scheduler-based)
+_ARCHIVED_SET = {
+    "grid_bot", "market_scanner", "mean_revert", "trend_follow",
+    "volatility_hunter", "volatility_hunter_v2", "smart_portfolio",
+    "sarv_tiger", "scalp_master",
+}
+
 _SCHEDULER_BOTS = {
     "nooaah": {
         "name": "نوح",
@@ -166,12 +191,45 @@ _SCHEDULER_BOTS = {
         "author": "ROSHD_SARV",
         "status": "running",
     },
+    "sarv_router": {
+        "name": "سرو‌روتر",
+        "name_en": "SarvRouter",
+        "version": "1.0",
+        "description": "روتر رژیم-آگاه — ۲۴/۷ روی سرور، capital protection",
+        "tags": ["regime_based", "multi_symbol", "router"],
+        "capabilities": ["paper", "live", "backtest"],
+        "author": "ROSHD_SARV",
+        "status": "running",
+    },
+}
+
+_ARCHIVED_STUBS = {
+    "sarv_tiger": {
+        "name": "ببر سرو",
+        "name_en": "SarvTiger",
+        "version": "0.1.0",
+        "description": "Bollinger Squeeze + تحلیل‌گر تاریخی (آرشیو — edge ندارد)",
+        "tags": ["bollinger", "squeeze", "swing"],
+        "capabilities": ["backtest"],
+        "author": "ROSHD_SARV",
+        "status": "stopped",
+    },
+    "scalp_master": {
+        "name": "اسکالپ مستر",
+        "name_en": "Scalp Master",
+        "version": "0.1.0",
+        "description": "اسکالپ روی نمادهای پرنوسان (آرشیو — ۳ استراتژی، همه منفی)",
+        "tags": ["scalping", "momentum"],
+        "capabilities": ["backtest"],
+        "author": "ROSHD_SARV",
+        "status": "stopped",
+    },
 }
 
 
 @router.get("/{slug}")
 async def get_bot_info(slug: str):
-    """اطلاعات یک ربات + backtest + paper + meta (from data/bots/)."""
+    """اطلاعات یک ربات + backtest + paper + meta + archived."""
     reports = {
         "backtest": _load_bot_report(slug, "backtest"),
         "paper": _load_bot_report(slug, "paper"),
@@ -179,29 +237,34 @@ async def get_bot_info(slug: str):
     }
 
     bot = bot_registry.get(slug)
-    if bot is None:
-        # Scheduler-based bot (nooaah) — not in registry but real
-        if slug in _SCHEDULER_BOTS:
-            info = _SCHEDULER_BOTS[slug]
-            return {"slug": slug, **info, **reports}
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"ربات '{slug}' پیدا نشد",
-        )
-    info = bot.info
-    return {
-        "slug": info.slug,
-        "name": info.name,
-        "name_en": info.name_en,
-        "version": info.version,
-        "description": info.description,
-        "tags": info.tags,
-        "capabilities": info.capabilities,
-        "author": info.author,
-        "status": bot.status.value,
-        **reports,
-    }
+    if bot is not None:
+        info = bot.info
+        return {
+            "slug": info.slug,
+            "name": info.name,
+            "name_en": info.name_en,
+            "version": info.version,
+            "description": info.description,
+            "tags": info.tags,
+            "capabilities": info.capabilities,
+            "author": info.author,
+            "status": bot.status.value,
+            "archived": info.slug in _ARCHIVED_SET,
+            **reports,
+        }
 
+    if slug in _SCHEDULER_BOTS:
+        info = _SCHEDULER_BOTS[slug]
+        return {"slug": slug, **info, "archived": False, **reports}
+
+    if slug in _ARCHIVED_STUBS:
+        info = _ARCHIVED_STUBS[slug]
+        return {"slug": slug, **info, "archived": True, **reports}
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"ربات '{slug}' پیدا نشد",
+    )
 
 @router.get("/{slug}/status")
 async def get_bot_status(
