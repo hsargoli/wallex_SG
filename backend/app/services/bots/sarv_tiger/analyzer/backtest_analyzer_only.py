@@ -29,7 +29,8 @@ from app.services.bots.sarv_tiger.analyzer.similarity import find_similar
 
 ATR_PERIOD = 14
 SL_ATR_MULT = 1.2
-TP_ATR_MULT = 8.0
+import os as _os
+TP_ATR_MULT = float(_os.environ.get('TP_ATR_MULT', '8.0'))
 
 
 @dataclass(slots=True)

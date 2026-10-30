@@ -18,6 +18,7 @@ class AnalyzerConfig:
     #   "delta" — direction + relative hit flags (default, most complete)
     #   "alpha" — relative hit flag only (p_hit_tp × mult)
     #   "gamma" — direction only (p_up vs baseline × mult)
+    #   "none"  — CONTROL: always long (bypass analyzer)
     signal_mode: str = "delta"
 
     # Relative thresholds (multiples of baseline)

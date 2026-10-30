@@ -119,7 +119,10 @@ def analyze_outcomes(
     return_ok = avg_return_168h > cfg.avg_return_168h_min
 
     mode = cfg.signal_mode
-    if mode == "gamma":
+    if mode == "none":
+        # CONTROL: always long (bypass analyzer). For A/B against analyzer.
+        signal_long = True
+    elif mode == "gamma":
         signal_long = direction_ok
     elif mode == "alpha":
         signal_long = hit_ok
