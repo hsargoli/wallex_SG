@@ -1,4 +1,6 @@
 """Bot Registry endpoints."""
+import json
+from pathlib import Path
 
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -141,11 +143,47 @@ async def list_bots():
     }
 
 
+def _load_bot_report(slug: str, kind: str) -> dict:
+    """Load per-bot report JSON (backtest/paper/meta). Fail-safe."""
+    p = Path("data") / "bots" / slug / f"{kind}.json"
+    try:
+        if p.exists():
+            return json.loads(p.read_text())
+    except Exception:
+        pass
+    return {"status": "no_data"}
+
+
+# Bots not in registry but shown on platform (scheduler-based)
+_SCHEDULER_BOTS = {
+    "nooaah": {
+        "name": "نوح",
+        "name_en": "Nooaah",
+        "version": "1.0",
+        "description": "ربات ML-based، regime-aware، multi-symbol",
+        "tags": ["ml", "regime_based", "multi_symbol"],
+        "capabilities": ["paper", "live", "backtest"],
+        "author": "ROSHD_SARV",
+        "status": "running",
+    },
+}
+
+
 @router.get("/{slug}")
 async def get_bot_info(slug: str):
-    """اطلاعات یک ربات."""
+    """اطلاعات یک ربات + backtest + paper + meta (from data/bots/)."""
+    reports = {
+        "backtest": _load_bot_report(slug, "backtest"),
+        "paper": _load_bot_report(slug, "paper"),
+        "meta": _load_bot_report(slug, "meta"),
+    }
+
     bot = bot_registry.get(slug)
     if bot is None:
+        # Scheduler-based bot (nooaah) — not in registry but real
+        if slug in _SCHEDULER_BOTS:
+            info = _SCHEDULER_BOTS[slug]
+            return {"slug": slug, **info, **reports}
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"ربات '{slug}' پیدا نشد",
@@ -161,6 +199,7 @@ async def get_bot_info(slug: str):
         "capabilities": info.capabilities,
         "author": info.author,
         "status": bot.status.value,
+        **reports,
     }
 
 
