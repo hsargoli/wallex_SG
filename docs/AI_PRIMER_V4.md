@@ -516,3 +516,19 @@ if open_pct > 30 (absolute) → Q4-2023 gate=۲۶.۱٪ رد شد. اما uptrend
 **Test:** `--mode <new>` بدون خطا اجرا شود.
 
 **Applied in:** ADR-0002 (none mode control test).
+
+## AP-42 (2026-10-30) — Heuristic import insertion در فایل با docstring چندخطی
+
+**Problem:** برای افزودن `import json` و `from pathlib import Path` به `bots.py`، heuristic استفاده کردم: «اولین خطی که با `from`/`import` شروع شود، قبلش insert کن». چون فایل docstring چندخطی داشت و کلمه‌ی «from» در آن بود، نتیجه:
+
+`from pathlib import PathBot Registry endpoints."""` — یعنی `Path` چسبید به متن docstring → `NameError: name 'Path' is not defined` در runtime.
+
+**Root cause:** heuristic بدون خواندن ساختار کامل فایل.
+
+**Fix:** برای فایل‌های با docstring، همیشه:
+1. `src.startswith('"""')` → closing `"""` را پیدا کن، بعد از آن import بگذار
+2. یا از AST: `ast.parse(src)` → `tree.body[0].end_lineno + 1`
+
+**Lesson:** heuristic imports = بدهی. همیشه AST یا boundary-check.
+
+**Applied in:** `bots.py` extension (2026-10-30).
