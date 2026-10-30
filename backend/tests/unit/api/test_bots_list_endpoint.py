@@ -4,16 +4,23 @@ from app.main import app
 
 
 class TestBotsListEndpoint:
-    """P7 — /v1/bots/list must include scalp_master (and keep nooaah)."""
+    """P7+2026-10-30 — /v1/bots/list must include ALL 11 bots.
 
-    def test_list_excludes_archived_scalp_master(self):
+    Per Hosein 2026-10-30: archived bots appear with `archived: true`
+    (transparency). Only `archived: false` bots are actively tradeable.
+    """
+
+    def test_list_includes_archived_scalp_master(self):
+        """2026-10-30: scalp_master appears with archived=true (transparency)."""
         client = TestClient(app)
         r = client.get("/v1/bots/list")
         assert r.status_code == 200
         data = r.json()
-        slugs = [item["slug"] for item in data["items"]]
-        assert "scalp_master" not in slugs, f"archived scalp_master must NOT appear: {slugs}"
-        assert "nooaah" in slugs, "nooaah must remain in list"
+        items_by_slug = {item["slug"]: item for item in data["items"]}
+        assert "scalp_master" in items_by_slug, f"scalp_master must appear (archived): {list(items_by_slug)}"
+        assert items_by_slug["scalp_master"]["archived"] is True
+        assert "nooaah" in items_by_slug, "nooaah must remain in list"
+        assert items_by_slug["nooaah"]["archived"] is False
 
     def test_list_production_tier_present(self):
         client = TestClient(app)
