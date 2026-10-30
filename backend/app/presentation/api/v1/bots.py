@@ -287,29 +287,6 @@ async def set_bot_symbols(slug: str, payload: dict):
     return bot.set_symbols(symbols)
 
 
-@router.post("/{slug}/symbols")
-async def set_bot_symbols(slug: str, payload: dict):
-    """تغییر نمادها (فقط برای scalp_master)."""
-    bot = bot_registry.get(slug)
-    if bot is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"ربات '{slug}' پیدا نشد",
-        )
-    if not hasattr(bot, "set_symbols"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"ربات '{slug}' از تغییر نمادها پشتیبانی نمی‌کند",
-        )
-    symbols = payload.get("symbols")
-    if not symbols:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="پارامتر symbols لازم است",
-        )
-    return bot.set_symbols(symbols)
-
-
 @router.post("/{slug}/reset")
 async def reset_bot(slug: str):
     """ریست یک ربات."""
