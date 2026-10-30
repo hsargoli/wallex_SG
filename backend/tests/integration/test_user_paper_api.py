@@ -282,7 +282,7 @@ class TestManualOrder:
         r = await client.post(
             "/v1/user/paper-v3/order",
             headers=auth_headers(token),
-            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 10_000_000},
+            json={"side": "buy", "symbol": "BTCTMN", "amount_tmn": 20_000_000},
         )
         assert r.status_code == 200
         data = r.json()

@@ -210,13 +210,19 @@ export default function LandingPage() {
               </div>
 
               {/* دکمه با گرادیان و درخشش */}
-              <Button asChild size="lg" className="relative z-10 mt-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_10px_40px_-10px_rgba(192,38,211,0.8)] border border-violet-400/50">
-                <Link href="/learn" className="transition-colors hover:text-emerald-400">آموزش</Link>
-            <Link href="/demo">
-                  مشاهده دموی زنده
-                  <ArrowLeft className="h-5 w-5 mr-2 animate-bounce-x" />
-                </Link>
-              </Button>
+              <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-3">
+                <Button asChild size="lg" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_10px_40px_-10px_rgba(192,38,211,0.8)] border border-violet-400/50">
+                  <Link href="/demo">
+                    مشاهده دموی زنده
+                    <ArrowLeft className="h-5 w-5 mr-2 animate-bounce-x" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/learn" className="transition-colors hover:text-emerald-400">
+                    آموزش (راهنما)
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
           </TiltCard>
