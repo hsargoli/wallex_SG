@@ -23,12 +23,14 @@ log = structlog.get_logger("guest.scheduler")
 class GuestScheduler:
     """Scheduler مشترک برای همه‌ی Guest Paper Engineها."""
 
-    def __init__(self, interval_sec: int = 180):
+    def __init__(self, interval_sec: int = 180, cleanup_interval_sec: int = 24 * 3600):
         self.interval_sec = interval_sec
+        self.cleanup_interval_sec = cleanup_interval_sec
         self._task: asyncio.Task | None = None
         self._engines_provider: Callable[[], dict[str, "PaperEngine"]] | None = None
         self._user_engines_provider: Callable[[], dict[str, "PaperEngine"]] | None = None
         self._running = False
+        self._last_cleanup_ts: float = 0.0
 
     def set_engines_provider(
         self, provider: Callable[[], dict[str, "PaperEngine"]]
@@ -77,6 +79,8 @@ class GuestScheduler:
             except Exception as e:
                 log.error("guest.scheduler_error", error=str(e))
                 await asyncio.sleep(30)
+                continue
+            await self._maybe_cleanup()
 
     async def _tick(self) -> None:
         """یه چرخه: همه‌ی engineهای در حال اجرا رو check کن.
@@ -119,3 +123,21 @@ class GuestScheduler:
 
         if active:
             log.info("paper.scheduler_tick", active=active)
+
+    async def _maybe_cleanup(self) -> None:
+        """Run cleanup_stale_guests if enough time has passed."""
+        import time
+        now = time.time()
+        if now - self._last_cleanup_ts < self.cleanup_interval_sec:
+            return
+        try:
+            from app.services.guest.storage import cleanup_stale_guests
+            removed = cleanup_stale_guests()
+            self._last_cleanup_ts = now
+            if removed:
+                log.info("guest.cleanup", removed=removed, interval_sec=self.cleanup_interval_sec)
+            else:
+                log.debug("guest.cleanup_noop")
+        except Exception as e:
+            log.error("guest.cleanup_failed", error=str(e))
+

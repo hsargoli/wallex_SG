@@ -87,3 +87,38 @@ def delete_guest(token: str) -> bool:
         return False
     shutil.rmtree(d)
     return True
+
+def cleanup_stale_guests(
+    base_dir: Path | None = None,
+    max_age_hours: int = 24,
+) -> int:
+    """حذف guest stateهایی که از max_age_hours قدیمی‌ترند.
+
+    Args:
+        base_dir: مسیر ریشه‌ی مهمان‌ها. پیش‌فرض GUEST_ROOT.
+        max_age_hours: سن حداکثر (پیش‌فرض ۲۴ ساعت).
+
+    Returns:
+        int: تعداد پوشه‌های حذف‌شده.
+    """
+    import time
+
+    root = base_dir if base_dir is not None else GUEST_ROOT
+    if not root.exists():
+        return 0
+
+    cutoff = time.time() - max_age_hours * 3600
+    removed = 0
+
+    for entry in root.iterdir():
+        if not entry.is_dir():
+            continue
+        try:
+            if entry.stat().st_mtime < cutoff:
+                shutil.rmtree(entry)
+                removed += 1
+        except OSError:
+            continue
+
+    return removed
+

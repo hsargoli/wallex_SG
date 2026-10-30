@@ -11,6 +11,7 @@
 from app.services.guest.scheduler import GuestScheduler
 from app.services.guest.storage import (
     GUEST_ROOT,
+    cleanup_stale_guests,
     delete_guest,
     ensure_guest_dir,
     guest_dir,
@@ -35,5 +36,6 @@ __all__ = [
     "ensure_guest_dir",
     "list_guests",
     "delete_guest",
+    "cleanup_stale_guests",
     "GuestScheduler",
 ]

@@ -31,11 +31,12 @@ log = structlog.get_logger("guest.api")
 router = APIRouter(prefix="/guest", tags=["Guest Mode"])
 
 # ─── ثابت‌ها ───
-DEFAULT_GUEST_CAPITAL = 500_000.0        # ۵۰۰ هزار تومان
+DEFAULT_GUEST_CAPITAL = 100_000.0        # ۱۰۰ هزار تومان (Per Hosein 2026-10-30)
 DEFAULT_BOT = "scalp_master"
 DEFAULT_SYMBOLS = ["BTCTMN", "ETHTMN", "SOLTMN"]
 DEFAULT_TIMEFRAME = "1h"
 DEFAULT_CHECK_INTERVAL = 180
+DEFAULT_POSITION_SIZE_PCT = 30.0   # ۳۰٪ (Per Hosein 2026-10-30; was 50.0)
 
 
 # ═══════════════════════════════════════════
@@ -97,7 +98,7 @@ class StartRequest(BaseModel):
     timeframe: str = DEFAULT_TIMEFRAME
     initial_capital: float = DEFAULT_GUEST_CAPITAL
     check_interval_sec: int = DEFAULT_CHECK_INTERVAL
-    position_size_pct: float = 50.0
+    position_size_pct: float = DEFAULT_POSITION_SIZE_PCT
 
 
 class ManualOrderRequest(BaseModel):
@@ -173,7 +174,7 @@ def _get_or_create_engine(
         timeframe=payload.timeframe if payload else DEFAULT_TIMEFRAME,
         initial_capital=payload.initial_capital if payload else DEFAULT_GUEST_CAPITAL,
         check_interval_sec=payload.check_interval_sec if payload else DEFAULT_CHECK_INTERVAL,
-        position_size_pct=payload.position_size_pct if payload else 50.0,
+        position_size_pct=payload.position_size_pct if payload else DEFAULT_POSITION_SIZE_PCT,
         state_dir=state_dir,
     )
     engines[token] = engine
