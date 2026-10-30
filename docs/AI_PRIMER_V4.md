@@ -532,3 +532,21 @@ if open_pct > 30 (absolute) → Q4-2023 gate=۲۶.۱٪ رد شد. اما uptrend
 **Lesson:** heuristic imports = بدهی. همیشه AST یا boundary-check.
 
 **Applied in:** `bots.py` extension (2026-10-30).
+
+## AP-43 (2026-10-30) — Heuristic insert در بلوک try/while/if
+
+**Problem:** برای افزودن `await self._maybe_cleanup()` به `_loop`، از `src.replace("await self._tick()", "await self._tick()\n            await self._maybe_cleanup()")` استفاده کردم. نتیجه:
+
+```python
+try:
+    await self._tick()
+    await self._maybe_cleanup()   # ← indentation 12spaces، بین try و except
+except asyncio.CancelledError:    # ← SyntaxError
+
+Root cause: heuristic insert، ساختار بلوک (try/while/if/for) را نمی‌شناسد. indentation در Python = syntax.
+
+Fix: برای تغییر ساختار بلوک، کل متد را بازنویسی کن (با مرزهای مشخص: async def X تا async def Y)، نه heuristic insert. مثل AP-42 (import).
+
+Lesson: heuristic insert در بلوک = بدهی. همیشه مرز بلوک را پیدا کن، جایگزین کن.
+
+Applied in: guest/scheduler.py _loop rewrite (2026-10-30).
