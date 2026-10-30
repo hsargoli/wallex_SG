@@ -480,3 +480,39 @@ if open_pct > 30 (absolute) → Q4-2023 gate=۲۶.۱٪ رد شد. اما uptrend
 > قبل از هر Investigate، مسیر لاگ سرویس را چک کن. journald پیش‌فرض نیست.
 
 **Applied in:** SarvRouter deploy (2026-10-29).
+
+---
+
+## AP-39 — گزارش منفی، یک پیروزی است
+
+**Problem:** ۷ ساعت کار روی analyzer (سarv_tiger)، edge تولید نکرد. وسوسه: «دوباره tune کن، شاید این بار».
+
+**Fix:** گزارش منفی با شاهد (PF<1 در test) = **پیروزی**، چون ۵M سرمایه از ضرر نجات یافت. **ذخیره در ADR، نه تلاش دوباره.**
+
+**Rule:** اگر backtest با شاهد PF<1 داد → archive، نه tune. p-hacking = دشمن.
+
+**Applied in:** ADR-0002 (sarv_tiger analyzer archive).
+
+---
+
+## AP-40 — WR بالا ≠ PF بالا
+
+**Problem:** TP=2ATR → WR از ۲۰٪ به ۴۰٪ رفت، ولی PF از ۱.۱۴ به ۰.۹۰ افتاد.
+
+**Root cause:** WR بالا با TP کوچک = بردهای کوچک. lossها (SL=1.2ATR) بزرگ‌تر از بردها → PF < 1.
+
+**Rule:** WR تنها معیار نیست. همیشه PF + expectancy + R/R را با هم ببین.
+
+**Applied in:** ADR-0002 (delta/gamma TP=2 results).
+
+---
+
+## AP-41 — argparse choices را همزمان آپدیت کن
+
+**Problem:** mode جدید (`none`) به argparse اضافه نشد → control test بی‌صدا fail شد (choices قبلی).
+
+**Fix:** هر بار mode/option جدید اضافه می‌کنی، همان commit، argparse را هم آپدیت کن.
+
+**Test:** `--mode <new>` بدون خطا اجرا شود.
+
+**Applied in:** ADR-0002 (none mode control test).
