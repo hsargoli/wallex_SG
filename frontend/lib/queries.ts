@@ -252,6 +252,34 @@ export function useBotStatus(slug: string) {
   });
 }
 
+export function useSarvRouterStatus() {
+  return useQuery({
+    queryKey: ["sarvrouter-status"],
+    queryFn: () => api.getSarvRouterStatus(),
+    refetchInterval: 15000,
+  });
+}
+
+export function useSarvRouterKill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.sarvRouterKill(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sarvrouter-status"] });
+    },
+  });
+}
+
+export function useSarvRouterReenable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.sarvRouterReenable(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sarvrouter-status"] });
+    },
+  });
+}
+
 export function useStartBot() {
   const qc = useQueryClient();
   return useMutation({

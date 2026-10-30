@@ -799,6 +799,9 @@ export const api = {
     client.get<BotsListResponse>("/v1/bots").then((r) => r.data),
   getBot: (slug: string) =>
     client.get<BotInfo>(`/v1/bots/${slug}`).then((r) => r.data),
+  getSarvRouterStatus: () => client.get('/v1/sarvrouter/status').then(r => r.data),
+  sarvRouterKill: () => client.post('/v1/sarvrouter/kill-switch').then(r => r.data),
+  sarvRouterReenable: () => client.post('/v1/sarvrouter/reenable').then(r => r.data),
   getBotStatus: (slug: string) =>
     client.get<BotStatusResponse>(`/v1/bots/${slug}/status`).then((r) => r.data),
   startBot: (slug: string) =>
