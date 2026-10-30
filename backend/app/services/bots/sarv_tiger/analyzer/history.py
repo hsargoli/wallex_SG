@@ -44,6 +44,8 @@ class HistoricalWindow:
     outcome_168h: float
     hit_sl_24h: bool
     hit_tp_24h: bool
+    hit_sl_168h: bool = False
+    hit_tp_168h: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -55,6 +57,8 @@ class HistoricalWindow:
             "outcome_168h": self.outcome_168h,
             "hit_sl_24h": self.hit_sl_24h,
             "hit_tp_24h": self.hit_tp_24h,
+            "hit_sl_168h": self.hit_sl_168h,
+            "hit_tp_168h": self.hit_tp_168h,
         }
 
     @classmethod
@@ -68,6 +72,8 @@ class HistoricalWindow:
             outcome_168h=float(d["outcome_168h"]),
             hit_sl_24h=bool(d["hit_sl_24h"]),
             hit_tp_24h=bool(d["hit_tp_24h"]),
+            hit_sl_168h=bool(d.get("hit_sl_168h", False)),
+            hit_tp_168h=bool(d.get("hit_tp_168h", False)),
         )
 
 
@@ -181,6 +187,11 @@ def build_windows(
         future_24h = candles[end_idx + 1 : end_idx + 1 + HORIZON_24H]
         sl_hit, tp_hit = check_hit_sl_tp(future_24h, entry=entry, sl=sl, tp=tp)
 
+        future_168h = candles[end_idx + 1 : end_idx + 1 + HORIZON_168H]
+        sl_hit_168, tp_hit_168 = check_hit_sl_tp(
+            future_168h, entry=entry, sl=sl, tp=tp,
+        )
+
         result.append(HistoricalWindow(
             window_start_ts=int(candles[start_idx].time),
             window_end_ts=int(candles[end_idx].time),
@@ -190,6 +201,8 @@ def build_windows(
             outcome_168h=o168,
             hit_sl_24h=sl_hit,
             hit_tp_24h=tp_hit,
+            hit_sl_168h=sl_hit_168,
+            hit_tp_168h=tp_hit_168,
         ))
 
     return result
