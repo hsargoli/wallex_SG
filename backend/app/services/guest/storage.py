@@ -101,6 +101,7 @@ def cleanup_stale_guests(
     Returns:
         int: تعداد پوشه‌های حذف‌شده.
     """
+    import json
     import time
 
     root = base_dir if base_dir is not None else GUEST_ROOT
@@ -113,12 +114,27 @@ def cleanup_stale_guests(
     for entry in root.iterdir():
         if not entry.is_dir():
             continue
-        try:
-            if entry.stat().st_mtime < cutoff:
+
+        # Prefer meta.last_seen_at (set by _get_or_create_meta on every request);
+        # fall back to dir mtime only if meta is missing/corrupt.
+        ts = entry.stat().st_mtime
+        meta_path = entry / "meta.json"
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                if isinstance(meta, dict):
+                    last_seen = meta.get("last_seen_at")
+                    if isinstance(last_seen, (int, float)):
+                        ts = float(last_seen)
+            except Exception:
+                pass  # fallback to mtime
+
+        if ts < cutoff:
+            try:
                 shutil.rmtree(entry)
                 removed += 1
-        except OSError:
-            continue
+            except OSError:
+                continue
 
     return removed
 
