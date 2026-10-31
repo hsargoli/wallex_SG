@@ -16,6 +16,9 @@ export function parseNum(s: string): string {
   return s.replace(/[^0-9]/g, "");
 }
 
-/** 1234.56 → "۱,۲۳۵" (Persian locale) */
-export const fmt = (n: number | undefined | null, dec: number = 0) =>
-  n == null ? "—" : Math.round(n).toLocaleString("fa-IR") + (dec > 0 ? "" : "");
+/**
+ * 1234.56 → "۱٬۲۳۵" (Persian locale, rounded to integer).
+ * Note: this is for Toman/integer display. For decimals, use chart-legend's fmt.
+ */
+export const fmt = (n: number | undefined | null): string =>
+  n == null ? "—" : Math.round(n).toLocaleString("fa-IR");
