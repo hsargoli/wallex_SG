@@ -124,10 +124,10 @@ export default function LearnPage() {
           </Badge>
 
           <h1 className="mb-6 text-3xl font-bold leading-tight md:text-5xl lg:text-6xl">
-            ۱۰۰ هزار تومان پول مجازی رایگان بگیرید.
+            صد هزارتومن پول مجازی بگیرید
             <br />
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-              با ثبت‌نام، ۹ میلیون و ۹۰۰ هزار تومان جایزه بگیرید.
+              با ثبت نام 9900 بیشتر
             </span>
           </h1>
 
