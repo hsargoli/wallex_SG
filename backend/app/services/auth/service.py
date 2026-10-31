@@ -173,7 +173,7 @@ async def register_user(
             capital_total=float(user.capital_total),
             merged=merged_data.merged,
             merged_from_guest=merged_data.merged,
-            merged_capital=merged_data.capital_total - 3_000_000.0 if merged_data.merged else 0.0,
+            merged_capital=merged_data.capital_total - 10_000_000.0 if merged_data.merged else 0.0,  # per Hosein 2026-10-31
             merged_positions=len(merged_data.open_positions),
         )
 

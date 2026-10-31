@@ -31,7 +31,7 @@ class UserPaperEngine(PaperEngine):
         bot_slug: str,
         symbols: list[str],
         timeframe: str = "1h",
-        initial_capital: float = 3_000_000.0,
+        initial_capital: float = 10_000_000.0,  # 10M (per Hosein 2026-10-31)
         check_interval_sec: int = 180,
         position_size_pct: float = 50.0,
         fee_pct: float = 0.2,

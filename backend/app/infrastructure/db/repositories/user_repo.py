@@ -41,7 +41,7 @@ class UserRepository:
         self,
         email: str,
         password_hash: str,
-        capital_total: float = 3_000_000.0,
+        capital_total: float = 10_000_000.0,  # 10M (per Hosein 2026-10-31)
         capital_available: float | None = None,
         open_positions: list | None = None,
         closed_trades: list | None = None,

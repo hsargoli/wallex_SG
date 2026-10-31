@@ -21,7 +21,7 @@ from app.services.guest import (
 log = structlog.get_logger("auth.merge")
 
 # پول پایه‌ی کاربر ثبت‌نام‌شده
-USER_BASE_CAPITAL = 3_000_000.0
+USER_BASE_CAPITAL = 10_000_000.0  # 10M (per Hosein 2026-10-31)
 
 
 @dataclass

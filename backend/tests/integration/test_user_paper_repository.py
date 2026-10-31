@@ -74,9 +74,9 @@ class TestLoadFallback:
     async def test_load_empty_returns_defaults(self, repo) -> None:
         """user جدید با paper_meta خالی → defaults."""
         state = await repo.load()
-        # fallback: initial_capital = capital_total (3M)
-        assert state.initial_capital == 3_000_000.0
-        assert state.capital == 3_000_000.0
+        # fallback: initial_capital = capital_total (10M)
+        assert state.initial_capital == 10_000_000.0
+        assert state.capital == 10_000_000.0
         assert state.is_running is False
         assert state.open_positions == []
 
@@ -165,6 +165,6 @@ class TestSyncGuarantee:
         async with SessionLocal() as session:
             user = await session.get(User, test_user)
             # capital_total = investment کل → 3M (پیش‌فرض)
-            assert float(user.capital_total) == 3_000_000.0
+            assert float(user.capital_total) == 10_000_000.0
             # capital_available = نقد → 500k
             assert float(user.capital_available) == 500_000.0

@@ -40,6 +40,23 @@ def client():
         yield c
 
 # ═══════════════════════════════════════════════════════════════
+# Candles cache reset — جلوگیری از test pollution
+# (test_markets_price_public قیمت واقعی BTC را cache می‌کند،
+#  و test_manual_order_persists با FakeExchange(price=100)
+#  همان قیمت ۲۱ میلیارد را برمی‌گرداند → "سرمایه کافی نیست")
+# ═══════════════════════════════════════════════════════════════
+
+
+@pytest.fixture(autouse=True)
+def _clear_candles_cache_between_tests():
+    """هر تست با cache خالی شروع می‌شود."""
+    from app.infrastructure.cache.candles import cache as _candles_cache
+    _candles_cache._store.clear()
+    yield
+    _candles_cache._store.clear()
+
+
+# ═══════════════════════════════════════════════════════════════
 # Rate limiter reset — جلوگیری از 429 در تست‌های متوالی
 # (CONNECT_LIMIT=5/hour، تست‌ها ۱۴ بار /connect می‌زنن)
 # ═══════════════════════════════════════════════════════════════

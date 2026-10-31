@@ -79,7 +79,7 @@ def exchange() -> FakeExchange:
 def make_engine(
     test_user,
     exchange: FakeExchange,
-    initial_capital: float = 3_000_000.0,
+    initial_capital: float = 10_000_000.0,
 ) -> UserPaperEngine:
     return UserPaperEngine(
         user_id=test_user,
@@ -100,12 +100,12 @@ class TestFreshUser:
         self, test_user, exchange
     ) -> None:
         """user جدید → capital = initial_capital param."""
-        engine = make_engine(test_user, exchange, initial_capital=3_000_000.0)
+        engine = make_engine(test_user, exchange, initial_capital=10_000_000.0)
         await engine.ensure_state()
 
-        assert engine.state.initial_capital == 3_000_000.0
-        assert engine.state.capital == 3_000_000.0
-        assert engine.state.equity == 3_000_000.0
+        assert engine.state.initial_capital == 10_000_000.0
+        assert engine.state.capital == 10_000_000.0
+        assert engine.state.equity == 10_000_000.0
         assert engine.state.is_running is False
         assert engine.state.open_positions == []
 
@@ -188,5 +188,5 @@ class TestInheritance:
         e2 = make_engine(test_user, exchange)
         await e2.ensure_state()
         assert e2.state.open_positions == []
-        assert e2.state.capital == 3_000_000.0
+        assert e2.state.capital == 10_000_000.0
         assert e2.state.total_trades == 0

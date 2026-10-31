@@ -42,10 +42,10 @@ class User(Base):
 
     # پول مجازی
     capital_total: Mapped[float] = mapped_column(
-        Numeric(20, 2), default=3_000_000, server_default=text("3000000.00")
+        Numeric(20, 2), default=10_000_000, server_default=text("10000000.00")
     )
     capital_available: Mapped[float] = mapped_column(
-        Numeric(20, 2), default=3_000_000, server_default=text("3000000.00")
+        Numeric(20, 2), default=10_000_000, server_default=text("10000000.00")
     )
     capital_in_use: Mapped[float] = mapped_column(
         Numeric(20, 2), default=0, server_default=text("0.00")

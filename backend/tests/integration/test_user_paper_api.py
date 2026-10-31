@@ -106,7 +106,7 @@ class TestStatusFallback:
         )
         assert r.status_code == 200
         data = r.json()
-        assert data["initial_capital"] == 3_000_000.0
+        assert data["initial_capital"] == 10_000_000.0
         assert data["is_running"] is False
         assert data["open_positions"] == []
 
@@ -126,7 +126,7 @@ class TestStartStop:
                 "bot_slug": "scalp_master",
                 "symbols": ["BTCTMN"],
                 "timeframe": "1h",
-                "initial_capital": 3_000_000.0,
+                "initial_capital": 10_000_000.0,
                 "check_interval_sec": 9999,
                 "position_size_pct": 50.0,
             },
