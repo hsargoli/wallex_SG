@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackgroundFX } from "@/components/landing/background-fx";
 
 export const metadata = {
   title: "آموزش | SarvBots",
@@ -103,7 +104,9 @@ const ICON_TONES: Record<string, string> = {
 
 export default function LearnPage() {
   return (
-    <div dir="rtl" className="min-h-screen bg-background">
+    <div className="dark relative min-h-screen overflow-hidden bg-background text-foreground">
+      <BackgroundFX />
+      <div className="relative z-10 min-h-screen bg-background" dir="rtl">
       {/* Header */}
       <header className="border-b border-border/40">
         <div className="container mx-auto flex items-center justify-between py-4">
@@ -234,6 +237,7 @@ export default function LearnPage() {
           </div>
         </div>
       </section>
+    </div>
     </div>
   );
 }
