@@ -562,3 +562,36 @@ Applied in: guest/scheduler.py _loop rewrite (2026-10-30).
 **Lesson:** برای cleanup/expiration، همیشه از **domain timestamp** استفاده کن (last_seen_at، updated_at، expired_at). `mtime` فقط برای bootstrap یا fallback.
 
 **Applied in:** `guest/storage.py` `cleanup_stale_guests` (2026-10-31).
+
+## AP-48 (2026-10-31) — tsc تنها کافی نیست؛ npm run build لوکال
+
+**Problem:** بعد از اضافه‌کردن crosslink، `npx tsc --noEmit` پاس شد ولی در server، build fail شد:
+
+app/(app)/sarvrouter/page.tsx(103,12): error TS2552: Cannot find name 'ExternalLink'
+text
+
+چون `ExternalLink` در JSX استفاده شد ولی در import نبود. **tsc در localhost آن را نگرفت، ولی build روی server گرفت.**
+
+**Root cause:** `npx tsc --noEmit` ممکن است بعضی خطاها را در context متفاوت (cache، missing node_modules) نبیند. build واقعی، همه‌ی bundling + client/server را چک می‌کند.
+
+**Fix:** قبل از هر deploy، **`npm run build` لوکال** اجرا کن. اگر fail → rsync نکن.
+
+**Lesson:** tsc ≠ build. در CI/CD همیشه build (نه فقط tsc).
+
+**Applied in:** incident 2026-10-31 (frontend crash loop، سایت 502).
+
+---
+
+## AP-49 (2026-10-31) — systemd unit برای Next.js: bypass npm
+
+**Problem:** unit file `ExecStart=/usr/bin/npm run start -- --port 3020` — npm آرگومان `--port` را به `next start` پاس نمی‌داد → Next.js روی default 3000 بالا می‌آمد → EADDRINUSE (orphan روی 3000).
+
+**Fix:** bypass npm مستقیم:
+
+ExecStart=/home/deploy/wallex/frontend/node_modules/.bin/next start --port 3020
+text
+
+
+**Lesson:** برای systemd + Next.js، همیشه direct binary (نه `npm run start`). npm wrapper args را می‌بلعد.
+
+**Applied in:** incident 2026-10-31 (EADDRINUSE، restart counter 17).
