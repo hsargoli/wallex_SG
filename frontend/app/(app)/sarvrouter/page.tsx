@@ -95,6 +95,13 @@ export default function SarvRouterPage() {
           <ArrowRight className="h-4 w-4 inline" />
         </Link>
         <h1 className="text-2xl font-bold">SarvRouter</h1>
+        <Link
+          href="/bots/sarv_router"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-violet-400"
+        >
+          نمای کلی ربات
+          <ExternalLink className="h-3 w-3" />
+        </Link>
         <Badge variant="outline" className={regime.color}>
           رژیم: {regime.label}
         </Badge>

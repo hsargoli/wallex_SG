@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Brain,
+  ExternalLink,
   Loader2,
   Play,
   FlaskConical,
@@ -133,7 +134,16 @@ export default function NooaahPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Brain className="h-6 w-6 text-amber-400" />
-          <h1 className="text-2xl font-bold">ربات نوح — تحلیل و بک‌تست</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold">ربات نوح — تحلیل و بک‌تست</h1>
+            <Link
+              href="/bots/nooaah"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-violet-400"
+            >
+              نمای کلی ربات
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground">تعداد نمادها:</label>

@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Archive,
   Bot,
+  ExternalLink,
   Play,
   Square,
   RotateCcw,
@@ -120,14 +121,40 @@ export default function BotDetailPage({
                 </Button>
               </Link>
             )
-          ) : (slug === "nooaah" || slug === "sarv_router") ? (
-            <Button
-              onClick={() => document.getElementById("paper-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-            >
-              <Activity className="h-4 w-4" />
-              مشاهده‌ی وضعیت
-            </Button>
+          ) : slug === "nooaah" ? (
+            <>
+              <Button
+                onClick={() => document.getElementById("paper-section")?.scrollIntoView({ behavior: "smooth" })}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Activity className="h-4 w-4" />
+                مشاهده‌ی وضعیت
+              </Button>
+              <Link href="/nooaah">
+                <Button variant="outline" className="gap-2 border-violet-500/40">
+                  <ExternalLink className="h-4 w-4" />
+                  پنل کامل
+                </Button>
+              </Link>
+            </>
+          ) : slug === "sarv_router" ? (
+            <>
+              <Button
+                onClick={() => document.getElementById("paper-section")?.scrollIntoView({ behavior: "smooth" })}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Activity className="h-4 w-4" />
+                مشاهده‌ی وضعیت
+              </Button>
+              {hasUserToken() && (
+                <Link href="/sarvrouter">
+                  <Button variant="outline" className="gap-2 border-violet-500/40">
+                    <ExternalLink className="h-4 w-4" />
+                    پنل کامل
+                  </Button>
+                </Link>
+              )}
+            </>
           ) : hasUserToken() ? (
             <>
               {!isRunning ? (
