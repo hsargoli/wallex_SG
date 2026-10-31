@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Play,
   Square,
@@ -107,7 +108,14 @@ export default function PaperTradingPage() {
             تست زنده استراتژی‌ها روی داده‌ی واقعی والکس
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/paper-trading/manual"
+            className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300 hover:bg-violet-500/20"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            تست دستی
+          </Link>
           {!isRunning ? (
             <Button
               onClick={handleStart}
