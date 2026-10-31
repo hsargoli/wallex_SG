@@ -550,3 +550,15 @@ Fix: برای تغییر ساختار بلوک، کل متد را بازنویس
 Lesson: heuristic insert در بلوک = بدهی. همیشه مرز بلوک را پیدا کن، جایگزین کن.
 
 Applied in: guest/scheduler.py _loop rewrite (2026-10-30).
+
+## AP-44 (2026-10-31) — Cleanup/Expiration بر اساس domain timestamp، نه fs mtime
+
+**Problem:** `cleanup_stale_guests` از `entry.stat().st_mtime` استفاده می‌کرد. مهمان فعال که فقط `meta.json` را overwrite می‌کرد (in-place write)، `mtime` **پوشه** آپدیت نمی‌شد → پاک می‌شد. UX bug.
+
+**Root cause:** اتکا به filesystem mtime برای منطق domain. mtime با in-place overwrite، attribute-only change، `rsync -t`، یا cache، ناپایدار است.
+
+**Fix:** اولویت اول `meta.json.last_seen_at` (که `_get_or_create_meta` در هر request آپدیت می‌کند). fallback به `mtime` فقط اگر meta نبود یا خراب.
+
+**Lesson:** برای cleanup/expiration، همیشه از **domain timestamp** استفاده کن (last_seen_at، updated_at، expired_at). `mtime` فقط برای bootstrap یا fallback.
+
+**Applied in:** `guest/storage.py` `cleanup_stale_guests` (2026-10-31).
