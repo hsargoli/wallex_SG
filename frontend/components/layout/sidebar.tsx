@@ -67,8 +67,22 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+function computeActiveHref(pathname: string, groups: NavGroup[]): string | null {
+  // Longest-prefix-match: /paper-trading/manual should win over /paper-trading
+  const matches = groups
+    .flatMap((g) => g.items)
+    .filter((item) =>
+      item.href === "/"
+        ? pathname === "/"
+        : pathname === item.href || pathname.startsWith(item.href + "/"),
+    )
+    .sort((a, b) => b.href.length - a.href.length);
+  return matches[0]?.href ?? null;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
+  const activeHref = computeActiveHref(pathname, navGroups);
   const health = useHealth();
   const isOnline = health.isSuccess && health.data?.status === "ok";
 
@@ -166,10 +180,7 @@ export function Sidebar() {
               )}
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const active = item.href === activeHref;
                 return (
                   <Link
                     key={item.href}
