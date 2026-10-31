@@ -33,6 +33,21 @@ class PaperState:
     def to_dict(self) -> dict:
         return asdict(self)
 
+    @classmethod
+    def with_capital(cls, capital: float) -> "PaperState":
+        """Create a fresh state with given initial capital.
+
+        Per Hosein 2026-10-31: ensure initial/capital/equity/peaks are all
+        set to the intended capital (default was 1000, causing UX confusion).
+        """
+        return cls(
+            initial_capital=float(capital),
+            capital=float(capital),
+            equity=float(capital),
+            peak_capital=float(capital),
+            peak_equity=float(capital),
+        )
+
     def update_metrics(self) -> None:
         """محاسبه معیارها بر اساس equity."""
         # ۱. equity = نقد + ارزش پوزیشن‌های باز

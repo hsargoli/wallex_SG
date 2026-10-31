@@ -171,6 +171,23 @@ async def start(
         position_size_pct=payload.position_size_pct,
     )
 
+    # Per Hosein 2026-10-31: migrate stale state (e.g., old 3M capital)
+    # to the intended capital. One-time safe migration: only resets if
+    # state's initial_capital differs from payload.
+    try:
+        if await engine.repo.exists():
+            _old_state = await engine.repo.load()
+            if _old_state.initial_capital != payload.initial_capital:
+                await engine.repo.save(PaperState.with_capital(payload.initial_capital))
+                log.info(
+                    "user.paper_state_migrated",
+                    user_id=str(user_id)[:8],
+                    old_capital=_old_state.initial_capital,
+                    new_capital=payload.initial_capital,
+                )
+    except Exception as e:
+        log.warning("user.paper_state_migrate_failed", error=str(e))
+
     engines = _get_engines(request)
     engines[user_id] = engine
 
@@ -209,10 +226,11 @@ async def reset(
         return result
 
     # اگه engine نیست، مستقیم از repo
+    # Per Hosein 2026-10-31: reset must use user's actual capital (10M)
     repo = UserPaperRepository(user_id, SessionLocal)
-    await repo.save(PaperState())
+    await repo.save(PaperState.with_capital(10_000_000.0))
     log.info("user.paper_reset_no_engine", user_id=str(user_id)[:8])
-    return {"status": "reset"}
+    return {"status": "reset", "initial_capital": 10_000_000.0}
 
 
 @router.post("/order")
