@@ -11,9 +11,10 @@ import {
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackgroundFX } from "@/components/landing/background-fx";
+import { SarvLogo } from "@/components/landing/sarv-logo";
+import { TiltCard } from "@/components/landing/tilt-card";
 
 export const metadata = {
   title: "آموزش | SarvBots",
@@ -25,13 +26,13 @@ const SECTIONS = [
   {
     id: "paper",
     icon: TrendingUp,
+    step: "بخش ۱",
     title: "Paper Trading",
     subtitle: "بدون ریسک، با پول مجازی",
     description:
       "با سرمایه‌ی مجازی، استراتژی‌های معاملاتی را در محیطی شبیه‌سازی‌شده تمرین کن. بدون ریسک از دست دادن سرمایه‌ی واقعی.",
     cta: "شروع Paper Trading",
     href: "/paper-trading",
-    tone: "emerald",
     features: [
       "سرمایه‌ی مجازی رایگان",
       "همان موتور اجرای Live",
@@ -41,13 +42,13 @@ const SECTIONS = [
   {
     id: "backtest",
     icon: BarChart3,
+    step: "بخش ۲",
     title: "Backtest",
     subtitle: "استراتژی روی داده‌ی تاریخی",
     description:
       "عملکرد استراتژی‌ها را روی داده‌ی تاریخی BTC، ETH و SOL ببین. Profit Factor، Win Rate، و Max Drawdown — همه شفاف.",
     cta: "دیدن Backtest",
     href: "/backtest",
-    tone: "violet",
     features: [
       "داده‌ی ۵ ساله",
       "هزینه‌های واقعی (fee + slip)",
@@ -57,13 +58,13 @@ const SECTIONS = [
   {
     id: "paper-test",
     icon: BotIcon,
+    step: "بخش ۳",
     title: "Paper Test",
     subtitle: "ربات‌های واقعی، در Paper Mode",
     description:
       "ربات‌های ما (Nooaah، SarvRouter) در Paper Mode ۲۴/۷ کار می‌کنند. عملکرد زنده‌شان را ببین، بدون هیچ تعهدی.",
     cta: "دیدن ربات‌ها",
     href: "/bots",
-    tone: "sky",
     features: [
       "وضعیت زنده (regime, gate)",
       "Backtest + Paper کنارِ هم",
@@ -73,13 +74,13 @@ const SECTIONS = [
   {
     id: "live",
     icon: Zap,
+    step: "بخش ۴",
     title: "Live",
     subtitle: "بعد از ۳۰ روز Paper موفق",
     description:
       "هر ربات، قبل از Live، باید ۳۰ روز در Paper Mode موفق باشد. این محافظ، سرمایه‌ی تو را حفظ می‌کند.",
     cta: "ثبت‌نام برای Live",
     href: "/register",
-    tone: "amber",
     features: [
       "۳۰ روز Paper Mode الزامی",
       "Kill Switch فوری",
@@ -88,156 +89,163 @@ const SECTIONS = [
   },
 ] as const;
 
-const TONES: Record<string, string> = {
-  emerald: "border-emerald-500/30 bg-emerald-500/5",
-  violet: "border-violet-500/30 bg-violet-500/5",
-  sky: "border-sky-500/30 bg-sky-500/5",
-  amber: "border-amber-500/30 bg-amber-500/5",
-};
-
-const ICON_TONES: Record<string, string> = {
-  emerald: "text-emerald-400",
-  violet: "text-violet-400",
-  sky: "text-sky-400",
-  amber: "text-amber-400",
-};
-
 export default function LearnPage() {
   return (
     <div className="dark relative min-h-screen overflow-hidden bg-background text-foreground">
       <BackgroundFX />
-      <div className="relative z-10 min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <header className="border-b border-border/40">
-        <div className="container mx-auto flex items-center justify-between py-4">
+
+      {/* HEADER — مثل landing */}
+      <header className="relative z-10">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 pt-6">
           <Link href="/" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm text-muted-foreground">بازگشت به خانه</span>
+            <SarvLogo size={32} />
+            <span className="text-sm font-semibold">SarvBots</span>
           </Link>
-          <div className="text-sm font-semibold">SarvBots</div>
+          <Link
+            href="/"
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-violet-400"
+          >
+            بازگشت به خانه
+            <ArrowLeft className="h-3 w-3" />
+          </Link>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="container mx-auto px-4 py-14 md:py-20 text-center">
-        <Badge variant="outline" className="mb-5">
-          <Sparkles className="h-3 w-3 ml-1" /> بدون نیاز به ثبت‌نام
-        </Badge>
-        <h1 className="text-3xl md:text-5xl font-bold mb-5 leading-tight">
-          ۱۰۰ هزار تومان رایگان.
-          <br />
-          <span className="text-emerald-400">با ثبت‌نام، ۱۰ میلیون تومان.</span>
-        </h1>
-        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-          پلتفرم شفاف ارزیابی ربات‌های معاملاتی. Paper، Backtest، Paper Test، و
-          Live — همه در یک جا، بدون بدهی پنهان.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/guest">
-            <Button size="lg" className="gap-2">
-              شروع مهمان (۱۰۰k)
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="lg" variant="outline" className="gap-2">
-              ثبت‌نام (۱۰M)
-              <CheckCircle2 className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+      {/* HERO */}
+      <section className="relative z-10">
+        <div className="mx-auto max-w-4xl px-6 pb-10 pt-12 text-center lg:pt-20">
+          <Badge
+            variant="outline"
+            className="mb-6 border-violet-500/30 bg-violet-500/10 text-violet-200"
+          >
+            <Sparkles className="ml-1 h-3 w-3" />
+            بدون نیاز به ثبت‌نام
+          </Badge>
 
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-10 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="h-3 w-3" /> بدون کارت بانکی
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" /> ۲ دقیقه راه‌اندازی
-          </span>
-          <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Kill switch فوری
-          </span>
+          <h1 className="mb-6 text-3xl font-bold leading-tight md:text-5xl lg:text-6xl">
+            ۱۰۰ هزار تومان رایگان.
+            <br />
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+              با ثبت‌نام، ۱۰ میلیون تومان.
+            </span>
+          </h1>
+
+          <p className="mx-auto mb-10 max-w-2xl text-base text-muted-foreground md:text-lg">
+            پلتفرم شفاف ارزیابی ربات‌های معاملاتی. Paper، Backtest، Paper Test، و
+            Live — همه در یک جا، بدون بدهی پنهان.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="border border-violet-400/50 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_40px_-10px_rgba(192,38,211,0.8)]"
+            >
+              <Link href="/guest" className="gap-2">
+                شروع مهمان (۱۰۰k)
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40">
+              <Link href="/register">
+                ثبت‌نام (۱۰M)
+                <CheckCircle2 className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3 text-violet-400" /> بدون کارت بانکی
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-violet-400" /> ۲ دقیقه راه‌اندازی
+            </span>
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-violet-400" /> Kill switch فوری
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* 4 sections */}
-      <section className="container mx-auto px-4 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {SECTIONS.map((s, i) => {
+      {/* 4 sections — TiltCard + violet glass */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-16">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {SECTIONS.map((s) => {
             const Icon = s.icon;
             return (
-              <Card key={s.id} className={TONES[s.tone]}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`rounded-lg bg-background/50 p-2 ${ICON_TONES[s.tone]}`}
-                    >
+              <TiltCard key={s.id}>
+                <div className="group relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 p-6 backdrop-blur-md transition-all duration-300 hover:border-violet-400/50 hover:shadow-[0_20px_60px_-20px_rgba(139,92,246,0.4)]">
+                  {/* subtle glow */}
+                  <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-violet-500/20 blur-2xl" />
+
+                  <div className="relative mb-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          بخش {i + 1}
-                        </span>
-                        <Badge variant="outline" className="text-[10px]">
-                          {s.subtitle}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg mt-1">{s.title}</CardTitle>
+                      <p className="text-[10px] text-violet-300/70">
+                        {s.step} <span className="mx-1">·</span> {s.subtitle}
+                      </p>
+                      <h2 className="text-lg font-semibold">{s.title}</h2>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+
+                  <p className="relative mb-4 text-sm leading-relaxed text-muted-foreground">
                     {s.description}
                   </p>
-                  <ul className="space-y-1.5 text-sm">
+
+                  <ul className="relative mb-5 space-y-1.5 text-sm">
                     {s.features.map((f) => (
                       <li key={f} className="flex items-start gap-2">
-                        <CheckCircle2
-                          className={`h-4 w-4 mt-0.5 shrink-0 ${ICON_TONES[s.tone]}`}
-                        />
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
-                  <Link href={s.href}>
-                    <Button variant="outline" className="w-full mt-2 gap-2">
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="relative w-full gap-2 border-violet-500/30 hover:bg-violet-500/10 hover:text-violet-200"
+                  >
+                    <Link href={s.href}>
                       {s.cta}
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+                      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </TiltCard>
             );
           })}
         </div>
       </section>
 
       {/* Footer CTA */}
-      <section className="border-t border-border/40">
-        <div className="container mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-bold mb-3">آماده‌ای شروع کنی؟</h2>
-          <p className="text-sm text-muted-foreground mb-6 max-w-xl mx-auto">
+      <section className="relative z-10 border-t border-violet-500/20 bg-black/40 backdrop-blur-md">
+        <div className="mx-auto max-w-4xl px-6 py-14 text-center">
+          <h2 className="mb-3 text-2xl font-bold md:text-3xl">آماده‌ای شروع کنی؟</h2>
+          <p className="mx-auto mb-8 max-w-xl text-sm text-muted-foreground">
             با ۱۰۰ هزار تومان رایگان شروع کن. هر وقت آماده بودی، ثبت‌نام کن و
             ۱۰ میلیون تومان بگیر.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link href="/guest">
-              <Button size="lg" className="gap-2">
+            <Button
+              asChild
+              size="lg"
+              className="border border-violet-400/50 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_40px_-10px_rgba(192,38,211,0.8)]"
+            >
+              <Link href="/guest" className="gap-2">
                 شروع مهمان (۱۰۰k)
                 <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="lg" variant="outline">
-                ثبت‌نام (۱۰M)
-              </Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-violet-500/40">
+              <Link href="/register">ثبت‌نام (۱۰M)</Link>
+            </Button>
           </div>
         </div>
       </section>
-    </div>
     </div>
   );
 }
