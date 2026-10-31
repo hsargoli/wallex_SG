@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Play, Square, RotateCcw, TrendingUp, TrendingDown, Wallet, Target, Activity, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,16 @@ export default function GuestPage() {
   const [orderLimitPrice, setOrderLimitPrice] = useState<string>("");
 
   const [isUser, setIsUser] = useState(false);
+  const router = useRouter();
+
   useEffect(() => {
-    setIsUser(!!getUserToken());
-  }, []);
+    const userToken = getUserToken();
+    setIsUser(!!userToken);
+    // Per Hosein 2026-10-31: logged-in users → /paper-trading/manual
+    if (userToken) {
+      router.replace("/paper-trading/manual");
+    }
+  }, [router]);
 
   const me = useMe();
   const guest = useGuest();

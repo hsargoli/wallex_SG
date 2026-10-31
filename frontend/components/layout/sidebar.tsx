@@ -51,7 +51,6 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/bots", label: "ربات‌ها", icon: Bot, desc: "ربات‌های معاملاتی" },
       { href: "/backtest", label: "بک‌تست", icon: FlaskConical, desc: "تست ربات روی داده‌ی گذشته" },
-      { href: "/guest", label: "Paper (تست زنده)", icon: Play, desc: "شبیه‌سازی معامله بدون پول واقعی — بدون نیاز به والکس" },
       { href: "/paper-trading", label: "Paper ربات‌ها", icon: Play, desc: "تست ربات‌های معاملاتی در Paper Mode" },
       { href: "/paper-trading/manual", label: "تست دستی", icon: SquarePen, desc: "ثبت سفارش دستی در Paper (بدون ریسک)" },
     ],
