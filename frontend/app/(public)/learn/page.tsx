@@ -123,16 +123,16 @@ export default function LearnPage() {
           </Badge>
 
           <h1 className="mb-6 text-3xl font-bold leading-tight md:text-5xl lg:text-6xl">
-            ۱۰۰ هزار تومان رایگان.
+            ۱۰۰ هزار تومان پول مجازی رایگان بگیرید.
             <br />
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-              با ثبت‌نام، ۱۰ میلیون تومان.
+              با ثبت‌نام، ۹ میلیون و ۹۰۰ هزار تومان جایزه بگیرید.
             </span>
           </h1>
 
           <p className="mx-auto mb-10 max-w-2xl text-base text-muted-foreground md:text-lg">
-            پلتفرم شفاف ارزیابی ربات‌های معاملاتی. Paper، Backtest، Paper Test، و
-            Live — همه در یک جا، بدون بدهی پنهان.
+            با این پول مجازی ترید کنید و بدون ریسک، ترید را یاد بگیرید.
+            پلتفرم شفاف ارزیابی ربات‌های معاملاتی — Paper، Backtest، Paper Test و Live.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -148,7 +148,7 @@ export default function LearnPage() {
             </Button>
             <Button asChild size="lg" variant="outline" className="gap-2 border-violet-500/40">
               <Link href="/register">
-                ثبت‌نام (۱۰M)
+                ثبت‌نام (۹.۹M)
                 <CheckCircle2 className="h-4 w-4" />
               </Link>
             </Button>
@@ -226,8 +226,7 @@ export default function LearnPage() {
         <div className="mx-auto max-w-4xl px-6 py-14 text-center">
           <h2 className="mb-3 text-2xl font-bold md:text-3xl">آماده‌ای شروع کنی؟</h2>
           <p className="mx-auto mb-8 max-w-xl text-sm text-muted-foreground">
-            با ۱۰۰ هزار تومان رایگان شروع کن. هر وقت آماده بودی، ثبت‌نام کن و
-            ۱۰ میلیون تومان بگیر.
+            با ۱۰۰ هزار تومان پول مجازی رایگان شروع کن. هر وقت آماده بودی، ثبت‌نام کن و ۹.۹ میلیون تومان جایزه بگیر.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button
@@ -241,7 +240,7 @@ export default function LearnPage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-violet-500/40">
-              <Link href="/register">ثبت‌نام (۱۰M)</Link>
+              <Link href="/register">ثبت‌نام (۹.۹M)</Link>
             </Button>
           </div>
         </div>
