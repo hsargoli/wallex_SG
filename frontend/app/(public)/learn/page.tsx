@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   Clock,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -221,12 +222,70 @@ export default function LearnPage() {
         </div>
       </section>
 
+      {/* داستان سروباتس */}
+      <section className="relative z-10 mx-auto max-w-3xl px-6 py-16">
+        <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 via-transparent to-fuchsia-500/5 p-8 backdrop-blur-md md:p-12">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
+
+          <div className="relative">
+            <Badge
+              variant="outline"
+              className="mb-5 border-violet-500/40 bg-violet-500/10 text-[10px] text-violet-200"
+            >
+              <Heart className="ml-1 h-2.5 w-2.5" />
+              داستان سروباتس
+            </Badge>
+
+            <h3 className="mb-5 text-xl font-bold leading-tight md:text-2xl">
+              این پلتفرم از یک ضرر شروع شد.
+            </h3>
+
+            <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+              <p>
+                یک شب، با یک تصمیم عجولانه،{" "}
+                <span className="font-semibold text-foreground">۱۰ میلیون تومان</span>{" "}
+                را در بازار از دست دادم. سرمایه‌ای که ماه‌ها برایش زحمت کشیده بودم،
+                در چند ساعت دود شد.
+              </p>
+              <p>
+                آن شب فهمیدم: مشکل از بازار نبود، از{" "}
+                <span className="font-semibold text-foreground">نداشتن ابزار</span>{" "}
+                بود. نه backtest واقعی، نه شفافیت، نه راهی برای یادگیری بدون
+                ریسک.
+              </p>
+              <p>
+                سروباتس را ساختم تا هیچ‌کس دیگری آن شب را تجربه نکند. یک پلتفرم
+                شفاف — هر ربات، backtest، و وضعیت زنده‌اش. برای کسانی که
+                می‌خواهند{" "}
+                <span className="font-semibold text-violet-300">بفهمند</span>، نه
+                فقط دنبال کنند.
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3 border-t border-violet-500/20 pt-5 text-xs text-muted-foreground">
+              <SarvLogo size={24} />
+              <p>
+                امروز سروباتس یک پلتفرم با{" "}
+                <b className="text-foreground">۳۸۱ تست</b>،{" "}
+                <b className="text-foreground">۱۱ ربات</b>، و{" "}
+                <b className="text-foreground">kill switch</b> است. و این تازه
+                شروع است.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer CTA */}
       <section className="relative z-10 border-t border-violet-500/20 bg-black/40 backdrop-blur-md">
         <div className="mx-auto max-w-4xl px-6 py-14 text-center">
-          <h2 className="mb-3 text-2xl font-bold md:text-3xl">آماده‌ای شروع کنی؟</h2>
+          <h2 className="mb-3 text-2xl font-bold md:text-3xl">
+            حالا نوبت توست.
+          </h2>
           <p className="mx-auto mb-8 max-w-xl text-sm text-muted-foreground">
-            با ۱۰۰ هزار تومان پول مجازی رایگان شروع کن. هر وقت آماده بودی، ثبت‌نام کن و ۹.۹ میلیون تومان جایزه بگیر.
+            با ۱۰۰ هزار تومان پول مجازی رایگان شروع کن. بدون ریسک، ترید را یاد
+            بگیر. هر وقت آماده بودی، ثبت‌نام کن و ۹.۹ میلیون تومان جایزه بگیر.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button
