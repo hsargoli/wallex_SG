@@ -41,6 +41,25 @@ async def list_markets(exchange: ExchangeDep) -> MarketsResponse:
     return MarketsResponse(count=len(items), items=items)
 
 
+@router.get("/price/{symbol}")
+async def get_public_price(symbol: str, exchange: ExchangeDep) -> dict:
+    """قیمت لحظه‌ای (public، بدون auth) — برای فرم سفارش دستی.
+
+    Per Hosein 2026-10-31: user و guest هر دو نیاز دارند، و guest
+    token overhead اضافی است. این endpoint عمومی است.
+    """
+    from app.application.use_cases.get_candles import GetCandlesUseCase
+
+    try:
+        uc = GetCandlesUseCase(exchange=exchange)
+        candles = await uc.execute(symbol=symbol, timeframe="1h", limit=2)
+        if not candles:
+            return {"symbol": symbol, "price": None, "error": "قیمت دریافت نشد"}
+        return {"symbol": symbol, "price": float(candles[-1].close)}
+    except Exception as e:
+        return {"symbol": symbol, "price": None, "error": str(e)}
+
+
 @router.get("/{symbol}", response_model=MarketOut)
 async def get_market(symbol: str, exchange: ExchangeDep) -> MarketOut:
     """دریافت اطلاعات یک مارکت مشخص."""
