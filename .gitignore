@@ -118,3 +118,4 @@ backend/data/candles/*.bak*
 backend/data/sarv_router/
 backend/data/sarv_tiger/
 backend/data/bots/
+*.backup
