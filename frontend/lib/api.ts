@@ -957,6 +957,13 @@ export const api = {
   }) =>
     client.post("/v1/guest/order", payload).then((r) => r.data),
 
+  getPublicPrice: (symbol: string) =>
+    client
+      .get<{ symbol: string; price: number | null; error?: string }>(
+        `/v1/markets/price/${symbol}`,
+      )
+      .then((r) => r.data),
+
   getGuestPrice: (symbol: string) =>
     client
       .get<{ symbol: string; price: number | null; error?: string }>(

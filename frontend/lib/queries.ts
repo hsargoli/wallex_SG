@@ -1038,6 +1038,16 @@ export function useCloseGuestPosition() {
 }
 
 
+export function usePublicPrice(symbol: string | null, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["public-price", symbol],
+    queryFn: () => api.getPublicPrice(symbol!),
+    enabled: !!symbol && enabled,
+    refetchInterval: 5000,
+    staleTime: 3000,
+  });
+}
+
 export function useGuestPrice(symbol: string | null, enabled: boolean = true) {
   return useQuery({
     queryKey: ["guest-price", symbol],
