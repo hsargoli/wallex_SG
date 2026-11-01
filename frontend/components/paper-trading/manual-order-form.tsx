@@ -20,6 +20,8 @@ export type ManualOrderFormProps = {
   isRunning: boolean;
   /** موجودی (نقد) */
   capital: number;
+  /** تعداد پوزیشن‌های باز (برای cap ۱۰) */
+  openPositionsCount?: number;
   /** قیمت بازار (برای نمایش) */
   marketPrice: { data?: { price: number | null } | null; isLoading: boolean };
   /** فرم state (controlled) */
@@ -44,6 +46,7 @@ export type ManualOrderFormProps = {
 export function ManualOrderForm({
   isRunning,
   capital,
+  openPositionsCount = 0,
   marketPrice,
   orderSymbol,
   orderAmount,
@@ -177,6 +180,21 @@ export function ManualOrderForm({
             className="h-9 font-mono text-xs"
             disabled={!isRunning}
           />
+          {orderLimitPrice && marketPrice.data?.price && (() => {
+            const lp = parseFloat(parseNum(orderLimitPrice));
+            const mp = marketPrice.data.price!;
+            const ok = lp >= mp;
+            return (
+              <p className={cn(
+                "text-[10px]",
+                ok ? "text-emerald-400" : "text-amber-400",
+              )}>
+                {ok
+                  ? "✅ قیمت شما ≥ بازار — سفارش پذیرفته می‌شه"
+                  : "⚠️ قیمت شما < بازار — سفارش رد می‌شه"}
+              </p>
+            );
+          })()}
         </div>
 
         {/* TP/SL */}
@@ -203,11 +221,28 @@ export function ManualOrderForm({
 
         <Button
           onClick={onSubmit}
-          disabled={!isRunning || isSubmitting || !parseNum(orderAmount)}
+          disabled={
+            !isRunning
+            || isSubmitting
+            || !parseNum(orderAmount)
+            || openPositionsCount >= 10
+          }
           className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
         >
-          {isSubmitting ? "در حال ثبت..." : "ثبت سفارش"}
+          {isSubmitting
+            ? "در حال ثبت..."
+            : !isRunning
+              ? "اول Paper را شروع کن"
+              : variant === "guest"
+                ? "ثبت خرید"
+                : "ثبت سفارش"}
         </Button>
+
+        {openPositionsCount >= 10 && (
+          <p className="text-center text-[10px] text-amber-400">
+            سقف ۱۰ پوزیشن باز پر است
+          </p>
+        )}
       </CardContent>
     </Card>
   );
