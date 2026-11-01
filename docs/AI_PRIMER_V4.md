@@ -595,3 +595,34 @@ text
 **Lesson:** برای systemd + Next.js، همیشه direct binary (نه `npm run start`). npm wrapper args را می‌بلعد.
 
 **Applied in:** incident 2026-10-31 (EADDRINUSE، restart counter 17).
+
+## AP-56 (2026-11-01) — Investigate interface کامپوننت‌های مشترک قبل از migration
+
+**Problem:** در Phase 4 DRY، `/guest` را به `<CandlestickChart>` وصل کردم با props حدسی:
+```tsx
+<CandlestickChart candles={...} symbol={symbol} timeframe={timeframe} />
+
+tsc fail داد:
+text
+
+Property 'symbol' does not exist on type 'CandlestickChartProps'
+
+Root cause: حدس زدن props بدون investigate. CandlestickChartProps فقط:
+ts
+
+interface CandlestickChartProps {
+  candles: Candle[];
+  height?: number;
+  loading?: boolean;
+  interactive?: boolean;
+  showVolume?: boolean;
+}
+
+Fix: حدف symbol/timeframe → <CandlestickChart candles={candles.data.candles} />
+
+Lesson: قبل از migration هر صفحه به یک کامپوننت مشترک، interface Props را با grep investigate کن:
+bash
+
+grep -n "interface.*Props\|type.*Props" components/path/to/component.tsx
+
+Applied in: guest/page.tsx Phase 4 (2026-11-01).
