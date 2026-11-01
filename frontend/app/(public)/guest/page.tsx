@@ -322,11 +322,7 @@ export default function GuestPage() {
                 داده‌ای برای نمایش نیست
               </div>
             ) : (
-              <CandlestickChart
-                candles={candles.data.candles}
-                symbol={symbol}
-                timeframe={timeframe}
-              />
+              <CandlestickChart candles={candles.data.candles} />
             )}
           </CardContent>
         </Card>
