@@ -35,6 +35,16 @@ class BotLifecycleManager:
             return [self.config.range_bot]
         return []
 
+    @property
+    def regime_since_idx(self) -> int | None:
+        """Public read access to internal regime_since_idx (for state sync)."""
+        return self._regime_since_idx
+
+    @property
+    def last_switch_idx(self) -> int | None:
+        """Public read access to internal last_switch_idx (for future/test)."""
+        return self._last_switch_idx
+
     def update(self, regime: Regime, now_idx: int) -> dict:
         # 1) Regime changed → reset stability timer
         if regime != self._current_regime:

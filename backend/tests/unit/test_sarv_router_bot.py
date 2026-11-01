@@ -117,3 +117,57 @@ class TestSarvRouter:
         r = router.tick(uid, _uptrend(300), now_idx=cfg.stability_window)
         assert r["action"] == "error"
         assert router.store.load(uid).active_bots == []
+
+
+def test_tick_persists_regime_since_idx(tmp_path):
+    """Regression: regime_since_idx must be persisted to state file after tick.
+
+    Before fix: bot.py::tick() never syncs lifecycle._regime_since_idx
+    to state.regime_since_idx. Result: file always has regime_since_idx=null.
+
+    Bug is invisible to existing tests (test_uptrend_switch) because they
+    only check state.active_bots — and lifecycle keeps _regime_since_idx
+    in memory, not on disk.
+    """
+    cfg = SarvRouterConfig()
+    calls = {"start": [], "stop": [], "stop_all": 0}
+
+    def _start(slug: str) -> None:
+        calls["start"].append(slug)
+
+    def _stop(slug: str) -> None:
+        calls["stop"].append(slug)
+
+    def _stop_all() -> None:
+        calls["stop_all"] += 1
+
+    router = SarvRouter(
+        config=cfg,
+        start_bot=_start,
+        stop_bot=_stop,
+        stop_all=_stop_all,
+        store=SarvStore(base_dir=tmp_path),
+        audit=AuditTrail(base_dir=tmp_path),
+    )
+    uid = str(uuid.uuid4())
+    candles = _uptrend(300)
+
+    r1 = router.tick(uid, candles, now_idx=5)
+    assert r1["action"] == "pending"
+    assert r1.get("reason") == "regime_changed"
+
+    persisted = router.store.load(uid)
+    assert persisted.regime_since_idx == 5, (
+        f"regime_since_idx not persisted after regime change: "
+        f"got {persisted.regime_since_idx!r}, expected 5"
+    )
+
+    half = cfg.stability_window // 2
+    r2 = router.tick(uid, candles, now_idx=5 + half)
+    assert r2["action"] == "pending"
+
+    persisted2 = router.store.load(uid)
+    assert persisted2.regime_since_idx == 5, (
+        f"regime_since_idx changed unexpectedly: "
+        f"got {persisted2.regime_since_idx!r}, expected 5"
+    )

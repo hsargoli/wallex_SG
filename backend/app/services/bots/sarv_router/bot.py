@@ -95,6 +95,10 @@ class SarvRouter:
         # Always track detected regime (even on no_change/pending)
         state.current_regime = regime_str
         action = self.lifecycle.update(regime, now_idx)
+        # Sync lifecycle internal state back to persistent state
+        # NOTE: interpretation (relative) only. For absolute (reset on restart),
+        # see Test B (future, not in this commit).
+        state.regime_since_idx = self.lifecycle.regime_since_idx
 
         # 4) On switch: allocate
         if action.get("action") == "switched":
