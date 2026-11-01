@@ -3,13 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Play, Square, RotateCcw, TrendingUp, TrendingDown, Wallet, Target, Activity, Clock, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  Sparkles,
+  Play,
+  Square,
+  RotateCcw,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Target,
+  Activity,
+  Clock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { BackgroundFX } from "@/components/landing/background-fx";
 import { GuestSignals } from "@/components/guest/guest-signals";
 import { GuestScanner } from "@/components/guest/guest-scanner";
@@ -17,6 +27,11 @@ import { GuestPersonality } from "@/components/guest/guest-personality";
 import { SarvLogo } from "@/components/landing/sarv-logo";
 import { UserBadge } from "@/components/layout/user-badge";
 import { cn } from "@/lib/utils";
+import { SYMBOLS } from "@/components/paper-trading/symbols";
+import { fmt, parseNum, formatNum } from "@/lib/paper-format";
+import { PaperStatusBanner } from "@/components/paper-trading/paper-status-banner";
+import { PaperDisclaimer } from "@/components/paper-trading/paper-disclaimer";
+import { ManualOrderForm } from "@/components/paper-trading/manual-order-form";
 import {
   useGuest,
   useGuestPaperV3Status,
@@ -38,35 +53,11 @@ import {
 import { getUserToken } from "@/lib/auth";
 import { CandlestickChart } from "@/components/charts/candlestick-chart";
 
-const SYMBOLS = [
-  { key: "BTCTMN",  fa: "بیت‌کوین" },
-  { key: "ETHTMN",  fa: "اتریوم" },
-  { key: "USDTTMN", fa: "تتر" },
-  { key: "SOLTMN",  fa: "سولانا" },
-  { key: "XRPTMN",  fa: "ریپل" },
-] as const;
-
-/** 21686999673 → "21,686,999,673" (با , انگلیسی — چون input فقط عدد و کاما قبول می‌کنه) */
-function formatNum(s: string): string {
-  const digits = s.replace(/[^0-9]/g, "");
-  if (!digits) return "";
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-/** "21,686,999,673" → "21686999673" (فقط رقم) */
-function parseNum(s: string): string {
-  return s.replace(/[^0-9]/g, "");
-}
-
-const fmt = (n: number | undefined | null, dec: number = 0) =>
-  n == null ? "—" : Math.round(n).toLocaleString("fa-IR") + (dec > 0 ? "" : "");
-
 export default function GuestPage() {
   const [symbol, setSymbol] = useState<string>("BTCTMN");
   const [timeframe, setTimeframe] = useState<string>("1h");
 
   // فرم سفارش دستی
-
   const [orderSymbol, setOrderSymbol] = useState<string>("BTCTMN");
   const [orderAmount, setOrderAmount] = useState<string>("100000");
   const [orderTp, setOrderTp] = useState<string>("2");
@@ -79,7 +70,6 @@ export default function GuestPage() {
   useEffect(() => {
     const userToken = getUserToken();
     setIsUser(!!userToken);
-    // Per Hosein 2026-10-31: logged-in users → /paper-trading/manual
     if (userToken) {
       router.replace("/paper-trading/manual");
     }
@@ -108,21 +98,46 @@ export default function GuestPage() {
   const closePosition = isUser ? userClose : guestClose;
   const marketPrice = useGuestPrice(orderSymbol, true);
 
-  // auto-fill قیمت پیشنهادی با قیمت بازار (وقتی نماد عوض می‌شه)
+  // auto-fill قیمت پیشنهادی با قیمت بازار
   useEffect(() => {
     if (marketPrice.data?.price) {
       setOrderLimitPrice(formatNum(String(Math.round(marketPrice.data.price))));
     }
   }, [orderSymbol, marketPrice.data?.price]);
 
-  const data = status.data;
+  const data = status.data as
+    | {
+        is_running?: boolean;
+        capital?: number;
+        equity?: number;
+        total_pnl?: number;
+        total_pnl_pct?: number;
+        win_rate?: number;
+        max_drawdown_pct?: number;
+        open_positions?: Array<{
+          symbol: string;
+          side: string;
+          entry_price: number;
+          current_price?: number;
+          tp?: number;
+          sl?: number;
+        }>;
+        recent_trades?: Array<{
+          symbol: string;
+          side: string;
+          entry_price: number;
+          exit_price?: number;
+          exit_reason?: string;
+          pnl?: number;
+          pnl_pct?: number;
+        }>;
+      }
+    | undefined;
+
   const isRunning = data?.is_running ?? false;
-  // ⚠️ capital از status (cash available) میاد، نه از me.capital_total
-  // capital_total = سرمایه‌ی کل (ثابت)، capital = نقد موجود (با سفارش‌ها کم می‌شه)
-  const capital = data?.capital ?? guest.data?.capital_total ?? 500_000;
+  const capital = data?.capital ?? (guest.data as any)?.capital_total ?? 100_000;
   const pnl = data?.total_pnl ?? 0;
   const pnlPct = data?.total_pnl_pct ?? 0;
-  // ⚠️ "آخرین تریدها" = recent_trades (بسته‌شده‌ها)، نه total_trades
   const trades = (data?.recent_trades ?? []).length;
   const winRate = data?.win_rate ?? 0;
   const openPositions = data?.open_positions ?? [];
@@ -175,10 +190,7 @@ export default function GuestPage() {
             {!isRunning ? (
               <Button
                 onClick={() => startPaper.mutate(undefined)}
-                disabled={
-                  startPaper.isPending ||
-                  (isUser ? !me.data : !guest.data)
-                }
+                disabled={startPaper.isPending || (isUser ? !me.data : !guest.data)}
                 className="gap-2 bg-violet-600 hover:bg-violet-500"
               >
                 <Play className="h-4 w-4" />
@@ -209,31 +221,14 @@ export default function GuestPage() {
         </div>
       </section>
 
-      {/* ─── Status Banner ─── */}
+      {/* ─── Status Banner (shared) ─── */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-4">
-        <Card className={cn("border-2", isRunning ? "border-violet-500/40 bg-violet-500/5" : "border-white/10")}>
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
-            <div className="flex items-center gap-3">
-              <div className={cn("h-3 w-3 rounded-full", isRunning ? "animate-pulse bg-emerald-400" : "bg-muted-foreground/40")} />
-              <div>
-                <p className="font-semibold">{isRunning ? "در حال اجرا" : "متوقف"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isRunning ? "ربات هر ۳ دقیقه بازار را چک می‌کند" : "برای شروع، دکمه‌ی شروع را بزن"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">پوزیشن‌های باز</p>
-                <p className="font-mono font-bold">{openPositions.length}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">کل تریدها</p>
-                <p className="font-mono font-bold">{trades}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <PaperStatusBanner
+          isRunning={isRunning}
+          openPositionsCount={openPositions.length}
+          tradesCount={trades}
+          variant="guest"
+        />
       </section>
 
       {/* ─── KPI Cards ─── */}
@@ -283,7 +278,6 @@ export default function GuestPage() {
               چارت {SYMBOLS.find((s) => s.key === symbol)?.fa ?? symbol}
             </CardTitle>
             <div className="flex items-center gap-2">
-              {/* Timeframe */}
               <div className="flex items-center gap-1 rounded-full border border-violet-500/30 bg-background/50 p-0.5">
                 {(["15m", "1h", "4h", "1D"] as const).map((tf) => (
                   <button
@@ -301,7 +295,6 @@ export default function GuestPage() {
                   </button>
                 ))}
               </div>
-              {/* Symbol */}
               <div className="flex items-center gap-1 rounded-full border border-violet-500/30 bg-background/50 p-0.5">
                 {SYMBOLS.map((s) => (
                   <button
@@ -331,16 +324,15 @@ export default function GuestPage() {
             ) : (
               <CandlestickChart
                 candles={candles.data.candles}
-                height={400}
-                showVolume
-                interactive
+                symbol={symbol}
+                timeframe={timeframe}
               />
             )}
           </CardContent>
         </Card>
       </section>
 
-      {/* ─── Signals + Scanner + Personality ─── */}
+      {/* ─── Guest-only: Signals + Scanner + Personality ─── */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-6">
         <div className="grid gap-4 lg:grid-cols-3">
           <GuestSignals symbol={symbol} timeframe={timeframe} />
@@ -349,223 +341,38 @@ export default function GuestPage() {
         </div>
       </section>
 
-      {/* ─── Disclaimer + Manual Order ─── */}
+      {/* ─── Form + Disclaimer (shared) ─── */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
-          {/* Disclaimer */}
-          <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base text-amber-300">
-                ⚠️ شبیه‌سازی، نه ترید واقعی
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs leading-relaxed text-muted-foreground">
-              <p>
-                سفارش‌هایی که این‌جا ثبت می‌کنی <span className="font-bold text-amber-300">در orderbook والکس نمی‌رن</span>.
-                فقط توی state شبیه‌سازی مهمان ذخیره می‌شن.
-              </p>
-              <p>
-                ترید واقعی تفاوت‌های مهمی داره:
-              </p>
-              <ul className="mr-4 list-disc space-y-1">
-                <li>نقدینگی واقعی (سفارش ممکنه fill نشه)</li>
-                <li>Slippage (قیمت اجرا با قیمت درخواستی فرق می‌کنه)</li>
-                <li>کارمزد صرافی</li>
-                <li>تأخیر شبکه</li>
-              </ul>
-              <p className="pt-2 text-[10px] text-amber-300/70">
-                برای ترید واقعی، ثبت‌نام کن و توکن والکس بده.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Manual Order Form */}
-          <Card className="border-violet-500/15 bg-background/60 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Zap className="h-5 w-5 text-violet-400" />
-                ثبت سفارش دستی (شبیه‌سازی)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Side */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="col-span-2 rounded-lg border-2 border-emerald-500 bg-emerald-500/20 py-2 text-center text-sm font-bold text-emerald-300">
-                    خرید دارایی
-                  </div>
-                </div>
-
-                {/* Symbol */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">نماد</Label>
-                  <div className="flex flex-wrap gap-1">
-                    {SYMBOLS.map((s) => (
-                      <button
-                        key={s.key}
-                        onClick={() => setOrderSymbol(s.key)}
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-[10px] font-medium transition",
-                          s.key === orderSymbol
-                            ? "border-violet-500 bg-violet-600 text-white"
-                            : "border-white/10 text-muted-foreground hover:border-violet-500/40",
-                        )}
-                      >
-                        {s.fa}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* مبلغ به تومان */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">مبلغ (تومان)</Label>
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      موجودی: {Math.round(capital).toLocaleString("fa-IR")}
-                    </span>
-                  </div>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={orderAmount}
-                    onChange={(e) => {
-                      setOrderAmount(formatNum(e.target.value));
-                    }}
-                    placeholder="۱۰۰٬۰۰۰"
-                    className="h-10 font-mono text-sm"
-                  />
-                  {/* دکمه‌های درصد سریع */}
-                  <div className="flex gap-1">
-                    {[25, 50, 75, 100].map((pct) => {
-                      const amount = Math.floor(capital * (pct / 100));
-                      const active = parseNum(orderAmount) === String(amount);
-                      return (
-                        <button
-                          key={pct}
-                          onClick={() => setOrderAmount(formatNum(String(amount)))}
-                          type="button"
-                          className={cn(
-                            "flex-1 rounded-md border px-2 py-1 text-[10px] font-medium transition",
-                            active
-                              ? "border-violet-500 bg-violet-600/20 text-violet-300"
-                              : "border-white/10 text-muted-foreground hover:border-violet-500/40",
-                          )}
-                        >
-                          {pct}٪
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* قیمت پیشنهادی (Limit) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">
-                      قیمت پیشنهادی (اختیاری)
-                    </Label>
-                    <span className="font-mono text-[10px]">
-                      {marketPrice.isLoading ? (
-                        <span className="text-muted-foreground">...</span>
-                      ) : marketPrice.data?.price ? (
-                        <span className="text-violet-300">
-                          بازار: {Math.round(marketPrice.data.price).toLocaleString("fa-IR")}
-                        </span>
-                      ) : (
-                        <span className="text-rose-400">قیمت موجود نیست</span>
-                      )}
-                    </span>
-                  </div>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={orderLimitPrice}
-                    onChange={(e) => {
-                      setOrderLimitPrice(formatNum(e.target.value));
-                    }}
-                    placeholder="خالی = به قیمت بازار"
-                    className="h-9 font-mono text-xs"
-                  />
-                  {orderLimitPrice && marketPrice.data?.price && (() => {
-                    const lp = parseFloat(parseNum(orderLimitPrice));
-                    const mp = marketPrice.data.price!;
-                    const ok = lp >= mp;
-                    return (
-                      <p className={cn(
-                        "text-[10px]",
-                        ok ? "text-emerald-400" : "text-amber-400",
-                      )}>
-                        {ok
-                          ? "✅ قیمت شما ≥ بازار — سفارش پذیرفته می‌شه"
-                          : "⚠️ قیمت شما < بازار — سفارش رد می‌شه"}
-                      </p>
-                    );
-                  })()}
-                </div>
-
-                {/* TP + SL */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">TP % (حد سود)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={orderTp}
-                      onChange={(e) => setOrderTp(e.target.value)}
-                      className="h-8 font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">SL % (حد ضرر)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={orderSl}
-                      onChange={(e) => setOrderSl(e.target.value)}
-                      className="h-8 font-mono text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <Button
-                  onClick={() =>
-                    placeOrder.mutate({
-                      side: "buy",
-                      symbol: orderSymbol,
-                      amount_tmn: parseFloat(parseNum(orderAmount)) || 0,
-                      limit_price: parseFloat(parseNum(orderLimitPrice)) || 0,
-                      tp_pct: parseFloat(orderTp) || 2,
-                      sl_pct: parseFloat(orderSl) || 1,
-                    })
-                  }
-                  disabled={
-                    placeOrder.isPending ||
-                    !orderAmount ||
-                    parseFloat(parseNum(orderAmount)) <= 0 ||
-                    parseFloat(parseNum(orderAmount)) > capital ||
-                    openPositions.length >= 10 ||
-                    !isRunning
-                  }
-                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500"
-                >
-                  <Play className="h-4 w-4" />
-                  {placeOrder.isPending
-                    ? "در حال ثبت..."
-                    : !isRunning
-                      ? "اول Paper را شروع کن"
-                      : "ثبت خرید"}
-                </Button>
-
-                {openPositions.length >= 10 && (
-                  <p className="text-center text-[10px] text-amber-400">
-                    سقف ۱۰ پوزیشن باز پر است
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <PaperDisclaimer variant="guest" />
+          <ManualOrderForm
+            isRunning={isRunning}
+            capital={capital}
+            openPositionsCount={openPositions.length}
+            marketPrice={marketPrice}
+            orderSymbol={orderSymbol}
+            orderAmount={orderAmount}
+            orderTp={orderTp}
+            orderSl={orderSl}
+            orderLimitPrice={orderLimitPrice}
+            setOrderSymbol={setOrderSymbol}
+            setOrderAmount={setOrderAmount}
+            setOrderTp={setOrderTp}
+            setOrderSl={setOrderSl}
+            setOrderLimitPrice={setOrderLimitPrice}
+            onSubmit={() =>
+              placeOrder.mutate({
+                side: "buy",
+                symbol: orderSymbol,
+                amount_tmn: parseFloat(parseNum(orderAmount)) || 0,
+                limit_price: parseFloat(parseNum(orderLimitPrice)) || 0,
+                tp_pct: parseFloat(orderTp) || 2,
+                sl_pct: parseFloat(orderSl) || 1,
+              })
+            }
+            isSubmitting={placeOrder.isPending}
+            variant="guest"
+          />
         </div>
       </section>
 
@@ -685,12 +492,10 @@ export default function GuestPage() {
                           <span className="font-mono text-xs font-semibold">{t.symbol}</span>
                           <span className="text-[10px] text-muted-foreground">{t.exit_reason}</span>
                         </div>
-                        <span
-                          className={cn(
-                            "font-mono text-xs font-bold",
-                            isWin ? "text-emerald-400" : "text-rose-400",
-                          )}
-                        >
+                        <span className={cn(
+                          "font-mono text-xs font-bold",
+                          isWin ? "text-emerald-400" : "text-rose-400",
+                        )}>
                           {(t.pnl ?? 0) > 0 ? "+" : ""}
                           {Math.round(t.pnl ?? 0).toLocaleString("fa-IR")}
                         </span>
