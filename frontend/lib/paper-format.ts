@@ -22,3 +22,10 @@ export function parseNum(s: string): string {
  */
 export const fmt = (n: number | undefined | null): string =>
   n == null ? "—" : Math.round(n).toLocaleString("fa-IR");
+
+/**
+ * 1234.5678 → "۱٬۲۳۴٫۵۷" (Persian locale, N digits after decimal).
+ * Use for percentages and PnL with decimal precision.
+ */
+export const fmtNum = (n: number | undefined | null, digits: number = 2): string =>
+  n == null ? "—" : n.toLocaleString("fa-IR", { maximumFractionDigits: digits });

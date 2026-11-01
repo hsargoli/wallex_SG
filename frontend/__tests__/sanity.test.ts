@@ -2,7 +2,7 @@
  * Sanity test — verify Jest works + paper-format helpers.
  * Real assertions (not just truthy) — per Di Koyar.
  */
-import { formatNum, parseNum, fmt } from "@/lib/paper-format";
+import { formatNum, parseNum, fmt, fmtNum } from "@/lib/paper-format";
 
 describe("paper-format", () => {
   describe("formatNum (string → Latin commas)", () => {
@@ -60,5 +60,28 @@ describe("paper-format", () => {
       // Must contain Persian digit(s)
       expect(result).toMatch(/[۰-۹]/);
     });
+  });
+});
+
+describe("fmtNum (Persian locale with decimals)", () => {
+  it("returns '—' on null/undefined", () => {
+    expect(fmtNum(null)).toBe("—");
+    expect(fmtNum(undefined)).toBe("—");
+  });
+
+  it("formats 1234.56 with 2 digits", () => {
+    expect(fmtNum(1234.56, 2)).toBe("۱٬۲۳۴٫۵۶");
+  });
+
+  it("rounds to given digits", () => {
+    expect(fmtNum(1234.5678, 2)).toBe("۱٬۲۳۴٫۵۷");
+  });
+
+  it("no trailing zeros", () => {
+    expect(fmtNum(1234, 2)).toBe("۱٬۲۳۴");
+  });
+
+  it("respects custom digits", () => {
+    expect(fmtNum(45.678, 1)).toBe("۴۵٫۷");
   });
 });

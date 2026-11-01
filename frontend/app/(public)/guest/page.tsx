@@ -28,7 +28,7 @@ import { SarvLogo } from "@/components/landing/sarv-logo";
 import { UserBadge } from "@/components/layout/user-badge";
 import { cn } from "@/lib/utils";
 import { SYMBOLS } from "@/components/paper-trading/symbols";
-import { fmt, parseNum, formatNum } from "@/lib/paper-format";
+import { fmt, fmtNum, parseNum, formatNum } from "@/lib/paper-format";
 import { PaperStatusBanner } from "@/components/paper-trading/paper-status-banner";
 import { PaperDisclaimer } from "@/components/paper-trading/paper-disclaimer";
 import { ManualOrderForm } from "@/components/paper-trading/manual-order-form";
@@ -245,14 +245,14 @@ export default function GuestPage() {
           <KpiCard
             title="سود / زیان"
             value={`${isProfit ? "+" : ""}${fmt(pnl)}`}
-            sub={`${pnlPct.toFixed(2)}%`}
+            sub={`${fmtNum(pnlPct, 2)}٪`}
             icon={isProfit ? TrendingUp : TrendingDown}
             accent={isProfit ? "text-emerald-400" : "text-rose-400"}
             loading={status.isLoading}
           />
           <KpiCard
             title="Win Rate"
-            value={`${winRate.toFixed(1)}%`}
+            value={`${fmtNum(winRate, 1)}٪`}
             sub={`${trades} ترید`}
             icon={Target}
             accent={winRate >= 55 ? "text-emerald-400" : winRate >= 45 ? "text-amber-400" : "text-rose-400"}
@@ -260,7 +260,7 @@ export default function GuestPage() {
           />
           <KpiCard
             title="Max Drawdown"
-            value={`${(data?.max_drawdown_pct ?? 0).toFixed(2)}%`}
+            value={`${fmtNum(data?.max_drawdown_pct ?? 0, 2)}٪`}
             sub={`${openPositions.length} باز`}
             icon={Activity}
             accent="text-fuchsia-400"

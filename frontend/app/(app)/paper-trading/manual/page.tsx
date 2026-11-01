@@ -28,13 +28,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { fmt, parseNum } from "@/lib/paper-format";
+import { fmt, fmtNum, parseNum } from "@/lib/paper-format";
 import { PaperStatusBanner } from "@/components/paper-trading/paper-status-banner";
 import { PaperDisclaimer } from "@/components/paper-trading/paper-disclaimer";
 import { ManualOrderForm } from "@/components/paper-trading/manual-order-form";
-
-const fmtNum = (n: number | undefined | null, digits = 2) =>
-  n == null ? "—" : n.toLocaleString("fa-IR", { maximumFractionDigits: digits });
 
 export default function ManualPaperPage() {
   const status = useUserPaperV3Status();
