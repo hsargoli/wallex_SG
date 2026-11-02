@@ -1,4 +1,4 @@
-# ADR 0008 — Server Drift Reconciliation (2026-11-01)
+# ADR 0032 — Server Drift Reconciliation (2026-11-01)
 
 - **تاریخ:** 2026-11-01
 - **وضعیت:** Accepted
