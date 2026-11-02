@@ -1,0 +1,91 @@
+{
+  "config": {
+    "cost": 0.006500000000000001,
+    "fc": "Minimal",
+    "chunksize": 200,
+    "n_jobs": 2,
+    "max_ts_1h": 168,
+    "max_ts_1D": 14,
+    "min_ts": 0,
+    "horizon_1h": 4,
+    "horizon_1D": 1,
+    "th_high": 0.6,
+    "th_low": 0.4
+  },
+  "results_1h": {
+    "timeframe": "1h",
+    "horizon": 4,
+    "n_candidates": 20,
+    "n_selected": 20,
+    "metrics": {
+      "val": {
+        "n": 8760,
+        "accuracy": 0.491,
+        "auc": 0.4903,
+        "backtest": {
+          "n_trades": 3344,
+          "n_long": 479,
+          "n_short": 2865,
+          "win_rate": 0.1618,
+          "profit_factor": 0.1431,
+          "total_return": -1.0,
+          "max_dd": -1.0,
+          "avg_return": -0.006845
+        }
+      },
+      "test": {
+        "n": 10968,
+        "accuracy": 0.5053,
+        "auc": 0.5014,
+        "backtest": {
+          "n_trades": 4680,
+          "n_long": 329,
+          "n_short": 4351,
+          "win_rate": 0.1656,
+          "profit_factor": 0.1568,
+          "total_return": -1.0,
+          "max_dd": -1.0,
+          "avg_return": -0.00634
+        }
+      }
+    }
+  },
+  "results_1D": {
+    "timeframe": "1D",
+    "horizon": 1,
+    "n_candidates": 20,
+    "n_selected": 20,
+    "metrics": {
+      "val": {
+        "n": 365,
+        "accuracy": 0.5178,
+        "auc": 0.5282,
+        "backtest": {
+          "n_trades": 222,
+          "n_long": 96,
+          "n_short": 126,
+          "win_rate": 0.3829,
+          "profit_factor": 0.7045,
+          "total_return": -0.5589,
+          "max_dd": -0.6806,
+          "avg_return": -0.003338
+        }
+      },
+      "test": {
+        "n": 457,
+        "accuracy": 0.4836,
+        "auc": 0.466,
+        "backtest": {
+          "n_trades": 274,
+          "n_long": 33,
+          "n_short": 241,
+          "win_rate": 0.3467,
+          "profit_factor": 0.43,
+          "total_return": -0.8259,
+          "max_dd": -0.8194,
+          "avg_return": -0.006168
+        }
+      }
+    }
+  }
+}

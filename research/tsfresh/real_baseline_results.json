@@ -1,0 +1,110 @@
+{
+  "config": {
+    "fee": 0.002,
+    "slippage": 0.001,
+    "spread": 0.0005,
+    "round_trip_cost": 0.006500000000000001,
+    "ema_fast": 50,
+    "ema_slow": 200
+  },
+  "results_1h": {
+    "timeframe": "1h",
+    "val": {
+      "bnh": {
+        "n_trades": 1,
+        "entry_price": 62931.99,
+        "exit_price": 107146.5,
+        "gross_return": 0.702576,
+        "net_return": 0.696076,
+        "max_dd": -0.309361,
+        "duration_hours": 8760,
+        "first": "2024-07-01 00:00:00",
+        "last": "2025-06-30 23:00:00"
+      },
+      "ma": {
+        "n_trades": 60,
+        "n_long": 30,
+        "n_short": 30,
+        "win_rate": 0.2833,
+        "profit_factor": 0.6262,
+        "total_return": -0.4662,
+        "max_dd": -0.5346,
+        "avg_return_per_trade": -0.009095
+      }
+    },
+    "test": {
+      "bnh": {
+        "n_trades": 1,
+        "entry_price": 107377.02,
+        "exit_price": 83623.6,
+        "gross_return": -0.221215,
+        "net_return": -0.227715,
+        "max_dd": -0.537421,
+        "duration_hours": 10968,
+        "first": "2025-07-01 00:00:00",
+        "last": "2026-09-30 23:00:00"
+      },
+      "ma": {
+        "n_trades": 73,
+        "n_long": 37,
+        "n_short": 36,
+        "win_rate": 0.2329,
+        "profit_factor": 0.7387,
+        "total_return": -0.3903,
+        "max_dd": -0.4877,
+        "avg_return_per_trade": -0.005365
+      }
+    }
+  },
+  "results_1D": {
+    "timeframe": "1D",
+    "val": {
+      "bnh": {
+        "n_trades": 1,
+        "entry_price": 62899.99,
+        "exit_price": 107146.5,
+        "gross_return": 0.703442,
+        "net_return": 0.696942,
+        "max_dd": -0.280953,
+        "duration_hours": 365,
+        "first": "2024-07-01 00:00:00",
+        "last": "2025-06-30 00:00:00"
+      },
+      "ma": {
+        "n_trades": 1,
+        "n_long": 1,
+        "n_short": 0,
+        "win_rate": 1.0,
+        "profit_factor": "inf",
+        "total_return": 0.6969,
+        "max_dd": 0.0,
+        "avg_return_per_trade": 0.696942
+      }
+    },
+    "test": {
+      "bnh": {
+        "n_trades": 1,
+        "entry_price": 105681.14,
+        "exit_price": 83623.6,
+        "gross_return": -0.208718,
+        "net_return": -0.215218,
+        "max_dd": -0.529718,
+        "duration_hours": 457,
+        "first": "2025-07-01 00:00:00",
+        "last": "2026-09-30 00:00:00"
+      },
+      "ma": {
+        "n_trades": 3,
+        "n_long": 2,
+        "n_short": 1,
+        "win_rate": 0.6667,
+        "profit_factor": 1.7255,
+        "total_return": 0.0764,
+        "max_dd": 0.0,
+        "avg_return_per_trade": 0.032385
+      }
+    }
+  },
+  "best_baseline_pf": 1.7255,
+  "tsfresh_threshold_pf": 1.8118
+}

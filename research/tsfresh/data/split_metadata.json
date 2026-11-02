@@ -1,0 +1,71 @@
+{
+  "input": "backend/data/candles/historical/BTCUSDT_1h.csv",
+  "output_dir": "research/tsfresh/data",
+  "threshold_ms": 1000000000000,
+  "split_boundaries": {
+    "train_end": "2024-06-30 23:59:59",
+    "val_end": "2025-06-30 23:59:59"
+  },
+  "total_rows": 44536,
+  "stats": {
+    "train": {
+      "label": "TRAIN",
+      "rows": 24808,
+      "expected_hours": 30648,
+      "coverage_pct": 80.94,
+      "first": "2021-01-01 00:00:00",
+      "last": "2024-06-30 23:00:00",
+      "duration_days": 1276
+    },
+    "val": {
+      "label": "VAL",
+      "rows": 8760,
+      "expected_hours": 8760,
+      "coverage_pct": 100.0,
+      "first": "2024-07-01 00:00:00",
+      "last": "2025-06-30 23:00:00",
+      "duration_days": 364
+    },
+    "test": {
+      "label": "TEST",
+      "rows": 10968,
+      "expected_hours": 10968,
+      "coverage_pct": 100.0,
+      "first": "2025-07-01 00:00:00",
+      "last": "2026-09-30 23:00:00",
+      "duration_days": 456
+    }
+  },
+  "gap_report": {
+    "label": "ALL",
+    "total_gaps_gt_1h": 6,
+    "total_gaps_gt_24h": 1,
+    "top5": [
+      {
+        "from": "2021-06-30 23:00:00",
+        "to": "2022-03-01 00:00:00",
+        "duration_hours": 5833.0
+      },
+      {
+        "from": "2021-04-25 04:00:00",
+        "to": "2021-04-25 08:00:00",
+        "duration_hours": 4.0
+      },
+      {
+        "from": "2021-04-20 01:00:00",
+        "to": "2021-04-20 04:00:00",
+        "duration_hours": 3.0
+      },
+      {
+        "from": "2021-02-11 03:00:00",
+        "to": "2021-02-11 05:00:00",
+        "duration_hours": 2.0
+      },
+      {
+        "from": "2021-03-06 01:00:00",
+        "to": "2021-03-06 03:00:00",
+        "duration_hours": 2.0
+      }
+    ]
+  }
+}

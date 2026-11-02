@@ -1,0 +1,91 @@
+{
+  "config": {
+    "fee": 0.002,
+    "slippage": 0.001,
+    "spread": 0.0005,
+    "features": [
+      "ret_1",
+      "ret_4",
+      "ret_24",
+      "rsi_14",
+      "atr_pct",
+      "ema_ratio",
+      "macd",
+      "macd_hist",
+      "vol_ratio",
+      "vol_pct"
+    ]
+  },
+  "results_1h": {
+    "timeframe": "1h",
+    "horizon": 4,
+    "train_rows": 30610,
+    "val_rows": 8759,
+    "test_rows": 10968,
+    "train_time_sec": 0.84,
+    "metrics": {
+      "val": {
+        "n": 8759,
+        "accuracy": 0.5157,
+        "auc": 0.5219,
+        "backtest": {
+          "n_trades": 4423,
+          "win_rate": 0.2005,
+          "profit_factor": 0.2004,
+          "total_return": -1.0,
+          "max_dd": -1.0,
+          "avg_ret": -0.006101
+        }
+      },
+      "test": {
+        "n": 10968,
+        "accuracy": 0.5263,
+        "auc": 0.5341,
+        "backtest": {
+          "n_trades": 5937,
+          "win_rate": 0.1497,
+          "profit_factor": 0.1318,
+          "total_return": -1.0,
+          "max_dd": -1.0,
+          "avg_ret": -0.006388
+        }
+      }
+    }
+  },
+  "results_1D": {
+    "timeframe": "1D",
+    "horizon": 1,
+    "train_rows": 1253,
+    "val_rows": 365,
+    "test_rows": 457,
+    "train_time_sec": 0.28,
+    "metrics": {
+      "val": {
+        "n": 365,
+        "accuracy": 0.4795,
+        "auc": 0.4875,
+        "backtest": {
+          "n_trades": 179,
+          "win_rate": 0.3743,
+          "profit_factor": 0.655,
+          "total_return": -0.5772,
+          "max_dd": -0.5805,
+          "avg_ret": -0.004392
+        }
+      },
+      "test": {
+        "n": 457,
+        "accuracy": 0.5011,
+        "auc": 0.5009,
+        "backtest": {
+          "n_trades": 237,
+          "win_rate": 0.346,
+          "profit_factor": 0.4632,
+          "total_return": -0.7968,
+          "max_dd": -0.8043,
+          "avg_ret": -0.006404
+        }
+      }
+    }
+  }
+}
