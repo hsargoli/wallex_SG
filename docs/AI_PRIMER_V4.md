@@ -626,3 +626,21 @@ bash
 grep -n "interface.*Props\|type.*Props" components/path/to/component.tsx
 
 Applied in: guest/page.tsx Phase 4 (2026-11-01).
+
+
+## AP-57 — قبل از هر research، «موفقیت» را تعریف کن
+
+**داستان:** در research tsfresh (2026-11-02)، baseline با
+RSI/ATR/EMA/MACD + long-only + bear market + cost 0.65٪ ساخته شد.
+نتیجه: PF=0.13، WR=15٪. مقایسه‌ی tsfresh با این baseline،
+بی‌معنی بود — چون baseline خودش محکوم به شکست بود.
+
+**درس:** قبل از هر research، سه سؤال:
+1. «موفقیت چیست؟» (PF>1.2؟ AUC>0.55؟)
+2. «baseline واقعی چیست؟» (B&H؟ MA Crossover؟ Long-Short؟)
+3. «اگر fail شد، چه نتیجه‌ای بگیریم؟» (AP-39: گزارش منفی = پیروزی)
+
+اگر این سه قبل از کد جواب داده نشوند، **کد زدن = قمار.**
+
+**مکمل AP-39:** AP-39 = پذیرش نتیجه؛ AP-57 = پیشگیری از نتیجه‌ی بی‌معنی.
+
