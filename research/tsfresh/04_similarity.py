@@ -18,6 +18,7 @@ CRITICAL: no lookahead. Historical windows must have t+24 already available.
 """
 from __future__ import annotations
 
+import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,8 +26,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA = Path("research/tsfresh/data/BTCUSDT_1h_full.csv")
-OUT = Path("frontend/public/data/similarity.json")
+# Parse --symbol argument
+parser = argparse.ArgumentParser()
+parser.add_argument("--symbol", default="BTCUSDT", help="Trading pair, e.g. BTCUSDT")
+args, _ = parser.parse_known_args()
+SYMBOL = args.symbol
+
+DATA = Path(f"research/tsfresh/data/{SYMBOL}_1h_full.csv")
+OUT = Path(f"frontend/public/data/similarity-{SYMBOL}.json")
 
 WINDOW = 24
 HORIZON = 24
@@ -111,7 +118,7 @@ def window_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     print("=" * 60)
-    print("  04_similarity.py — Historical Similarity Analysis")
+    print(f"  04_similarity.py — Historical Similarity Analysis [{SYMBOL}]")
     print("=" * 60)
     print(f"Window={WINDOW}h, Horizon={HORIZON}h, TopK={TOP_K}")
 

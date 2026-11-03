@@ -1,0 +1,313 @@
+{
+  "as_of": "2026-11-03T12:32:51.890058+00:00",
+  "current_datetime": "2026-10-31 23:00:00",
+  "current_price": 77582.02,
+  "current_regime": "unknown",
+  "window_hours": 24,
+  "horizon_hours": 24,
+  "n_features": 19,
+  "feature_names": [
+    "ret_1_mean",
+    "ret_1_std",
+    "ret_24",
+    "rsi_14_mean",
+    "rsi_14_last",
+    "atr_14_mean",
+    "atr_14_std",
+    "atr_pct_mean",
+    "ema_ratio_mean",
+    "macd_mean",
+    "macd_hist_mean",
+    "vol_ratio_mean",
+    "vol_ratio_std",
+    "volatility",
+    "close_position",
+    "hh_ll_ratio",
+    "upper_wick_mean",
+    "lower_wick_mean",
+    "body_ratio_mean"
+  ],
+  "current_features": {
+    "ret_1_mean": 0.0001,
+    "ret_1_std": 0.0015,
+    "ret_24": 0.0028,
+    "rsi_14_mean": 57.8345,
+    "rsi_14_last": 54.7737,
+    "atr_14_mean": 296.4904,
+    "atr_14_std": 124.133,
+    "atr_pct_mean": 0.0038,
+    "ema_ratio_mean": -0.0084,
+    "macd_mean": -182.7371,
+    "macd_hist_mean": 96.4817,
+    "vol_ratio_mean": 0.6757,
+    "vol_ratio_std": 0.3669,
+    "volatility": 0.0015,
+    "close_position": 0.6862,
+    "hh_ll_ratio": 0.0088,
+    "upper_wick_mean": 0.0009,
+    "lower_wick_mean": 0.0005,
+    "body_ratio_mean": 0.4407
+  },
+  "similar_periods": [
+    {
+      "date": "2025-06-01T03:00:00",
+      "similarity": 0.9626,
+      "forward_return_24h_pct": 0.43
+    },
+    {
+      "date": "2025-06-01T07:00:00",
+      "similarity": 0.9563,
+      "forward_return_24h_pct": 1.07
+    },
+    {
+      "date": "2024-06-15T23:00:00",
+      "similarity": 0.9557,
+      "forward_return_24h_pct": 0.68
+    },
+    {
+      "date": "2025-10-19T03:00:00",
+      "similarity": 0.955,
+      "forward_return_24h_pct": 2.68
+    },
+    {
+      "date": "2025-12-07T03:00:00",
+      "similarity": 0.9525,
+      "forward_return_24h_pct": 1.5
+    },
+    {
+      "date": "2025-06-01T05:00:00",
+      "similarity": 0.9518,
+      "forward_return_24h_pct": 0.28
+    },
+    {
+      "date": "2025-10-19T04:00:00",
+      "similarity": 0.948,
+      "forward_return_24h_pct": 3.15
+    },
+    {
+      "date": "2024-12-29T02:00:00",
+      "similarity": 0.9475,
+      "forward_return_24h_pct": -1.31
+    },
+    {
+      "date": "2025-08-31T08:00:00",
+      "similarity": 0.9469,
+      "forward_return_24h_pct": 0.53
+    },
+    {
+      "date": "2024-06-15T22:00:00",
+      "similarity": 0.9454,
+      "forward_return_24h_pct": 0.84
+    },
+    {
+      "date": "2025-08-31T04:00:00",
+      "similarity": 0.9447,
+      "forward_return_24h_pct": -1.29
+    },
+    {
+      "date": "2025-06-01T06:00:00",
+      "similarity": 0.9433,
+      "forward_return_24h_pct": 0.87
+    },
+    {
+      "date": "2025-12-07T02:00:00",
+      "similarity": 0.9423,
+      "forward_return_24h_pct": 1.94
+    },
+    {
+      "date": "2025-06-01T08:00:00",
+      "similarity": 0.9412,
+      "forward_return_24h_pct": 0.9
+    },
+    {
+      "date": "2025-08-17T03:00:00",
+      "similarity": 0.9409,
+      "forward_return_24h_pct": -2.01
+    },
+    {
+      "date": "2025-06-01T04:00:00",
+      "similarity": 0.94,
+      "forward_return_24h_pct": 0.13
+    },
+    {
+      "date": "2025-08-31T02:00:00",
+      "similarity": 0.9379,
+      "forward_return_24h_pct": -1.47
+    },
+    {
+      "date": "2026-05-09T11:00:00",
+      "similarity": 0.9369,
+      "forward_return_24h_pct": 0.59
+    },
+    {
+      "date": "2025-12-25T09:00:00",
+      "similarity": 0.9356,
+      "forward_return_24h_pct": 1.47
+    },
+    {
+      "date": "2026-03-28T22:00:00",
+      "similarity": 0.9345,
+      "forward_return_24h_pct": -1.34
+    },
+    {
+      "date": "2026-03-28T21:00:00",
+      "similarity": 0.9341,
+      "forward_return_24h_pct": 0.04
+    },
+    {
+      "date": "2025-09-27T21:00:00",
+      "similarity": 0.9338,
+      "forward_return_24h_pct": 1.24
+    },
+    {
+      "date": "2025-08-17T02:00:00",
+      "similarity": 0.9326,
+      "forward_return_24h_pct": -1.83
+    },
+    {
+      "date": "2026-03-28T20:00:00",
+      "similarity": 0.9323,
+      "forward_return_24h_pct": -0.44
+    },
+    {
+      "date": "2025-06-01T02:00:00",
+      "similarity": 0.9309,
+      "forward_return_24h_pct": 0.8
+    },
+    {
+      "date": "2026-10-09T23:00:00",
+      "similarity": 0.9305,
+      "forward_return_24h_pct": 0.43
+    },
+    {
+      "date": "2025-08-17T06:00:00",
+      "similarity": 0.9301,
+      "forward_return_24h_pct": -2.27
+    },
+    {
+      "date": "2026-05-09T12:00:00",
+      "similarity": 0.93,
+      "forward_return_24h_pct": 0.66
+    },
+    {
+      "date": "2025-12-25T08:00:00",
+      "similarity": 0.9297,
+      "forward_return_24h_pct": 1.32
+    },
+    {
+      "date": "2024-09-08T04:00:00",
+      "similarity": 0.9293,
+      "forward_return_24h_pct": 0.66
+    },
+    {
+      "date": "2025-09-28T00:00:00",
+      "similarity": 0.9292,
+      "forward_return_24h_pct": 2.42
+    },
+    {
+      "date": "2024-06-16T01:00:00",
+      "similarity": 0.9292,
+      "forward_return_24h_pct": 0.45
+    },
+    {
+      "date": "2025-08-31T05:00:00",
+      "similarity": 0.9283,
+      "forward_return_24h_pct": -0.82
+    },
+    {
+      "date": "2026-05-09T09:00:00",
+      "similarity": 0.9283,
+      "forward_return_24h_pct": 0.7
+    },
+    {
+      "date": "2025-08-17T05:00:00",
+      "similarity": 0.9277,
+      "forward_return_24h_pct": -1.96
+    },
+    {
+      "date": "2026-10-09T22:00:00",
+      "similarity": 0.9277,
+      "forward_return_24h_pct": 0.55
+    },
+    {
+      "date": "2024-12-29T00:00:00",
+      "similarity": 0.9272,
+      "forward_return_24h_pct": -1.64
+    },
+    {
+      "date": "2026-08-30T01:00:00",
+      "similarity": 0.9265,
+      "forward_return_24h_pct": -0.56
+    },
+    {
+      "date": "2025-08-16T20:00:00",
+      "similarity": 0.9261,
+      "forward_return_24h_pct": -0.05
+    },
+    {
+      "date": "2024-06-16T00:00:00",
+      "similarity": 0.9247,
+      "forward_return_24h_pct": 0.64
+    },
+    {
+      "date": "2026-10-09T18:00:00",
+      "similarity": 0.924,
+      "forward_return_24h_pct": 0.7
+    },
+    {
+      "date": "2025-12-25T11:00:00",
+      "similarity": 0.9238,
+      "forward_return_24h_pct": 1.16
+    },
+    {
+      "date": "2025-12-25T10:00:00",
+      "similarity": 0.9235,
+      "forward_return_24h_pct": 1.53
+    },
+    {
+      "date": "2025-08-30T23:00:00",
+      "similarity": 0.9229,
+      "forward_return_24h_pct": -0.52
+    },
+    {
+      "date": "2025-09-27T10:00:00",
+      "similarity": 0.922,
+      "forward_return_24h_pct": -0.06
+    },
+    {
+      "date": "2024-06-15T21:00:00",
+      "similarity": 0.9214,
+      "forward_return_24h_pct": 0.6
+    },
+    {
+      "date": "2024-05-12T00:00:00",
+      "similarity": 0.9203,
+      "forward_return_24h_pct": 0.88
+    },
+    {
+      "date": "2025-08-31T06:00:00",
+      "similarity": 0.9203,
+      "forward_return_24h_pct": -0.6
+    },
+    {
+      "date": "2025-09-27T22:00:00",
+      "similarity": 0.9203,
+      "forward_return_24h_pct": 2.13
+    },
+    {
+      "date": "2025-12-25T14:00:00",
+      "similarity": 0.9199,
+      "forward_return_24h_pct": -0.39
+    }
+  ],
+  "stats": {
+    "n": 50,
+    "mean_return_24h_pct": 0.31,
+    "median_return_24h_pct": 0.57,
+    "std_return_24h_pct": 1.23,
+    "positive_pct": 66.0,
+    "min_return_24h_pct": -2.27,
+    "max_return_24h_pct": 3.15
+  },
+  "disclaimer": "Historical similarity analysis, not trading signal. N matches > 30 required (AP-58). Past patterns may not repeat."
+}

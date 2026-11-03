@@ -265,8 +265,8 @@ function HowItWorks() {
       </button>
       {open && (
         <CardContent className="pt-0 text-xs text-muted-foreground space-y-3 leading-relaxed">
-          <div><strong className="text-foreground">۱. الگوی فعلی:</strong> ۱۹ ویژگی (RSI, ATR, MACD, حجم، نوسان) از ۲۴ ساعت اخیر BTC استخراج می‌شود.</div>
-          <div><strong className="text-foreground">۲. شباهت تاریخی:</strong> این الگو با ۵۰,۹۶۸ پنجره‌ی ۲۴ ساعته‌ی ۵ سال گذشته (از ۲۰۲۱) مقایسه می‌شود با شباهت کسینوسی (Cosine Similarity) روی featureهای Z-score شده.</div>
+          <div><strong className="text-foreground">۱. الگوی فعلی:</strong> ۱۹ ویژگی (RSI, ATR, MACD, حجم، نوسان) از ۲۴ ساعت اخیر استخراج می‌شود.</div>
+          <div><strong className="text-foreground">۲. شباهت تاریخی:</strong> این الگو با تمام پنجره‌های ۲۴ ساعته‌ی گذشته (از ۲۰۲۱) مقایسه می‌شود با شباهت کسینوسی (Cosine Similarity) روی featureهای Z-score شده.</div>
           <div><strong className="text-foreground">۳. ۵۰ دوره برتر:</strong> با N=۵۰ (طبق AP-58، حداقل ۳۰ برای معناداری آماری)، همه‌ی دوره‌های مشابه انتخاب می‌شوند.</div>
           <div><strong className="text-foreground">۴. بازده ۲۴h بعد:</strong> برای هر ۵۰ دوره، بازده ۲۴ ساعته‌ی بعد از آن محاسبه می‌شود. میانگین، میانه، درصد مثبت، و توزیع، خلاصه‌ی رفتار تاریخی است.</div>
           <div className="pt-2 border-t border-border/30"><strong className="text-foreground">⚠️ هشدار:</strong> این یک ابزار <strong>تحلیلی</strong> است، نه <strong>سیگنال معاملاتی</strong>. هزینه‌ی round-trip معامله (۰.۶۵٪) در آمار لحاظ نشده — اگر میانگین کمتر از این عدد باشد، در عمل edge وجود ندارد (طبق AP-39).</div>
@@ -337,16 +337,25 @@ function TimeframeStats({ periods, asOfDate }: { periods: SimilarPeriod[]; asOfD
   );
 }
 
+const SYMBOLS = [
+  { id: "BTCUSDT", label: "BTC / USDT (بیت‌کوین)" },
+  { id: "ETHUSDT", label: "ETH / USDT (اتریوم)" },
+  { id: "SOLUSDT", label: "SOL / USDT (سولانا)" },
+];
+
 export default function TSFreshResearchPage() {
+  const [symbol, setSymbol] = useState("BTCUSDT");
   const [data, setData] = useState<SimilarityData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/data/similarity.json")
+    setData(null);
+    setError(null);
+    fetch(`/data/similarity-${symbol}.json`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setData)
       .catch((e) => setError(String(e)));
-  }, []);
+  }, [symbol]);
 
   if (error) {
     return (
@@ -362,7 +371,10 @@ export default function TSFreshResearchPage() {
   if (!data) {
     return (
       <div className="container py-8 space-y-4">
-        <Skeleton className="h-8 w-64" /><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" />
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
@@ -390,12 +402,26 @@ export default function TSFreshResearchPage() {
   return (
     <div className="container py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Activity className="h-6 w-6 text-primary" /> تحلیل تشابه تاریخی BTC</h1>
-          <p className="text-sm text-muted-foreground mt-1">الگوی ۲۴ ساعت اخیر BTC، با ۵ سال گذشته مقایسه می‌شود.</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Activity className="h-6 w-6 text-primary" /> تحلیل تشابه تاریخی {symbol.replace("USDT", "")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">الگوی ۲۴ ساعت اخیر {symbol.replace("USDT", "")}، با گذشته مقایسه می‌شود.</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Dropdown for symbol selection */}
+          <select
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            className="bg-background border border-border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
+          >
+            {SYMBOLS.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+
           <Badge variant="outline" className="text-xs">Research · Insight only</Badge>
           <Badge variant="outline" className={`text-xs ${freshColor}`}><Clock className="h-3 w-3 mr-1" /> داده {freshness.label}</Badge>
         </div>
@@ -464,7 +490,6 @@ export default function TSFreshResearchPage() {
             <div className="border rounded-lg p-3 bg-muted/10"><div className="text-xs text-muted-foreground">تعداد (N)</div><div className="font-mono text-lg flex items-center gap-1">{stats.n}{stats.n >= 30 && <span className="text-xs text-emerald-400">✓</span>}</div></div>
           </div>
 
-          {/* New: Timeframe Stats */}
           <TimeframeStats periods={data.similar_periods} asOfDate={data.current_datetime} />
 
           {/* Fee comparison bar */}
@@ -531,7 +556,7 @@ export default function TSFreshResearchPage() {
 
       <div className="text-xs text-muted-foreground text-center pt-2 space-y-1">
         <p>as_of: <span className="font-mono">{data.as_of}</span></p>
-        <p>داده: BTCUSDT (Binance) · {data.n_features} feature · {data.similar_periods.length} match (N&gt;30, AP-58)</p>
+        <p>داده: {symbol} (Binance) · {data.n_features} feature · {data.similar_periods.length} match (N&gt;30, AP-58)</p>
         <Link href="/" className="inline-flex items-center gap-1 mt-2 text-primary hover:underline">بازگشت <ArrowRight className="h-3 w-3" /></Link>
       </div>
     </div>
