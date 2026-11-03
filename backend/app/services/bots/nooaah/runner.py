@@ -113,7 +113,7 @@ class NooaahRunner:
             return self._log_and_summarize(
                 t0, status="exits_only", action="exits_only",
                 reason_fa="SarvRouter gate closed — exits only, no new entries",
-                extra={"closed": closed} if closed else None,
+                closed=closed,
             )
 
         # ۲. اگه جا هست → proposal جدید
