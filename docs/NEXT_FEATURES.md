@@ -56,3 +56,41 @@
 **تصمیم CTO (2026-10-25):** **فاز فعلی — بعد از Prefetch.**
 
 ---
+
+## tsfresh — Historical Similarity Analysis Page (Future)
+
+**ایده:** صفحه‌ای در پلتفرم که به کاربر نشان دهد:
+- وضعیت فعلی بازار BTC (featureهای tsfresh روی کندل‌های اخیر)
+- الگوهای مشابه تاریخی (KNN روی feature space)
+- «وقتی این الگو در گذشته بود، چه شد؟» — توزیع forward returns بعد از الگوهای مشابه
+- Confidence + sample size (N historical matches)
+
+**تفاوت با research قبلی (verdict no edge):**
+این یک **ابزار تحلیل (Insight)** است، نه سیگنال معامله.
+- verdict «no edge» اینجا **معتبر است** (چون معامله نمی‌کنیم)
+- ریسک مالی = صفر
+- هدف: آگاهی کاربر، نه تصمیم خودکار
+
+**Dependencies:** pipeline موجود در `research/tsfresh/`
+- `01_load_and_split.py` (data)
+- `03_tsfresh.py` (feature extraction — برای similarity، نه classification)
+
+**Time-box:** ۲-۳ روز (بعد از SarvRouter + Test B)
+
+**Constraints:**
+- فقط Insight، نه trading signal
+- صفحه در `/research/tsfresh` (نه production)
+- باید شاهد داشته باشد: N historical matches > 30 (طبق AP-58)
+- any verdict «similar pattern» باید confidence + N نشان دهد
+
+**Open questions (Investigate before code — طبق AP-57):**
+- کدام featureها برای similarity؟ (همه ۱۵۵۴ یا زیرمجموعه‌ی efficient؟)
+- KNN با چه metric؟ (cosine، euclidean، DTW)
+- horizon forward returns؟ (۴h، ۱D، ۷D)
+- آیا featureها normalized می‌شوند؟ (Z-score روی rolling window)
+- آستانه‌ی «مشابه» چقدر؟ (فاصله‌ی KNN، یا percentile)
+
+**Owner:** TBD
+**Priority:** Low (بعد از SarvRouter + Test B)
+**Related APs:** AP-57 (تعریف موفقیت)، AP-58 (N>30)
+
