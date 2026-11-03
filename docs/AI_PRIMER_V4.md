@@ -663,3 +663,47 @@ RSI/ATR/EMA/MACD + long-only + bear market + cost 0.65٪ ساخته شد.
 
 **مکمل AP-57:** AP-57 = تعریف موفقیت. AP-58 = معیار معتبر برای موفقیت.
 
+
+
+## AP-59 — کامنت محیطی در بلاک‌های research
+
+**داستان:** در research tsfresh (2026-11-02/03)، بلاک‌های اجرا با `python3.10` (نه venv) نوشته شدند — چون tsfresh در python3.10 نصب بود. ولی این در بلاک کامنت نشد. معمار فنی (دی پرتو) در review، فرض کرد venv لازم است و بلاک اصلاحی با `source .venv` پیشنهاد داد — که tsfresh را از دست می‌داد.
+
+**درس:** در بلاک‌های research، محیط را کامنت کن:
+- کدام python (python3.10 vs venv python3.12)
+- کدام dependency کجاست (tsfresh در user site، نه venv)
+- چرا این انتخاب (محدودیت نسخه، سازگاری)
+
+**قاعده‌ی عملی:** `# ENV: python3.10 (tsfresh 0.21.2 in ~/.local/lib/python3.10/site-packages), NOT venv` در بالای هر اسکریپت research.
+
+**مکمل AP-57:** AP-57 = تعریف موفقیت. AP-59 = تعریف محیط. هر دو، «شاهد قبل از کد».
+
+---
+
+## AP-60 — بلاک‌های طولانی: progress live، timeout×2، background
+
+**داستان:** در research tsfresh، full run ۳ بار timeout داد (>۴۰ دقیقه هر بار). دلیل: `| tail -70` progress را مخفی کرد، timeout ۱۵۰۰ (۲۵ دقیقه) کم بود، و کاربر فکر کرد hang است (Ctrl+C زد).
+
+**درس:** در بلاک‌های اجرای طولانی:
+1. `timeout` = برآورد × ۱.۵-۲× (نه × ۱.۲۵)
+2. **`| tail` نزن** — progress bar live
+3. اجرا در background: `nohup ... > /tmp/run.log 2>&1 &` + `tail -f`
+4. `kill -9` backup (چون Ctrl+C روی C extensions کار نمی‌کند — AP-61)
+
+**مکمل AP-59:** AP-59 = محیط. AP-60 = اجرا. هر دو، «شاهد در طول اجرا».
+
+---
+
+## AP-61 — Ctrl+C روی tsfresh (numba) کار نمی‌کند — kill -9 backup
+
+**داستان:** در research tsfresh، بعد از ۴۰ دقیقه timeout، کاربر ۲۰۰+ بار Ctrl+C زد — process kill نشد. دلیل: tsfresh از numba (C extension) استفاده می‌کند که signal handler پایتون را نمی‌بیند.
+
+**درس:** در بلاک‌های طولانی با library سنگین (tsfresh/numba، numpy، tensorflow):
+- **قبل از اجرا:** `pgrep -af "script_name"` — ببین process قبلی نیست
+- **بعد از timeout:** `pkill -9 -f "script_name"` (نه Ctrl+C)
+- **اگر ترمینال قفل شد:** ترمینال جدید → `pkill -9`
+
+**قاعده‌ی عملی:** در بلاک‌های طولانی، `kill -9` (و `pkill -9 -f`) را **قبل از** اجرا آماده کن، نه بعد.
+
+**مکمل AP-60:** AP-60 = timeout. AP-61 = kill. هر دو، «شاهد در توقف».
+
