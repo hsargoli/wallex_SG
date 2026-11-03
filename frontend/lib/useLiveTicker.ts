@@ -14,7 +14,9 @@ const RECONNECT_MS = 3000;
 
 function getWsUrl(symbol: string): string {
   const base = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
-  return `${base}/ws/ticker/${symbol}`;
+  // Handle both "wss://host" and "wss://host/ws" (avoid /ws/ws/)
+  const cleanBase = base.endsWith("/ws") ? base.slice(0, -3) : base;
+  return `${cleanBase}/ws/ticker/${symbol}`;
 }
 
 /**
@@ -34,6 +36,8 @@ export function useLiveTicker(symbol: string): LiveTickerState & { stale: boolea
   const [now, setNow] = useState(() => Date.now());
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCount = useRef(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +48,7 @@ export function useLiveTicker(symbol: string): LiveTickerState & { stale: boolea
       wsRef.current = ws;
 
       ws.onopen = () => {
+        retryCount.current = 0;  // reset on successful connect
         setState((s) => ({ ...s, connected: true }));
       };
 
@@ -63,9 +68,14 @@ export function useLiveTicker(symbol: string): LiveTickerState & { stale: boolea
 
       ws.onclose = () => {
         setState((s) => ({ ...s, connected: false }));
-        if (!cancelled) {
-          reconnectTimer.current = setTimeout(connect, RECONNECT_MS);
+        if (cancelled) return;
+        if (retryCount.current >= MAX_RETRIES) {
+          console.warn(`WebSocket: max ${MAX_RETRIES} retries reached for ${symbol}`);
+          return;
         }
+        retryCount.current += 1;
+        const backoffMs = RECONNECT_MS * Math.min(retryCount.current, 5);
+        reconnectTimer.current = setTimeout(connect, backoffMs);
       };
 
       ws.onerror = () => {

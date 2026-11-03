@@ -6,17 +6,21 @@ import { Sparkles, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallexStatus } from "@/lib/queries";
+import dynamic from "next/dynamic";
+
+// Lazy load heavy components to speed up initial mobile load
+const BtcChartCard = dynamic(() => import("@/components/dashboard/btc-chart-card").then(m => m.BtcChartCard), { ssr: false, loading: () => <div className="h-[300px] animate-pulse bg-muted/20 rounded-xl" /> });
+const LiveTickerCard = dynamic(() => import("@/components/dashboard/live-ticker-card").then(m => m.LiveTickerCard), { ssr: false, loading: () => <div className="h-[100px] animate-pulse bg-muted/20 rounded-xl" /> });
+const PortfolioSignals = dynamic(() => import("@/components/dashboard/portfolio-signals").then(m => m.PortfolioSignals), { ssr: false, loading: () => <div className="h-[400px] animate-pulse bg-muted/20 rounded-xl" /> });
+const SarvAnalysisCard = dynamic(() => import("@/components/dashboard/sarv-analysis-card").then(m => m.SarvAnalysisCard), { ssr: false, loading: () => <div className="h-[100px] animate-pulse bg-muted/20 rounded-xl" /> });
+
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { CapitalCard } from "@/components/dashboard/capital-card";
-import { LiveTickerCard } from "@/components/dashboard/live-ticker-card";
-import { PortfolioSignals } from "@/components/dashboard/portfolio-signals";
 import { OrdersTimeline } from "@/components/dashboard/orders-timeline";
 import { BotsSummary } from "@/components/dashboard/bots-summary";
 import { HotMarkets } from "@/components/dashboard/hot-markets";
 import { PaperSummary } from "@/components/dashboard/paper-summary";
 import { StatusStrip } from "@/components/dashboard/status-strip";
-import { BtcChartCard } from "@/components/dashboard/btc-chart-card";
-import { SarvAnalysisCard } from "@/components/dashboard/sarv-analysis-card";
 
 export default function DashboardPage() {
   const { data } = useWallexStatus();

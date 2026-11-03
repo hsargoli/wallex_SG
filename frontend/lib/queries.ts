@@ -66,7 +66,7 @@ export function useHealth() {
   return useQuery({
     queryKey: ["health"],
     queryFn: () => api.health(),
-    refetchInterval: 10_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 }
