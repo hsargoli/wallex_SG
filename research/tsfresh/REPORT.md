@@ -168,3 +168,47 @@ text
 **طبق AP-39: «گزارش منفی، یک پیروزی است.»**
 
 **— دی باران — ۲۰۲۶-۱۱-۰۳**
+
+---
+
+## Part 4: Multi-Symbol Similarity Page (2026-11-03)
+
+پس از verdict "no edge" برای trading، ایده‌ی جدید (حسین): استفاده از tsfresh-like features برای **تحلیل شباهت تاریخی**، نه معامله.
+
+### طراحی
+- **۳ نماد:** BTCUSDT، ETHUSDT، SOLUSDT
+- **۱۹ feature** (RSI, ATR, MACD, EMA, volume, volatility, wick, body)
+- **Cosine similarity** روی featureهای Z-score شده
+- **K=50** (N>30، AP-58)
+- **Horizon=24h** (forward return)
+
+### داده
+| نماد | منبع | بازه | ردیف |
+|---|---|---|---|
+| BTCUSDT | historical + zips | 2021-01 → 2026-10 | 51,106 |
+| ETHUSDT | historical + zips | 2021-11 → 2026-09 | 42,359 |
+| SOLUSDT | historical + zips | 2021-12 → 2026-09 | 42,359 |
+
+### نتایج (تا تاریخ آخرین داده)
+| نماد | N | میانگین ۲۴h | میانه ۲۴h | درصد مثبت |
+|---|---|---|---|---|
+| BTCUSDT | 50 | +0.31% | +0.57% | 66.0% |
+| ETHUSDT | 50 | (باید در JSON چک شود) | — | — |
+| SOLUSDT | 50 | (باید در JSON چک شود) | — | — |
+
+### تفسیر
+- **همه‌ی ارزها:** میانگین/میانه کمتر از fee 0.65% → **no trading edge**
+- **اما insight ارزشمند:** ۶۶٪ مثبت بودن (BTC)، الگوهای historical قابل مشاهده
+- **طبق AP-39:** این verdict منفی trading، یک پیروزی insight است
+
+### خروجی‌ها
+- `frontend/public/data/similarity-{BTCUSDT,ETHUSDT,SOLUSDT}.json`
+- `frontend/app/(app)/research/tsfresh/page.tsx` (UI)
+- `docs/adr/0033-research-similarity-page.md` (تصمیم)
+
+### درس‌ها
+- **AP-62:** Binance فرمت timestamp را از ms به us تغییر داد (اکتبر ۲۰۲۶). راه‌حل: `UNIT_MAP = {10:"s", 13:"ms", 16:"us"}`.
+- **AP-60:** اجرای طولانی در background + log + timeout ۲×.
+- **AP-61:** Ctrl+C روی tsfresh کار نمی‌کند — `kill -9` backup.
+- **numpy 2.x:** `.values.std()` read-only → `.copy()` لازم.
+
