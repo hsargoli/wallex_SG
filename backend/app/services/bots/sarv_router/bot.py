@@ -49,6 +49,8 @@ class SarvRouter:
     ) -> dict:
         """One tick: load state → check kill → detect regime → update lifecycle."""
         state = self.store.load(user_id)
+        # Test B: restore internal lifecycle state on restart
+        self.lifecycle.hydrate_from_state(state)
 
         # 1) Kill switch (manual or auto)
         if state.kill_switch_manual or state.kill_switch_auto:

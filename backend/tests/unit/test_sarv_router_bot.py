@@ -171,3 +171,51 @@ def test_tick_persists_regime_since_idx(tmp_path):
         f"regime_since_idx changed unexpectedly: "
         f"got {persisted2.regime_since_idx!r}, expected 5"
     )
+
+
+def test_restart_preserves_regime_since_idx(tmp_path):
+    """Test B (AP-57/58): regime_since_idx must survive service restart.
+
+    Scenario:
+    - Session 1: tick at idx=100, regime=uptrend, regime_since_idx=100 persisted.
+    - Session 2 (restart): new SarvRouter, same store, tick at idx=200.
+    - Without fix: lifecycle resets _regime_since_idx, state overwritten to 200.
+    - With fix: state preserved as 100 (regime_since_idx = when regime started).
+    """
+    cfg = SarvRouterConfig()
+    calls = {"start": [], "stop": [], "stop_all": 0}
+
+    def _start(slug):
+        calls["start"].append(slug)
+
+    def _stop(slug):
+        calls["stop"].append(slug)
+
+    def _stop_all():
+        calls["stop_all"] += 1
+
+    uid = str(uuid.uuid4())
+    candles = _uptrend(300)
+
+    # --- Session 1 ---
+    router1 = SarvRouter(
+        config=cfg, start_bot=_start, stop_bot=_stop, stop_all=_stop_all,
+        store=SarvStore(base_dir=tmp_path), audit=AuditTrail(base_dir=tmp_path),
+    )
+    r1 = router1.tick(uid, candles, now_idx=100)
+    assert r1["action"] == "pending", f"session 1 unexpected: {r1}"
+    persisted1 = router1.store.load(uid)
+    assert persisted1.regime_since_idx == 100, f"session 1 failed: {persisted1.regime_since_idx}"
+    assert persisted1.current_regime == "uptrend"
+
+    # --- Session 2 (simulated restart — NEW router, same store) ---
+    router2 = SarvRouter(
+        config=cfg, start_bot=_start, stop_bot=_stop, stop_all=_stop_all,
+        store=SarvStore(base_dir=tmp_path), audit=AuditTrail(base_dir=tmp_path),
+    )
+    router2.tick(uid, candles, now_idx=200)
+    persisted2 = router2.store.load(uid)
+    assert persisted2.regime_since_idx == 100, (
+        f"regime_since_idx LOST on restart: got {persisted2.regime_since_idx}, "
+        f"expected 100 (should not become 200)"
+    )

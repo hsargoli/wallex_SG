@@ -28,6 +28,23 @@ class BotLifecycleManager:
         self._last_switch_idx: int | None = None
         self.active_bots: list[str] = []
 
+    def hydrate_from_state(self, state) -> None:
+        """Restore internal state from persisted state (Test B: survive restart).
+
+        Without this, a restart resets _regime_since_idx to None, causing
+        the stability window to restart from 0 (24h delay per restart).
+        """
+        cr = getattr(state, "current_regime", None)
+        if cr and cr != "unknown":
+            try:
+                self._current_regime = Regime(cr)
+            except ValueError:
+                self._current_regime = None
+        else:
+            self._current_regime = None
+        self._regime_since_idx = getattr(state, "regime_since_idx", None)
+        self._last_switch_idx = getattr(state, "last_switch_idx", None)
+
     def _desired_bots(self, regime: Regime) -> list[str]:
         if regime == Regime.UPTREND and self.config.uptrend_bot:
             return [self.config.uptrend_bot]
