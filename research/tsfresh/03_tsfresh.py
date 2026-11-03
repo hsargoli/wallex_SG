@@ -48,11 +48,11 @@ if QUICK:
     print("⚠️ QUICK MODE: MinimalFCParameters, max_ts=7d/14d")
 else:
     FC = EfficientFCParameters()
-    MAX_TS_H = 720
+    MAX_TS_H = 180  # reduced from 360 for speed (7.5 days); rolling 360 was ~40min total
     MAX_TS_D = 30
 
 CHUNKSIZE = 200
-N_JOBS = 2
+N_JOBS = 3
 
 HORIZON_H = 4
 HORIZON_D = 1

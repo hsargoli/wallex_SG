@@ -1,0 +1,44 @@
+{
+  "config": {
+    "fc": "Efficient",
+    "max_ts_1D": 30
+  },
+  "results_1D": {
+    "timeframe": "1D",
+    "horizon": 1,
+    "n_candidates": 1554,
+    "n_selected": 50,
+    "metrics": {
+      "val": {
+        "n": 365,
+        "accuracy": 0.4822,
+        "auc": 0.4763,
+        "backtest": {
+          "n_trades": 186,
+          "n_long": 59,
+          "n_short": 127,
+          "win_rate": 0.328,
+          "profit_factor": 0.4492,
+          "total_return": -0.7605,
+          "max_dd": -0.7596,
+          "avg_return": -0.00731
+        }
+      },
+      "test": {
+        "n": 457,
+        "accuracy": 0.477,
+        "auc": 0.4783,
+        "backtest": {
+          "n_trades": 170,
+          "n_long": 44,
+          "n_short": 126,
+          "win_rate": 0.3471,
+          "profit_factor": 0.379,
+          "total_return": -0.7579,
+          "max_dd": -0.7543,
+          "avg_return": -0.008011
+        }
+      }
+    }
+  }
+}
