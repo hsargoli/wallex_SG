@@ -26,6 +26,7 @@ def run_nooaah_backtest(
     start_idx: int = 0,
     end_idx: int | None = None,
     candles_1m_by_symbol: dict[str, Sequence[Candle]] | None = None,
+    entries_allowed_per_candle: dict[int, bool] | None = None,
 ) -> BacktestResult:
     """backtest چندنمادی Nooaah.
 
@@ -258,6 +259,11 @@ def run_nooaah_backtest(
             sym: c[i - warmup : i] for sym, c in candles_by_symbol.items()
         }
         proposal = decide(windows, config)
+
+        # SarvRouter gate: if entries not allowed (range/downtrend), block new entries
+        if proposal is not None and entries_allowed_per_candle is not None:
+            if not entries_allowed_per_candle.get(i, True):
+                proposal = None
 
         # B2: skip symbols already held
         held = {p["symbol"] for p in positions}

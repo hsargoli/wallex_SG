@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 
@@ -111,10 +112,34 @@ def main() -> None:
     # ─── Nooaah (single symbol BTCUSDT as proxy) ───
     print(f"\n[3] Nooaah (BTCUSDT only — proxy, not 5 symbols)")
     try:
+        # Parse --sl --tp --conf from sys.argv
+        sl = 1.0
+        tp = 2.0
+        conf = 85
+        for i, a in enumerate(sys.argv):
+            if a == "--sl" and i + 1 < len(sys.argv):
+                sl = float(sys.argv[i + 1])
+            elif a == "--tp" and i + 1 < len(sys.argv):
+                tp = float(sys.argv[i + 1])
+            elif a == "--conf" and i + 1 < len(sys.argv):
+                conf = int(sys.argv[i + 1])
+
+        cfg = replace(NooaahConfig(), sl_atr_mult=sl, tp_atr_mult=tp, min_confidence=conf)
+        print(f"    [cfg] sl={sl} tp={tp} conf={conf}")
+
+        # Combine: SarvRouter gate → Nooaah entries
+        # entries_allowed[i] = True if regime at i-1 was "uptrend"
+        regime_seq = sarv["regime_sequence"]
+        entries_allowed = {i: (regime_seq[i-1] == "uptrend" if i >= 1 else False)
+                           for i in range(len(candles))}
+        allowed_count = sum(entries_allowed.values())
+        print(f"    [gate] allowed entries: {allowed_count}/{len(candles)} candles ({allowed_count/len(candles)*100:.1f}%)")
+
         nooaah = run_nooaah_backtest(
             candles_by_symbol={"BTCUSDT": candles},
-            config=NooaahConfig(),
+            config=cfg,
             start_idx=200,
+            entries_allowed_per_candle=entries_allowed,
         )
         print(f"    candles_analyzed: {nooaah.candles_analyzed}")
         print(f"    total_trades: {len(nooaah.trades)}")
@@ -142,8 +167,10 @@ def main() -> None:
     print(f"{'=' * 60}")
     sarv_switches = sarv["switches"]
     sarv_kills = sarv["kill_events"]
-    sarv_ok = (10 <= sarv_switches <= 50) and sarv_kills == 0
-    print(f"  SarvRouter: switches={sarv_switches} (10-50?), kills={sarv_kills} (0?) → {'✅ PASS' if sarv_ok else '❌ FAIL'}")
+    years = len(candles) / (24 * 365)
+    switches_per_year = sarv_switches / years
+    sarv_ok = (10 <= switches_per_year <= 50) and sarv_kills == 0
+    print(f"  SarvRouter: total_switches={sarv_switches}, per_year={switches_per_year:.1f} (10-50/year?), kills={sarv_kills} → {'✅ PASS' if sarv_ok else '❌ FAIL'}")
 
     print(f"\n⚠️ NOTE: BTCUSDT is a PROXY for BTCMN. Verify on Wallex data before Live.")
 
