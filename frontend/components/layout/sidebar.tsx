@@ -65,6 +65,14 @@ const navGroups: NavGroup[] = [
       { href: "/bot-wallet", label: "کیف پول ربات", icon: Wallet, desc: "مدیریت بودجه‌ی ربات‌ها" },
     ],
   },
+  {
+    label: "پژوهش و تحلیل",
+    items: [
+      { href: "/research/tsfresh", label: "تحلیل تشابه BTC", icon: FlaskConical, desc: "شباهت تاریخی الگوها" },
+      { href: "/research/regime-accuracy", label: "دقت تشخیص رژیم", icon: Activity, desc: "دقت SarvRouter" },
+      { href: "/research/sarvrouter-timeline", label: "تاریخچه تصمیمات", icon: ClipboardList, desc: "تاریخچه ۲,۲۳۷ تصمیم" },
+    ],
+  },
 ];
 
 function computeActiveHref(pathname: string, groups: NavGroup[]): string | null {
