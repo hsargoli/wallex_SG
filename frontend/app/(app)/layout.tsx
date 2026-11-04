@@ -49,7 +49,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <AppShell>{children}<SarvFooter /></AppShell>;
   }
 
-  if (isLoading || !data) return spinner;
+  // Fix (2026-11-04): research pages are insight-only, no auth required
+  if (pathname.startsWith("/research/")) {
+    return <AppShell>{children}<SarvFooter /></AppShell>;
+  }
+
+  // Fix (2026-11-04): don't spin forever on error (e.g. 401 with expired token)
+  if (!isLoading && !data) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          اتصال به حساب برقرار نشد (احتمالاً توکن منقضی شده).
+        </p>
+        <a href="/login" className="text-sm text-primary underline">
+          ورود مجدد
+        </a>
+      </div>
+    );
+  }
+
+  if (isLoading) return spinner;
   
 
   return <AppShell>{children}</AppShell>;
