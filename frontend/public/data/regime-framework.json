@@ -1,0 +1,19 @@
+{
+  "as_of": "2026-11-04T15:08:03.021970",
+  "results": [
+    {
+      "name": "1h/24h",
+      "test_samples": 15325,
+      "adx_accuracy": 35.8,
+      "voting_accuracy": 35.2,
+      "ml_accuracy": 41.4
+    },
+    {
+      "name": "4h/10d",
+      "test_samples": 3827,
+      "adx_accuracy": 29.8,
+      "voting_accuracy": 31.6,
+      "ml_accuracy": 42.9
+    }
+  ]
+}
