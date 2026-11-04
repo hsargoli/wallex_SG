@@ -11,7 +11,9 @@ def run_sarv_backtest(router, user_id, candles):
     cash_trace: list[float] = []
 
     for i in range(len(candles)):
-        window = candles[: i + 1]
+        # O(n): only pass last WINDOW candles (detect_regime only needs ~100 warmup)
+        start = max(0, i - 200)
+        window = candles[start: i + 1]
         result = router.tick(user_id, window, now_idx=i)
         total_ticks += 1
         action = result.get("action", "")
