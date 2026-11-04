@@ -1,0 +1,231 @@
+{
+  "as_of": "2026-11-04T14:51:25.953226",
+  "data_source": "BTCUSDT (Binance) 1h resampled",
+  "hypothesis": "Confidence>=70 helps trend; max-deviation range metric beats baseline",
+  "config": {
+    "uptrend_adx_min": 25.0,
+    "downtrend_adx_min": 25.0,
+    "range_adx_max": 20.0
+  },
+  "results": [
+    {
+      "name": "1h/24h",
+      "bars": 51106,
+      "forward_bars": 24,
+      "range_max_dev_pct": 3.0,
+      "samples": 41176,
+      "baseline_bounded_pct": 56.2,
+      "range_accuracy_pct": 61.4,
+      "range_lift_vs_baseline": 5.2,
+      "range_verdict": "PASS",
+      "buckets": [
+        {
+          "range": "50-59",
+          "n": 21071,
+          "accuracy_pct": 51.4
+        },
+        {
+          "range": "60-69",
+          "n": 13202,
+          "accuracy_pct": 53.7
+        },
+        {
+          "range": "70-74",
+          "n": 3540,
+          "accuracy_pct": 54.4
+        },
+        {
+          "range": "75-79",
+          "n": 3278,
+          "accuracy_pct": 54.8
+        },
+        {
+          "range": "80-100",
+          "n": 85,
+          "accuracy_pct": 83.5
+        }
+      ],
+      "per_regime": {
+        "uptrend": {
+          "all": {
+            "n": 12250,
+            "accuracy_pct": 48.8
+          },
+          "conf_ge_70": {
+            "n": 1994,
+            "accuracy_pct": 52.8
+          }
+        },
+        "downtrend": {
+          "all": {
+            "n": 13323,
+            "accuracy_pct": 46.3
+          },
+          "conf_ge_70": {
+            "n": 2763,
+            "accuracy_pct": 45.7
+          }
+        },
+        "range": {
+          "all": {
+            "n": 15603,
+            "accuracy_pct": 61.4
+          },
+          "conf_ge_70": {
+            "n": 2146,
+            "accuracy_pct": 68.9
+          }
+        }
+      },
+      "best_high_conf_accuracy_pct": 68.9,
+      "trend_verdict": "PASS"
+    },
+    {
+      "name": "4h/10d",
+      "bars": 12780,
+      "forward_bars": 60,
+      "range_max_dev_pct": 8.0,
+      "samples": 10041,
+      "baseline_bounded_pct": 40.9,
+      "range_accuracy_pct": 44.3,
+      "range_lift_vs_baseline": 3.4,
+      "range_verdict": "FAIL",
+      "buckets": [
+        {
+          "range": "50-59",
+          "n": 5088,
+          "accuracy_pct": 45.0
+        },
+        {
+          "range": "60-69",
+          "n": 3203,
+          "accuracy_pct": 49.2
+        },
+        {
+          "range": "70-74",
+          "n": 761,
+          "accuracy_pct": 49.3
+        },
+        {
+          "range": "75-79",
+          "n": 972,
+          "accuracy_pct": 61.8
+        },
+        {
+          "range": "80-100",
+          "n": 17,
+          "accuracy_pct": 64.7
+        }
+      ],
+      "per_regime": {
+        "uptrend": {
+          "all": {
+            "n": 3176,
+            "accuracy_pct": 52.9
+          },
+          "conf_ge_70": {
+            "n": 732,
+            "accuracy_pct": 68.0
+          }
+        },
+        "downtrend": {
+          "all": {
+            "n": 3236,
+            "accuracy_pct": 48.4
+          },
+          "conf_ge_70": {
+            "n": 684,
+            "accuracy_pct": 44.9
+          }
+        },
+        "range": {
+          "all": {
+            "n": 3629,
+            "accuracy_pct": 44.3
+          },
+          "conf_ge_70": {
+            "n": 334,
+            "accuracy_pct": 54.5
+          }
+        }
+      },
+      "best_high_conf_accuracy_pct": 68.0,
+      "trend_verdict": "PASS"
+    },
+    {
+      "name": "1d/30d",
+      "bars": 2130,
+      "forward_bars": 30,
+      "range_max_dev_pct": 15.0,
+      "samples": 1564,
+      "baseline_bounded_pct": 43.9,
+      "range_accuracy_pct": 39.8,
+      "range_lift_vs_baseline": -4.1,
+      "range_verdict": "FAIL",
+      "buckets": [
+        {
+          "range": "50-59",
+          "n": 789,
+          "accuracy_pct": 43.5
+        },
+        {
+          "range": "60-69",
+          "n": 480,
+          "accuracy_pct": 48.8
+        },
+        {
+          "range": "70-74",
+          "n": 132,
+          "accuracy_pct": 53.0
+        },
+        {
+          "range": "75-79",
+          "n": 128,
+          "accuracy_pct": 63.3
+        },
+        {
+          "range": "80-100",
+          "n": 35,
+          "accuracy_pct": 60.0
+        }
+      ],
+      "per_regime": {
+        "uptrend": {
+          "all": {
+            "n": 550,
+            "accuracy_pct": 52.4
+          },
+          "conf_ge_70": {
+            "n": 160,
+            "accuracy_pct": 65.0
+          }
+        },
+        "downtrend": {
+          "all": {
+            "n": 554,
+            "accuracy_pct": 50.2
+          },
+          "conf_ge_70": {
+            "n": 123,
+            "accuracy_pct": 49.6
+          }
+        },
+        "range": {
+          "all": {
+            "n": 460,
+            "accuracy_pct": 39.8
+          },
+          "conf_ge_70": {
+            "n": 12,
+            "accuracy_pct": 58.3
+          }
+        }
+      },
+      "best_high_conf_accuracy_pct": 65.0,
+      "trend_verdict": "PASS"
+    }
+  ],
+  "trend_passed": 3,
+  "range_passed": 1,
+  "overall_verdict": "PASS"
+}
