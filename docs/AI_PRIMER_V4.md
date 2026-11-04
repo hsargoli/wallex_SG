@@ -707,3 +707,30 @@ RSI/ATR/EMA/MACD + long-only + bear market + cost 0.65٪ ساخته شد.
 
 **مکمل AP-60:** AP-60 = timeout. AP-61 = kill. هر دو، «شاهد در توقف».
 
+
+
+## AP-63 — قبل از Investigate لاگ، `systemctl cat` بزن
+
+**داستان:** در Investigate SarvRouter (2026-11-04)، ۴ Investigate صرف کردیم تا بفهمیم scheduler متوقف است یا نه — چون فرض کردیم لاگ‌ها در journald هستند. `journalctl -u wallex-backend` خالی بود. بعد فهمیدیم `StandardOutput=append:/var/log/wallex-backend.log` است — لاگ‌ها در فایل، نه journald.
+
+**درس:** قبل از هر Investigate لاگ، اول `systemctl cat <service>` بزن:
+- `StandardOutput=journal` → `journalctl`
+- `StandardOutput=append:/path` → `tail /path`
+- `StandardOutput=null` → لاگ خاموش (P0 bug)
+- `StandardOutput=tty` → خروجی به terminal (production = دور ریخته می‌شود)
+
+**قاعده‌ی عملی:** `systemctl cat <service> | grep StandardOutput` = اولین قدم در هر Investigate لاگ.
+
+---
+
+## AP-64 — مقایسه timestamp: همیشه `date -u`
+
+**داستان:** در Investigate SarvRouter (2026-11-03)، `mtime state: 2026-11-03 22:59 UTC` را با `date` محلی (timezone +03:30) مقایسه کردم و «۴ ساعت پیش» حساب کردم — اشتباه بود. واقعیت: ۵ دقیقه پیش.
+
+**درس:** در مقایسه timestampها:
+- همیشه `date -u` (UTC) بزن
+- یا هر دو را به یک timezone تبدیل کن
+- **❌ هرگز mtime (UTC) را با `date` (local) مقایسه نکن**
+
+**قاعده‌ی عملی:** `stat -c '%y' file` (UTC) + `date -u` — همیشه با هم.
+
