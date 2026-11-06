@@ -156,66 +156,75 @@ def _load_candles() -> list[Candle]:
 @router.post("/backtest")
 async def sarvrouter_backtest(body: SarvBacktestInput) -> dict:
     """Run backtest with user's config, compare to default."""
-    candles = _load_candles()
-    if not candles:
-        raise HTTPException(503, detail="Historical data missing")
+    try:
+        candles = _load_candles()
+        if not candles:
+            raise HTTPException(503, detail="Historical data missing")
+        # Limit to last 10,000 candles (approx 1 year) to prevent proxy timeout
+        candles = candles[-10000:]
+    except Exception as e:
+        raise HTTPException(500, detail=f"Data load failed: {str(e)}")
 
-    # 1. Run default
-    def run_cfg(cfg: SarvRouterConfig) -> dict:
-        import tempfile
-        tmp = Path(tempfile.mkdtemp())
-        router = SarvRouter(
-            config=cfg, start_bot=lambda s: None, stop_bot=lambda s: None,
-            stop_all=lambda: None, store=SarvStore(base_dir=tmp), audit=AuditTrail(base_dir=tmp)
-        )
-        res = run_sarv_backtest(router, "builder", candles)
+    try:
+        # 1. Run default
+        def run_cfg(cfg: SarvRouterConfig) -> dict:
+            import tempfile
+            tmp = Path(tempfile.mkdtemp())
+            router = SarvRouter(
+                config=cfg, start_bot=lambda s: None, stop_bot=lambda s: None,
+                stop_all=lambda: None, store=SarvStore(base_dir=tmp), audit=AuditTrail(base_dir=tmp)
+            )
+            res = run_sarv_backtest(router, "builder", candles)
+            
+            # Compute accuracy
+            correct, total = 0, 0
+            for i, regime in enumerate(res["regime_sequence"]):
+                if regime in ("uptrend", "downtrend", "range") and i + 24 < len(candles):
+                    fwd_ret = (float(candles[i+24].close) / float(candles[i].close) - 1) * 100
+                    total += 1
+                    if regime == "uptrend" and fwd_ret > 0: correct += 1
+                    elif regime == "downtrend" and fwd_ret < 0: correct += 1
+                    elif regime == "range" and abs(fwd_ret) < 1.0: correct += 1
+                    
+            acc = (correct / total * 100) if total > 0 else 0.0
+            return {
+                "switches": res["switches"],
+                "accuracy": round(acc, 1),
+                "total_signals": total,
+                "correct": correct,
+            }
+
+        default_res = run_cfg(SarvRouterConfig())
         
-        # Compute accuracy
-        correct, total = 0, 0
-        for i, regime in enumerate(res["regime_sequence"]):
-            if regime in ("uptrend", "downtrend", "range") and i + 24 < len(candles):
-                fwd_ret = (float(candles[i+24].close) / float(candles[i].close) - 1) * 100
-                total += 1
-                if regime == "uptrend" and fwd_ret > 0: correct += 1
-                elif regime == "downtrend" and fwd_ret < 0: correct += 1
-                elif regime == "range" and abs(fwd_ret) < 1.0: correct += 1
-                
-        acc = (correct / total * 100) if total > 0 else 0.0
+        # 2. Run custom
+        custom_cfg = SarvRouterConfig(
+            stability_window=body.stability_window,
+            cooldown_candles=body.cooldown_candles,
+            uptrend_adx_min=body.uptrend_adx_min,
+            downtrend_adx_min=body.downtrend_adx_min,
+            cash_reserve_pct=body.cash_reserve_pct,
+            daily_loss_limit_pct=body.daily_loss_limit_pct,
+        )
+        custom_res = run_cfg(custom_cfg)
+
+        # 3. Compare
+        delta = round(custom_res["accuracy"] - default_res["accuracy"], 1)
+        switch_delta = round((custom_res["switches"] / max(default_res["switches"], 1) - 1) * 100, 1)
+        
+        warnings = []
+        if abs(switch_delta) > 30:
+            warnings.append(f"⚠️ تعداد switchها {switch_delta:+.1f}% تغییر کرد.")
+        
         return {
-            "switches": res["switches"],
-            "accuracy": round(acc, 1),
-            "total_signals": total,
-            "correct": correct,
+            "default": default_res,
+            "custom": custom_res,
+            "delta": {
+                "accuracy": delta,
+                "switches_pct": switch_delta,
+            },
+            "warnings": warnings,
         }
-
-    default_res = run_cfg(SarvRouterConfig())
-    
-    # 2. Run custom
-    custom_cfg = SarvRouterConfig(
-        stability_window=body.stability_window,
-        cooldown_candles=body.cooldown_candles,
-        uptrend_adx_min=body.uptrend_adx_min,
-        downtrend_adx_min=body.downtrend_adx_min,
-        cash_reserve_pct=body.cash_reserve_pct,
-        daily_loss_limit_pct=body.daily_loss_limit_pct,
-    )
-    custom_res = run_cfg(custom_cfg)
-
-    # 3. Compare
-    delta = round(custom_res["accuracy"] - default_res["accuracy"], 1)
-    switch_delta = round((custom_res["switches"] / max(default_res["switches"], 1) - 1) * 100, 1)
-    
-    warnings = []
-    if abs(switch_delta) > 30:
-        warnings.append(f"⚠️ تعداد switchها {switch_delta:+.1f}% تغییر کرد.")
-    
-    return {
-        "default": default_res,
-        "custom": custom_res,
-        "delta": {
-            "accuracy": delta,
-            "switches_pct": switch_delta,
-        },
-        "warnings": warnings,
-    }
-
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, detail=str(e))

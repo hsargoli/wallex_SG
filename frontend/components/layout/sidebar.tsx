@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
       { href: "/research/tsfresh", label: "تحلیل تشابه BTC", icon: FlaskConical, desc: "شباهت تاریخی الگوها" },
       { href: "/research/regime-accuracy", label: "دقت تشخیص رژیم", icon: Activity, desc: "دقت SarvRouter" },
       { href: "/research/sarvrouter-timeline", label: "تاریخچه تصمیمات", icon: ClipboardList, desc: "تاریخچه ۲,۲۳۷ تصمیم" },
+      { href: "/research/sarvrouter-builder", label: "آزمایشگاه SarvRouter", icon: Settings, desc: "تغییر پارامترها و شبیه‌سازی" },
     ],
   },
 ];
