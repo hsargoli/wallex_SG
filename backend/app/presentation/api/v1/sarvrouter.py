@@ -161,7 +161,7 @@ async def sarvrouter_backtest(body: SarvBacktestInput) -> dict:
         if not candles:
             raise HTTPException(503, detail="Historical data missing")
         # Limit to last 10,000 candles (approx 1 year) to prevent proxy timeout
-        candles = candles[-10000:]
+        candles = candles[-3000:]  # 3000 candles (~4 months) — faster backtest
     except Exception as e:
         raise HTTPException(500, detail=f"Data load failed: {str(e)}")
 
