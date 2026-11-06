@@ -1,0 +1,65 @@
+{
+  "as_of": "2026-11-07T01:04:51.401383",
+  "results": [
+    {
+      "name": "baseline (threshold=0, votes=5/5)",
+      "threshold": 0.0,
+      "votes": 5,
+      "trades": 7041,
+      "win_rate": 44.4,
+      "pf": 0.56,
+      "total_return": -100.0,
+      "max_dd": -100.0,
+      "tp": 2748,
+      "sl": 3000,
+      "timeout": 1293,
+      "rejections": 43732,
+      "candidates": 50773
+    },
+    {
+      "name": "strict (threshold=0.65, votes=5/5)",
+      "threshold": 0.65,
+      "votes": 5,
+      "trades": 3779,
+      "win_rate": 46.3,
+      "pf": 0.58,
+      "total_return": -100.0,
+      "max_dd": -100.0,
+      "tp": 1598,
+      "sl": 1702,
+      "timeout": 479,
+      "rejections": 46994,
+      "candidates": 50773
+    },
+    {
+      "name": "balanced (threshold=0.65, votes=4/5)",
+      "threshold": 0.65,
+      "votes": 4,
+      "trades": 9091,
+      "win_rate": 44.8,
+      "pf": 0.56,
+      "total_return": -100.0,
+      "max_dd": -100.0,
+      "tp": 3669,
+      "sl": 4029,
+      "timeout": 1393,
+      "rejections": 41682,
+      "candidates": 50773
+    },
+    {
+      "name": "aggressive (threshold=1.5, votes=4/5)",
+      "threshold": 1.5,
+      "votes": 4,
+      "trades": 5179,
+      "win_rate": 46.3,
+      "pf": 0.59,
+      "total_return": -100.0,
+      "max_dd": -100.0,
+      "tp": 2222,
+      "sl": 2305,
+      "timeout": 652,
+      "rejections": 45594,
+      "candidates": 50773
+    }
+  ]
+}
