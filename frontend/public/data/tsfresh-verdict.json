@@ -1,0 +1,97 @@
+{
+  "as_of": "2026-11-07",
+  "adr": "ADR-0036",
+  "verdict": "no_edge",
+  "verdict_label_fa": "فاقد edge — فقط تحلیل",
+  "verdict_desc_fa": "۶ تست پیش‌ثبت‌شده، همه FAIL. سیگنال تشابه تاریخی از random walk قابل تشخیص نیست.",
+  "params": {
+    "TP_pct": 4.0,
+    "SL_pct": 2.0,
+    "Fee_pct": 0.65,
+    "break_even_wr_pct": 44.2,
+    "random_walk_wr_pct": 33.3
+  },
+  "key_insight_fa": "میانگین WR مشاهده‌شده (~33٪) تقریباً برابر با WR مورد انتظار در random walk (SL/(TP+SL) = 2/6 = 33.3٪) است. اگر سیگنال edge داشت (هر جهتی — long، short، long-red)، WR باید > 44.2٪ می‌رفت. نرفت.",
+  "tests": [
+    {
+      "id": "baseline",
+      "direction_code": "long",
+      "direction_fa": "خرید",
+      "n_matches": 5,
+      "horizon_h": 24,
+      "trades": 2117,
+      "win_rate_pct": 33.0,
+      "profit_factor": 0.58,
+      "max_dd_pct": -100.0,
+      "verdict": "fail"
+    },
+    {
+      "id": "H2",
+      "direction_code": "long",
+      "direction_fa": "خرید",
+      "n_matches": 10,
+      "horizon_h": 24,
+      "trades": 466,
+      "win_rate_pct": 26.0,
+      "profit_factor": 0.42,
+      "max_dd_pct": -99.6,
+      "verdict": "fail"
+    },
+    {
+      "id": "H4",
+      "direction_code": "long",
+      "direction_fa": "خرید",
+      "n_matches": 5,
+      "horizon_h": 72,
+      "trades": 4116,
+      "win_rate_pct": 33.1,
+      "profit_factor": 0.58,
+      "max_dd_pct": -100.0,
+      "verdict": "fail"
+    },
+    {
+      "id": "H3",
+      "direction_code": "long",
+      "direction_fa": "خرید",
+      "n_matches": 10,
+      "horizon_h": 72,
+      "trades": 1251,
+      "win_rate_pct": 31.6,
+      "profit_factor": 0.55,
+      "max_dd_pct": -100.0,
+      "verdict": "fail"
+    },
+    {
+      "id": "H5",
+      "direction_code": "short",
+      "direction_fa": "فروش (short)",
+      "n_matches": 10,
+      "horizon_h": 24,
+      "trades": 679,
+      "win_rate_pct": 36.5,
+      "profit_factor": 0.68,
+      "max_dd_pct": -97.9,
+      "verdict": "fail"
+    },
+    {
+      "id": "H6",
+      "direction_code": "long-red",
+      "direction_fa": "خرید (long-red)",
+      "n_matches": 10,
+      "horizon_h": 24,
+      "trades": 548,
+      "win_rate_pct": 34.3,
+      "profit_factor": 0.63,
+      "max_dd_pct": -97.3,
+      "verdict": "fail"
+    }
+  ],
+  "rejected_hypotheses_fa": [
+    "long-only با N=5 edge دارد (WR 33.0٪ < 44.2٪)",
+    "سخت‌گیرانه‌تر (N=10) بهتر می‌شود (بدتر شد: 26-31٪)",
+    "افق 72h هم‌راستا بهتر می‌شود (بدون تغییر: PF 0.58→0.58)",
+    "سیگنال contrarian است (short WR 36.5٪، نزدیک random)",
+    "آینه‌ی contrarian (long-red) edge دارد (WR 34.3٪)",
+    "ترکیب N و horizon اثر دارد (همه ~33٪)"
+  ]
+}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Globe, LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen, Brain, TrendingDown, Settings } from "lucide-react";
+import { Globe, LayoutDashboard, Wallet, TrendingUp, Calculator, Activity, PieChart, Zap, Radar, Bot, Play, ClipboardList, Menu, X, ChevronLeft, ChevronRight, FlaskConical, SquarePen, Brain, TrendingDown, BarChart3, Settings } from "lucide-react";
 import { UserBadge } from "./user-badge";
 import { cn } from "@/lib/utils";
 import { useHealth } from "@/lib/queries";
@@ -72,6 +72,7 @@ const navGroups: NavGroup[] = [
       { href: "/research/regime-accuracy", label: "دقت تشخیص رژیم", icon: Activity, desc: "دقت SarvRouter" },
       { href: "/research/sarvrouter-timeline", label: "تاریخچه تصمیمات", icon: ClipboardList, desc: "تاریخچه ۲,۲۳۷ تصمیم" },
       { href: "/research/sarvrouter-builder", label: "آزمایشگاه SarvRouter", icon: Settings, desc: "تغییر پارامترها و شبیه‌سازی" },
+      { href: "/research/tsfresh-backtest", label: "نتیجه بک‌تست tsfresh", icon: BarChart3, desc: "ADR-0036: no edge" },
     ],
   },
 ];
