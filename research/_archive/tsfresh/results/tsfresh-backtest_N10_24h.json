@@ -1,0 +1,324 @@
+{
+  "as_of": "2026-11-07T09:39:15.231862",
+  "params": {
+    "window": 24,
+    "N": 5,
+    "TP": 4.0,
+    "SL": 2.0,
+    "MaxHold": 72,
+    "Fee": 0.65
+  },
+  "stats": {
+    "trades": 4116,
+    "win_rate": 33.1,
+    "profit_factor": 0.58,
+    "total_return": -100.0,
+    "max_dd": -100.0
+  },
+  "trades": [
+    {
+      "entry": 48728,
+      "exit": 48739,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 48730,
+      "exit": 48740,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 48734,
+      "exit": 48741,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 48845,
+      "exit": 48916,
+      "ret": 0.35757393363981593,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 48848,
+      "exit": 48919,
+      "ret": 0.4728114691702595,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 48913,
+      "exit": 48984,
+      "ret": 0.11799361003234698,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 48916,
+      "exit": 48987,
+      "ret": 0.3459478561331947,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 48919,
+      "exit": 48990,
+      "ret": 1.2926376409056535,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49031,
+      "exit": 49092,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49164,
+      "exit": 49235,
+      "ret": 1.398259014969811,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49238,
+      "exit": 49284,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49272,
+      "exit": 49284,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49288,
+      "exit": 49301,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49289,
+      "exit": 49301,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49290,
+      "exit": 49301,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49294,
+      "exit": 49303,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49295,
+      "exit": 49308,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49300,
+      "exit": 49308,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49302,
+      "exit": 49318,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49303,
+      "exit": 49318,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49304,
+      "exit": 49318,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49305,
+      "exit": 49318,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49326,
+      "exit": 49326,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49358,
+      "exit": 49370,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49425,
+      "exit": 49496,
+      "ret": -0.03555061876572785,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49448,
+      "exit": 49501,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49566,
+      "exit": 49599,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49567,
+      "exit": 49599,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49630,
+      "exit": 49643,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 49680,
+      "exit": 49751,
+      "ret": -1.4531762082487125,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49817,
+      "exit": 49888,
+      "ret": -0.49037237546563583,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49831,
+      "exit": 49902,
+      "ret": 0.77723449547002,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 49871,
+      "exit": 49931,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49897,
+      "exit": 49931,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49902,
+      "exit": 49930,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 49956,
+      "exit": 50002,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 50073,
+      "exit": 50142,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 50074,
+      "exit": 50125,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 50279,
+      "exit": 50329,
+      "ret": 3.35,
+      "reason": "TP"
+    },
+    {
+      "entry": 50308,
+      "exit": 50379,
+      "ret": 0.4321140149153585,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50327,
+      "exit": 50398,
+      "ret": 1.358373572017419,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50344,
+      "exit": 50415,
+      "ret": 0.9962104333851091,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50345,
+      "exit": 50416,
+      "ret": 1.0207766374019163,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50457,
+      "exit": 50481,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 50496,
+      "exit": 50567,
+      "ret": 1.4478427394310773,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50505,
+      "exit": 50576,
+      "ret": -0.4700772113577495,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50609,
+      "exit": 50628,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 50662,
+      "exit": 50729,
+      "ret": -2.65,
+      "reason": "SL"
+    },
+    {
+      "entry": 50717,
+      "exit": 50788,
+      "ret": 1.152913132701134,
+      "reason": "Timeout"
+    },
+    {
+      "entry": 50851,
+      "exit": 50868,
+      "ret": -2.65,
+      "reason": "SL"
+    }
+  ],
+  "rejections": {
+    "not_green": 46657,
+    "in_position": 0
+  }
+}
