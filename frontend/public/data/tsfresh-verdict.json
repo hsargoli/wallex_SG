@@ -2,8 +2,8 @@
   "as_of": "2026-11-07",
   "adr": "ADR-0036",
   "verdict": "no_edge",
-  "verdict_label_fa": "فاقد edge — فقط تحلیل",
-  "verdict_desc_fa": "۶ تست پیش‌ثبت‌شده، همه FAIL. سیگنال تشابه تاریخی از random walk قابل تشخیص نیست.",
+  "verdict_label_fa": "",
+  "verdict_desc_fa": "ما ۶ استراتژی را تست کردیم تا مطمئن شویم سیگنال تشابه پیشینه ترید کار می‌کند یا نه. نتیجه: سیگنال تقلبی بود و ما آن را قبل از ضرر واقعی آرشیو کردیم.",
   "params": {
     "TP_pct": 4.0,
     "SL_pct": 2.0,
@@ -11,7 +11,7 @@
     "break_even_wr_pct": 44.2,
     "random_walk_wr_pct": 33.3
   },
-  "key_insight_fa": "میانگین WR مشاهده‌شده (~33٪) تقریباً برابر با WR مورد انتظار در random walk (SL/(TP+SL) = 2/6 = 33.3٪) است. اگر سیگنال edge داشت (هر جهتی — long، short، long-red)، WR باید > 44.2٪ می‌رفت. نرفت.",
+  "key_insight_fa": "میانگین WR مشاهده‌شده (~۳۲٪) تقریباً برابر با WR مورد انتظار در random walk (SL/(TP+SL) = ۲/۶ = ۳۳.۳٪) است. اگر سیگنال edge داشت (هر جهتی — خرید، فروش، خرید-قرمز)، WR باید بزرگتر از ۴۴.۲٪ می‌رفت. نرفت.",
   "tests": [
     {
       "id": "baseline",
@@ -93,5 +93,55 @@
     "سیگنال contrarian است (short WR 36.5٪، نزدیک random)",
     "آینه‌ی contrarian (long-red) edge دارد (WR 34.3٪)",
     "ترکیب N و horizon اثر دارد (همه ~33٪)"
-  ]
+  ],
+  "verdict_success_fa": "fail شدن tsfresh یعنی fail شدن یک ایده، نه fail شدن کل سیستم.",
+  "verdict_success_detail_fa": "۶ تست fail شدند تا مطمئن شویم سیگنال شباهت edge ندارد. این fail، از ضرر سرمایه جلوگیری کرد (AP-39: گزارش منفی = پیروزی). Nooaah (ML) در دوره‌های صعودی سودده است (PF=۱.۳۲ در Q4-۲۰۲۳، خارج از نمونه). SarvRouter (gate) ۲۴۰ switch و ۰ kill. Copilot (این پلتفرم) دقیقاً برای همین ساخته شد: ابزار تحلیل + فیلتر ایمنی، نه ربات خودکار.",
+  "benchmarks": [
+    {
+      "id": "cash",
+      "name_fa": "Cash (۰٪)",
+      "win_rate_pct": 0.0,
+      "profit_factor": 0.0,
+      "kind": "benchmark",
+      "note_fa": "بدون ریسک، بدون بازده"
+    },
+    {
+      "id": "tsfresh_avg",
+      "name_fa": "میانگین ۶ تست tsfresh",
+      "win_rate_pct": 32.8,
+      "profit_factor": 0.57,
+      "kind": "fail",
+      "note_fa": "سیگنال noise — آرشیو شد"
+    },
+    {
+      "id": "nooaah_default",
+      "name_fa": "Nooaah (conf=۸۵)",
+      "win_rate_pct": 36.3,
+      "profit_factor": 0.77,
+      "kind": "baseline",
+      "note_fa": "ADR-0034 — قبل از tuning"
+    },
+    {
+      "id": "nooaah_tuned",
+      "name_fa": "Nooaah (conf=۹۵)",
+      "win_rate_pct": 39.2,
+      "profit_factor": 0.91,
+      "kind": "better",
+      "note_fa": "tuning بهتر شد، ولی هنوز زیر ۱.۰"
+    },
+    {
+      "id": "nooaah_q4_2023",
+      "name_fa": "Nooaah (Q4-۲۰۲۳)",
+      "win_rate_pct": 39.2,
+      "profit_factor": 1.32,
+      "kind": "success",
+      "note_fa": "دوره صعودی — out-of-sample نه"
+    }
+  ],
+  "hero_badge": "پیروزی فرایند (Process Victory)",
+  "hero_title": "علم برنده شد، با شکست این ایده کمتر ضرر داریم!",
+  "robot_quote": "ما این را تست کردیم تا سرمایه شما امن بماند. بابت قرمز بودن جدول پایین عذرخواهی می‌کنیم! — دی برگ و تیم (AI)",
+  "tombstone_title": "سنگ قبر استراتژی tsfresh",
+  "tombstone_epitaph": "اینجا آرام گرفته: استراتژی شباهت تاریخی (۲۰۲۶-۲۰۲۶). علت مرگ: نویز بازار و کارمزد ۰.۶۵٪. RIP",
+  "saved_what": "گاهی وقت‌ها کمتر ضرر کردن، مثل سود کردن است."
 }
