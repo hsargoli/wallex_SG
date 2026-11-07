@@ -92,6 +92,10 @@ class NooaahState:
     killed: bool = False
     killed_at: int = 0
 
+    # --- HumanSignal (ADR-0037, mode 1 = safety filter) ---
+    human_direction: str = "neutral"   # "bearish" | "bullish" | "neutral"
+    human_expires_at: int = 0          # unix ts; 0 = never expires
+
     # --- آخرین اجرا ---
     last_run: int = 0
 
@@ -136,6 +140,8 @@ class NooaahState:
             "daily_loss_hit": self.daily_loss_hit,
             "killed": self.killed,
             "killed_at": self.killed_at,
+            "human_direction": self.human_direction,
+            "human_expires_at": self.human_expires_at,
             "last_run": self.last_run,
             # ADR-0011
             "paper_started_at": self.paper_started_at,
@@ -195,6 +201,8 @@ class NooaahState:
             daily_loss_hit=raw.get("daily_loss_hit", False),
             killed=raw.get("killed", False),
             killed_at=raw.get("killed_at", 0),
+            human_direction=raw.get("human_direction", "neutral"),
+            human_expires_at=raw.get("human_expires_at", 0),
             last_run=raw.get("last_run", 0),
             # ADR-0011
             paper_started_at=raw.get("paper_started_at", 0),
@@ -257,6 +265,18 @@ class NooaahState:
         """شروع cooldown ۶ ساعته (بعد از daily loss)."""
         self.cooldown_until = int(time.time()) + hours * 3600
         self.daily_loss_hit = True  # برای گزارش
+
+    # ============================================================
+    # HumanSignal (ADR-0037 — mode 1: safety filter, not ML replacement)
+    # ============================================================
+    @property
+    def human_blocks_entry(self) -> bool:
+        """True فقط اگر human_direction == 'bearish' و signal منقضی نشده."""
+        if self.human_direction != "bearish":
+            return False
+        if self.human_expires_at == 0:
+            return True
+        return int(time.time()) < self.human_expires_at
 
     # ============================================================
     # Live readiness (ADR-0011)
