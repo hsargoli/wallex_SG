@@ -236,6 +236,56 @@ async def stop_live(body: StopIn, exchange: ExchangeDep) -> StopResultOut:
     return StopResultOut(**result)
 
 
+# ---------- HumanSignal (ADR-0037, mode 1: safety filter) ----------
+
+from typing import Literal
+from pydantic import Field
+
+
+class HumanSignalIn(BaseModel):
+    direction: Literal["bearish", "bullish", "neutral"]
+    ttl_days: int = Field(10, ge=1, le=90)
+
+
+class HumanSignalOut(BaseModel):
+    direction: str
+    expires_at: int
+    is_expired: bool
+    blocks_entry: bool
+
+
+@router.get("/human-signal", response_model=HumanSignalOut)
+async def get_human_signal() -> HumanSignalOut:
+    """وضعیت سیگنال انسانی فعلی Nooaah."""
+    import time as _time
+    state = NooaahState.load()
+    is_expired = (
+        state.human_expires_at > 0
+        and int(_time.time()) >= state.human_expires_at
+    )
+    return HumanSignalOut(
+        direction=state.human_direction,
+        expires_at=state.human_expires_at,
+        is_expired=is_expired,
+        blocks_entry=state.human_blocks_entry,
+    )
+
+
+@router.post("/human-signal", response_model=HumanSignalOut)
+async def set_human_signal(body: HumanSignalIn) -> HumanSignalOut:
+    """تنظیم سیگنال انسانی (ADR-0037).
+
+    mode 1: safety filter — bearish فقط ورود جدید را veto می‌کند.
+    ML همچنان تصمیم‌گیرنده‌ی اصلی است.
+    """
+    import time as _time
+    state = NooaahState.load()
+    state.human_direction = body.direction
+    state.human_expires_at = int(_time.time()) + body.ttl_days * 86400
+    state.save()
+    return await get_human_signal()
+
+
 @router.post("/kill", response_model=NooaahConfigOut)
 async def kill_nooaah() -> NooaahConfigOut:
     """kill-switch: قفل فوری. نیاز به /resume برای ادامه."""

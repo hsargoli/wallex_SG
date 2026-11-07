@@ -116,6 +116,14 @@ class NooaahRunner:
                 closed=closed,
             )
 
+        # ADR-0037: HumanSignal veto (mode 1 — safety filter, ML stays in charge)
+        if self._state.human_blocks_entry:
+            return self._log_and_summarize(
+                t0, status="blocked_by_human", action="blocked_by_human",
+                reason_fa="سیگنال انسانی: bearish — ورود جدید ممنوع",
+                closed=closed,
+            )
+
         # ۲. اگه جا هست → proposal جدید
         opened = None
         symbols = []
