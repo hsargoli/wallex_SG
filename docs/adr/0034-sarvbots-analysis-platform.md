@@ -116,3 +116,22 @@ SarvRouter دقیقاً همین کرد: ۰ kill، ۲۴۰ switch منظم، cash
 ## تاریخچه
 
 - 2026-11-04: نوشته شد (پس از Investigate + verdict Nooaah)
+
+
+---
+
+## Addendum (2026-11-08) — bear_hunter Legacy Cleanup
+
+پس از ADR-0038، وضعیت به‌روز شده:
+
+- **`bear_hunter` آرشیو شده** (`_archive/bear_hunter/`) — از ۲۰۲۶-۱۰-۱۸
+- **صفحه `/bear-hunter` حذف شد** — ۲۰۲۶-۱۱-۰۸ (ADR-0038 phase 2)
+- **`live_bot.py` + `specialized_backtest.py` حذف شدند** — ۲۰۲۶-۱۱-۰۸ (ADR-0038 phase 1)
+- **`/backtest` بدون بخش specialized** — فقط main backtest (سالم، endpointهای `/v1/backtest/*`)
+- **Nooaah تنها ربات فعال و قابل استفاده** است (`/nooaah/*`)
+
+این Addendum، تناقض Context ADR-0034 («Nooaah تنها ربات ML-based و سودده») با واقعیت قبلی (bear_hunter در sidebar فعال) را رفع می‌کند.
+
+**شاهدان:** ADR-0038، شاهد ترافیک nginx (۰ API call)، DB check (۰ user با trade_token)، git log (۲۰ روز بدون کامیت bear_hunter).
+
+**Refs:** ADR-0038 (bear_hunter legacy cleanup).
