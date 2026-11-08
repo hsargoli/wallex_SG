@@ -43,7 +43,6 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/analysis", label: "شخصیت ارز", icon: Brain, desc: "تحلیل رژیم و رفتار هر نماد" },
       { href: "/nooaah", label: "ربات نوح", icon: Bot, desc: "ربات انتخاب بهترین نماد + بک‌تست" },
-      { href: "/bear-hunter", label: "شکارچی خرس", icon: TrendingDown, desc: "ربات short در بازار نزولی" },
     ],
   },
   {

@@ -32,7 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     // در صفحه تنظیمات یا شکارچی خرس، نیازی به ریدایرکت نیست
-    if (pathname === "/settings/wallex" || pathname === "/bear-hunter") return;
+    if (pathname === "/settings/wallex") return;
 
   }, [mounted, pathname, data, isLoading, router]);
 
@@ -45,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!mounted) return spinner;
   if (!canAccessAppPath(pathname)) return spinner;
 
-  if (pathname.startsWith("/settings") || pathname === "/bear-hunter") {
+  if (pathname.startsWith("/settings")) {
     return <AppShell>{children}<SarvFooter /></AppShell>;
   }
 
