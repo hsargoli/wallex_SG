@@ -322,7 +322,7 @@ export default function SarvRouterPage() {
                         <span className="font-bold text-foreground">{REGIME_FA[simResult.stats.final_regime]?.label || simResult.stats.final_regime || "نامشخص"}</span>
                       </div>
                       <div className="bg-background/50 p-2 rounded">
-                        <span className="text-[10px] text-muted-foreground block">ربات‌های فعال در پایان:</span>
+                        <span className="text-[10px] text-muted-foreground block">ربات پیشنهادی در این بازه:</span>
                         <span className="font-bold text-foreground">{simResult.stats.final_active_bots?.join("، ") || "نقد (Cash)"}</span>
                       </div>
                       <div className="bg-background/50 p-2 rounded">
