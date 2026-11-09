@@ -127,7 +127,12 @@ export default function SarvRouterPage() {
         <Link href="/bots" className="text-muted-foreground hover:text-foreground">
           <ArrowRight className="h-4 w-4 inline" />
         </Link>
-        <h1 className="text-2xl font-bold">SarvRouter</h1>
+        <div>
+          <h1 className="text-2xl font-bold">SarvRouter</h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            دستیار هوشمند تشخیص روند بازار. این سیستم به شما پیشنهاد می‌دهد، اما تصمیم نهایی و تایید معامله همیشه با خود شماست.
+          </p>
+        </div>
         <Link
           href="/bots/sarv_router"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-violet-400"
@@ -151,6 +156,7 @@ export default function SarvRouterPage() {
           <CardTitle className="flex items-center gap-2 text-base">
             <Activity className="h-4 w-4" /> وضعیت رژیم و Gate
           </CardTitle>
+          <p className="text-[11px] text-muted-foreground">ربات به طور مداوم کندل‌ها را بررسی می‌کند تا بفهمد بازار در حالت صعودی، نزولی یا رنج است.</p>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="رژیم" value={regime.label} />
@@ -177,6 +183,7 @@ export default function SarvRouterPage() {
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="h-4 w-4" /> آخرین تصمیم Copilot
           </CardTitle>
+          <p className="text-[11px] text-muted-foreground">دلیل پیشنهاد ربات و میزان اطمینان آن در این بخش قابل مشاهده است.</p>
         </CardHeader>
         <CardContent>
           {!d.last_decision ? (
@@ -338,6 +345,7 @@ export default function SarvRouterPage() {
           <CardTitle className="flex items-center gap-2 text-base">
             <BotIcon className="h-4 w-4" /> ربات‌های فعال
           </CardTitle>
+          <p className="text-[11px] text-muted-foreground">ربات‌هایی که برای مدیریت سرمایه شما در این روند پیشنهاد شده‌اند.</p>
         </CardHeader>
         <CardContent>
           {d.active_bots.length === 0 ? (
@@ -382,6 +390,7 @@ export default function SarvRouterPage() {
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldAlert className="h-4 w-4" /> کنترل اضطراری
           </CardTitle>
+          <p className="text-[11px] text-muted-foreground">در صورت نیاز، با این دکمه تمام پیشنهادات ورود جدید را فوراً متوقف کنید.</p>
         </CardHeader>
         <CardContent className="space-y-3">
           {!confirmKill && !isKilled && (
