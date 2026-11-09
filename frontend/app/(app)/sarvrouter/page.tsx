@@ -58,7 +58,7 @@ export default function SarvRouterPage() {
   
   // Playground State
   const [simTf, setSimTf] = useState("1h");
-  const [simDate, setSimDate] = useState("2026-11-01");
+  const [simDate, setSimDate] = useState("2026-10-01");
   const [simResult, setSimResult] = useState<any>(null);
 
   const handleSimulate = () => {
@@ -279,15 +279,18 @@ export default function SarvRouterPage() {
 
               <div>
                 <label className="text-xs font-medium text-foreground mb-2 flex items-center gap-1">
-                  <Calendar className="h-3 w-3" /> انتخاب تاریخ:
+                  <Calendar className="h-3 w-3" /> انتخاب بازه زمانی (تاریخ پایان تحلیل):
                 </label>
-                <Input 
-                  type="date" 
+                <select 
                   value={simDate} 
                   onChange={(e) => setSimDate(e.target.value)}
-                  className="text-left font-mono"
-                  dir="ltr"
-                />
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="2026-10-01">ابتدای مهر ۱۴۰۵ (آخرین داده‌ها)</option>
+                  <option value="2026-07-01">ابتدای تیر ۱۴۰۵ (۳ ماه قبل)</option>
+                  <option value="2026-01-01">ابتدای دی ۱۴۰۴ (۹ ماه قبل)</option>
+                  <option value="2025-01-01">ابتدای سال ۲۰۲۵ (یک سال قبل)</option>
+                </select>
               </div>
             </div>
 
