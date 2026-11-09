@@ -66,6 +66,7 @@ async def get_status() -> dict:
         "kill_switch_manual": state.get("kill_switch_manual", False),
         "kill_switch_auto": state.get("kill_switch_auto", False),
         "gate": gate,
+        "last_decision": state.get("last_decision"),
     }
 
 

@@ -22,6 +22,7 @@ class SarvState:
     daily_reset_day: str = ""
     kill_switch_manual: bool = False
     kill_switch_auto: bool = False
+    last_decision: dict | None = None
 
 
 class SarvStore:

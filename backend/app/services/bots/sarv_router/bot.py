@@ -75,7 +75,7 @@ class SarvRouter:
             self._safe_stop_all()
             self.lifecycle.active_bots = []
             kill_reason = "manual" if state.kill_switch_manual else "auto"
-            return self._decision(
+            decision = self._decision(
                 action="kill_switch_active",
                 why=f"kill_switch_{kill_reason}",
                 evidence={
@@ -85,6 +85,9 @@ class SarvRouter:
                     "path": "kill_switch",
                 },
             )
+            state.last_decision = decision
+            self.store.save(user_id, state)
+            return decision
 
         # 2) Daily loss limit
         if state.daily_pnl_pct <= -self.config.daily_loss_limit_pct:
@@ -103,7 +106,7 @@ class SarvRouter:
                 allocations={},
                 cash=state.total_capital,
             ))
-            return self._decision(
+            decision = self._decision(
                 action="daily_loss_kill",
                 why=f"daily_loss={state.daily_pnl_pct}",
                 evidence={
@@ -113,6 +116,9 @@ class SarvRouter:
                     "path": "daily_loss",
                 },
             )
+            state.last_decision = decision
+            self.store.save(user_id, state)
+            return decision
 
         # 3) Detect regime + lifecycle
         if getattr(self.config, "enable_multi_tf", False):
@@ -152,9 +158,11 @@ class SarvRouter:
             ))
 
         # Always persist (regime + any switch changes)
-        self.store.save(user_id, state)
-        return self._decision(
+        decision = self._decision(
             action=action.get("action", "unknown"),
             why=str(action.get("reason", action.get("action", ""))),
             evidence={**action, "path": "lifecycle", "regime": regime_str},
         )
+        state.last_decision = decision
+        self.store.save(user_id, state)
+        return decision

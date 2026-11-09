@@ -95,3 +95,51 @@ class TestDecisionReasonUniformShape:
         assert "evidence" in r
         assert r["evidence"]["path"] == "lifecycle"
         assert r["evidence"]["regime"] == "uptrend"
+
+
+class TestLastDecisionPersistence:
+    """Phase 1c (ADR-0040 Addendum 1.1): persist last_decision for API/UI."""
+
+    def test_sarv_state_has_last_decision_field(self):
+        from app.services.bots.sarv_router.store import SarvState
+        s = SarvState()
+        assert hasattr(s, "last_decision")
+        assert s.last_decision is None
+
+    def test_sarv_state_roundtrip_preserves_last_decision(self, tmp_path):
+        from app.services.bots.sarv_router.store import SarvState, SarvStore
+        store = SarvStore(base_dir=tmp_path)
+        s = SarvState()
+        s.last_decision = {"why": "test", "confidence": 0.9, "tick_id": "x"}
+        store.save("u1", s)
+        loaded = store.load("u1")
+        assert loaded.last_decision == {"why": "test", "confidence": 0.9, "tick_id": "x"}
+
+    def test_tick_sets_state_last_decision(self, tmp_path):
+        from decimal import Decimal
+        from app.domain.entities.candle import Candle
+        from app.services.bots.sarv_router.audit import AuditTrail
+        from app.services.bots.sarv_router.bot import SarvRouter
+        from app.services.bots.sarv_router.config import SarvRouterConfig
+        from app.services.bots.sarv_router.store import SarvStore
+
+        def _c(t, price):
+            p = Decimal(str(price))
+            return Candle(time=t, open=p, high=p+1, low=p-1, close=p, volume=Decimal("100"))
+
+        def _uptrend(n=300):
+            return [_c(i*3600, 100 + i*2) for i in range(n)]
+
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None,
+            stop_bot=lambda s: None,
+            stop_all=lambda: None,
+            store=SarvStore(base_dir=tmp_path),
+            audit=AuditTrail(base_dir=tmp_path),
+        )
+        router.tick("u-test", _uptrend(300), now_idx=0)
+        st = router.store.load("u-test")
+        assert st.last_decision is not None
+        assert "why" in st.last_decision
+        assert st.last_decision["evidence"]["path"] == "lifecycle"
