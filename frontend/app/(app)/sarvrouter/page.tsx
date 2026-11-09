@@ -90,6 +90,15 @@ export default function SarvRouterPage() {
       evidence: Record<string, unknown>;
       confidence: number;
       tick_id: string;
+      risk?: {
+        fee_pct: number;
+        slippage_pct: number;
+        spread_pct: number;
+        estimated_cost_pct: number;
+        capital_at_risk_tmn: number;
+        estimated_cost_tmn: number;
+        is_hypothetical: boolean;
+      } | null;
     } | null;
   };
 
@@ -198,6 +207,33 @@ export default function SarvRouterPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Card: Risk Analysis (phase 2) */}
+      {d.last_decision?.risk && (
+        <Card className={d.last_decision.risk.is_hypothetical ? "border-slate-500/30" : "border-amber-500/40"}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShieldAlert className="h-4 w-4" /> تحلیل ریسک
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <Stat
+              label={d.last_decision.risk.is_hypothetical ? "هزینه فرضی (اگر وارد شویم)" : "هزینه پیشنهادی"}
+              value={`${Math.round(d.last_decision.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان`}
+              tone="bad"
+            />
+            <Stat
+              label="درصد هزینه (رفت و برگشت)"
+              value={`${d.last_decision.risk.estimated_cost_pct.toFixed(2)}%`}
+              tone="bad"
+            />
+            <Stat
+              label="سرمایه درگیر"
+              value={`${Math.round(d.last_decision.risk.capital_at_risk_tmn).toLocaleString("fa-IR")} تومان`}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Card 2: Active bots + allocations */}
       <Card>
