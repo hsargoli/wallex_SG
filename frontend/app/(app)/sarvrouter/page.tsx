@@ -225,7 +225,7 @@ export default function SarvRouterPage() {
                   </div>
                 </div>
                 
-                <div className="p-5 bg-violet-500/5 border border-violet-500/20 rounded-xl text-sm text-foreground leading-loose text-justify min-h-[140px] shadow-inner">
+                <div className="p-5 bg-violet-500/5 border border-violet-500/20 rounded-xl text-[13px] md:text-sm text-foreground leading-loose text-justify shadow-inner">
                   {why.isLoading ? (
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" /> در حال استخراج دلایل از موتور تحلیل...
