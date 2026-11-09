@@ -18,7 +18,8 @@ import {
   XCircle,
   Info,
   BrainCircuit,
-  Calculator
+  Calculator,
+  Bitcoin
 } from "lucide-react";
 import {
   useSarvRouterStatus,
@@ -141,14 +142,25 @@ export default function SarvRouterPage() {
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           
           <div className="space-y-4 text-center md:text-right w-full">
-            <div className="flex items-center justify-center md:justify-start gap-3">
-              <Badge variant="outline" className={`px-3 py-1 text-sm ${regime.color}`}>
-                <RegimeIcon className="h-4 w-4 ml-1" />
-                وضعیت بازار: {regime.label}
-              </Badge>
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30 px-3 py-1">
+                  <Bitcoin className="h-4 w-4 ml-1" /> بیت‌کوین (BTCTMN)
+                </Badge>
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 px-3 py-1">
+                  تایم‌فریم: ۱ ساعته
+                </Badge>
+                <Badge variant="outline" className={`px-3 py-1 ${regime.color}`}>
+                  <RegimeIcon className="h-4 w-4 ml-1" />
+                  وضعیت: {regime.label}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                * در حال حاضر تنها بیت‌کوین تحلیل می‌شود. ارزهای دیگر به‌زودی اضافه خواهند شد.
+              </p>
             </div>
             
-            <div>
+            <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-1">تحلیل و پیشنهاد فعلی من:</p>
               <h2 className="text-2xl font-bold text-foreground">
                 {last ? ACTION_FA[last.action] || last.action : "در حال پردازش داده‌ها..."}
