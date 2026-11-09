@@ -49,3 +49,30 @@ class FeedbackTrail:
         except (OSError, json.JSONDecodeError):
             return []
         return entries
+
+    def get_stats(self, tick_id: str) -> dict:
+        """Aggregate votes for a specific tick across all users."""
+        accept_count = 0
+        reject_count = 0
+        
+        for file in self.base_dir.glob("*.feedback.jsonl"):
+            try:
+                with open(file, encoding="utf-8") as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        data = json.loads(line)
+                        if data.get("tick_id") == tick_id:
+                            if data.get("user_choice") == "accept":
+                                accept_count += 1
+                            elif data.get("user_choice") == "reject":
+                                reject_count += 1
+            except Exception:
+                continue
+                
+        total = accept_count + reject_count
+        return {
+            "accept": accept_count,
+            "reject": reject_count,
+            "total": total
+        }

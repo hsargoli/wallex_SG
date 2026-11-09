@@ -793,6 +793,7 @@ export const api = {
   sarvRouterKill: () => client.post('/v1/sarvrouter/kill-switch').then(r => r.data),
   simulateSarvRouter: (symbol: string, date: string, timeframe: string) => client.post('/v1/sarvrouter/simulate', { symbol, date, timeframe }).then(r => r.data),
   postSarvRouterFeedback: (tick_id: string, user_choice: string) => client.post('/v1/sarvrouter/feedback', { tick_id, user_choice }).then(r => r.data),
+  getSarvRouterFeedbackStats: (tick_id: string) => client.get(`/v1/sarvrouter/feedback/stats?tick_id=${tick_id}`).then(r => r.data),
   sarvRouterReenable: () => client.post('/v1/sarvrouter/reenable').then(r => r.data),
   getBotStatus: (slug: string) =>
     client.get<BotStatusResponse>(`/v1/bots/${slug}/status`).then((r) => r.data),

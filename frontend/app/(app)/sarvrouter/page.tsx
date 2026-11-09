@@ -28,6 +28,7 @@ import {
   useSarvRouterWhy,
   useSarvRouterFeedback,
   useSarvRouterSimulate,
+  useSarvRouterFeedbackStats,
 } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,8 @@ export default function SarvRouterPage() {
   const why = useSarvRouterWhy();
   const feedback = useSarvRouterFeedback();
   const simulate = useSarvRouterSimulate();
+  const tickId = (status.data as any)?.last_decision?.tick_id;
+  const feedbackStats = useSarvRouterFeedbackStats(tickId);
   
   // Playground State
   const [simTf, setSimTf] = useState("1h");
@@ -202,6 +205,16 @@ export default function SarvRouterPage() {
             </Button>
             {feedback.isSuccess && (
               <p className="text-xs text-emerald-400 text-center mt-1">بازخورد شما ثبت شد.</p>
+            )}
+            
+            {feedbackStats.data && feedbackStats.data.total > 0 && (
+              <div className="mt-2 text-center">
+                <p className="text-[10px] text-muted-foreground mb-1">نظر سایر کاربران:</p>
+                <div className="flex justify-center gap-3 text-xs">
+                  <span className="text-emerald-400 font-medium">تایید: {feedbackStats.data.accept}</span>
+                  <span className="text-rose-400 font-medium">رد: {feedbackStats.data.reject}</span>
+                </div>
+              </div>
             )}
           </div>
         </CardContent>

@@ -1371,3 +1371,12 @@ export function useSarvRouterSimulate() {
       api.simulateSarvRouter(data.symbol, data.date, data.timeframe),
   });
 }
+
+export function useSarvRouterFeedbackStats(tick_id?: string) {
+  return useQuery({
+    queryKey: ["sarvrouter", "feedback-stats", tick_id],
+    queryFn: () => tick_id ? api.getSarvRouterFeedbackStats(tick_id) : null,
+    enabled: !!tick_id,
+    staleTime: 5000,
+  });
+}

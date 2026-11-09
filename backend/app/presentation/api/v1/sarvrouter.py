@@ -96,7 +96,14 @@ class FeedbackInput(BaseModel):
     tick_id: str
     user_choice: str  # "accept" | "reject"
 
+
+@router.get("/feedback/stats")
+async def get_feedback_stats(tick_id: str) -> dict:
+    trail = FeedbackTrail()
+    return trail.get_stats(tick_id)
+
 @router.post("/feedback")
+
 async def post_feedback(body: FeedbackInput) -> dict:
     """Record user feedback on the last decision (ADR-0043)."""
     state = _load(_state_file())
