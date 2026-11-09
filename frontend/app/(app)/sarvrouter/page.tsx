@@ -67,7 +67,17 @@ export default function SarvRouterPage() {
       { symbol: "BTCUSDT", date: simDate, timeframe: simTf },
       {
         onSuccess: (data) => setSimResult(data),
-        onError: (err: any) => setSimResult({ error: err.response?.data?.detail || "خطا در اجرای شبیه‌سازی" })
+        onError: (err: any) => {
+          let msg = "خطا در اجرای شبیه‌سازی";
+          if (err.response?.data?.detail) {
+            if (typeof err.response.data.detail === 'string') {
+              msg = err.response.data.detail;
+            } else if (Array.isArray(err.response.data.detail)) {
+              msg = "اطلاعات ورودی نامعتبر است. لطفاً تاریخ را بررسی کنید.";
+            }
+          }
+          setSimResult({ error: msg });
+        }
       }
     );
   };
@@ -294,19 +304,19 @@ export default function SarvRouterPage() {
               <div className="mt-4 space-y-3">
                 {simResult.error ? (
                   <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-rose-400">
-                    {simResult.error}
+                    {typeof simResult.error === 'string' ? simResult.error : JSON.stringify(simResult.error)}
                   </div>
-                ) : (
+                ) : simResult.stats ? (
                   <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
                     <p className="font-bold mb-3">آمار شبیه‌سازی در این بازه (۳۰۰ کندل):</p>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="bg-background/50 p-2 rounded">
                         <span className="text-[10px] text-muted-foreground block">تعداد تغییر رژیم:</span>
-                        <span className="font-bold text-foreground">{simResult.stats.switches} بار</span>
+                        <span className="font-bold text-foreground">{simResult.stats.switches || 0} بار</span>
                       </div>
                       <div className="bg-background/50 p-2 rounded">
                         <span className="text-[10px] text-muted-foreground block">رژیم نهایی:</span>
-                        <span className="font-bold text-foreground">{REGIME_FA[simResult.stats.final_regime]?.label || simResult.stats.final_regime}</span>
+                        <span className="font-bold text-foreground">{REGIME_FA[simResult.stats.final_regime]?.label || simResult.stats.final_regime || "نامشخص"}</span>
                       </div>
                       <div className="bg-background/50 p-2 rounded">
                         <span className="text-[10px] text-muted-foreground block">ربات‌های فعال در پایان:</span>
@@ -314,13 +324,27 @@ export default function SarvRouterPage() {
                       </div>
                       <div className="bg-background/50 p-2 rounded">
                         <span className="text-[10px] text-muted-foreground block">مجموع تحلیل‌ها:</span>
-                        <span className="font-bold text-foreground">{simResult.stats.total_ticks} کندل</span>
+                        <span className="font-bold text-foreground">{simResult.stats.total_ticks || 0} کندل</span>
                       </div>
                     </div>
-                    <div className="bg-background/50 p-3 rounded text-xs leading-relaxed">
-                      <p className="font-bold mb-1">دلیل آخرین تصمیم:</p>
-                      <p className="text-foreground whitespace-pre-line">{simResult.explanation}</p>
-                    </div>
+                    {simResult.decision ? (
+                      <div className="bg-background/50 p-3 rounded text-xs leading-relaxed">
+                        <div className="flex gap-2 items-center mb-2">
+                           <Badge variant="outline" className="bg-blue-500/20 text-blue-300">{simResult.decision.action}</Badge>
+                           <span className="text-[10px] text-muted-foreground">اطمینان: {Math.round((simResult.decision.confidence || 0) * 100)}%</span>
+                        </div>
+                        <p className="font-bold mb-1">دلیل آخرین تصمیم:</p>
+                        <p className="text-foreground whitespace-pre-line">{simResult.explanation}</p>
+                      </div>
+                    ) : (
+                      <div className="bg-background/50 p-3 rounded text-xs text-amber-400">
+                        در این تاریخ، ربات تصمیم مشخصی نگرفته است.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-rose-400">
+                    داده‌ای برای نمایش وجود ندارد.
                   </div>
                 )}
               </div>
