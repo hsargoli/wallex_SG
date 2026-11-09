@@ -1354,3 +1354,15 @@ export function useSarvRouterWhy() {
     enabled: false, // don't fetch on mount
   });
 }
+
+export function useSarvRouterFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tick_id, choice }: { tick_id: string; choice: string }) => 
+      api.postSarvRouterFeedback(tick_id, choice),
+    onSuccess: () => {
+      // We don't necessarily need to invalidate, but we could refetch status
+      qc.invalidateQueries({ queryKey: ["sarvrouter-status"] });
+    },
+  });
+}

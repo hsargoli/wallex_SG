@@ -21,6 +21,7 @@ import {
   useSarvRouterKill,
   useSarvRouterReenable,
   useSarvRouterWhy,
+  useSarvRouterFeedback,
 } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ export default function SarvRouterPage() {
   const kill = useSarvRouterKill();
   const reenable = useSarvRouterReenable();
   const why = useSarvRouterWhy();
+  const feedback = useSarvRouterFeedback();
   const [confirmKill, setConfirmKill] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
 
@@ -207,21 +209,47 @@ export default function SarvRouterPage() {
                       {d.last_decision.tick_id.slice(0, 8)}
                     </code>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      setShowWhy(true);
-                      why.refetch();
-                    }}
-                    disabled={why.isFetching}
-                  >
-                    <MessageCircleQuestion className="h-3 w-3 ml-1" />
-                    چرا؟
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                      onClick={() => feedback.mutate({ tick_id: d.last_decision!.tick_id, choice: "accept" })}
+                      disabled={feedback.isPending || feedback.isSuccess}
+                    >
+                      تایید
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30"
+                      onClick={() => feedback.mutate({ tick_id: d.last_decision!.tick_id, choice: "reject" })}
+                      disabled={feedback.isPending || feedback.isSuccess}
+                    >
+                      رد
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setShowWhy(true);
+                        why.refetch();
+                      }}
+                      disabled={why.isFetching}
+                    >
+                      <MessageCircleQuestion className="h-3 w-3 ml-1" />
+                      چرا؟
+                    </Button>
+                  </div>
                 </div>
 
+                {feedback.isSuccess && (
+                  <p className="mt-2 text-xs text-emerald-400">بازخورد شما با موفقیت ثبت شد.</p>
+                )}
+                {feedback.isError && (
+                  <p className="mt-2 text-xs text-rose-400">خطا در ثبت بازخورد.</p>
+                )}
                 {showWhy && why.data && (
                   <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-md text-sm text-violet-200">
                     <p className="font-medium mb-1">پاسخ Copilot:</p>
