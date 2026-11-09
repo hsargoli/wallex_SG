@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import {
   useSarvRouterStatus,
@@ -83,6 +84,13 @@ export default function SarvRouterPage() {
     kill_switch_manual: boolean;
     kill_switch_auto: boolean;
     gate: { allow_new_entries: boolean; updated_at: string; killed_by?: string };
+    last_decision?: {
+      action: string;
+      why: string;
+      evidence: Record<string, unknown>;
+      confidence: number;
+      tick_id: string;
+    } | null;
   };
 
   const regime = REGIME_FA[d.regime] ?? REGIME_FA.unknown;
@@ -136,6 +144,58 @@ export default function SarvRouterPage() {
             label="آخرین به‌روزرسانی gate"
             value={d.gate?.updated_at ? formatTime(new Date(d.gate.updated_at).getTime() / 1000) : "—"}
           />
+        </CardContent>
+      </Card>
+
+      {/* Card: Last Copilot Decision (phase 1) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4" /> آخرین تصمیم Copilot
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!d.last_decision ? (
+            <p className="text-sm text-muted-foreground">
+              هنوز تصمیمی ثبت نشده — منتظر اولین tick.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">
+                  {d.last_decision.why || d.last_decision.action}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={
+                    d.last_decision.confidence >= 0.8
+                      ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                      : d.last_decision.confidence >= 0.5
+                      ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                      : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                  }
+                >
+                  اطمینان: {Math.round(d.last_decision.confidence * 100)}%
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                <div>
+                  <span className="font-medium">action:</span>{" "}
+                  {d.last_decision.action}
+                </div>
+                <div>
+                  <span className="font-medium">مسیر:</span>{" "}
+                  {String(d.last_decision.evidence.path ?? "—")}
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium">tick:</span>{" "}
+                  <code className="text-[10px]">
+                    {d.last_decision.tick_id.slice(0, 8)}
+                  </code>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
