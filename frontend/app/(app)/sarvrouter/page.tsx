@@ -18,8 +18,11 @@ import {
   XCircle,
   Info,
   BrainCircuit,
-  Calculator,
-  Bitcoin
+  Bitcoin,
+  Calendar,
+  Clock,
+  Play,
+  LineChart
 } from "lucide-react";
 import {
   useSarvRouterStatus,
@@ -51,17 +54,25 @@ export default function SarvRouterPage() {
   const why = useSarvRouterWhy();
   const feedback = useSarvRouterFeedback();
   
-  // Calculator State
-  const [calcAmount, setCalcAmount] = useState<string>("");
+  // Playground State
+  const [simTf, setSimTf] = useState("1h");
+  const [simDate, setSimDate] = useState("2026-11-01");
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simResult, setSimResult] = useState<any>(null);
 
-  // Set default calculation amount when data loads
-  useEffect(() => {
-    if (status.data?.last_decision?.risk?.capital_at_risk_tmn) {
-      setCalcAmount(status.data.last_decision.risk.capital_at_risk_tmn.toString());
-    } else {
-      setCalcAmount("10000000"); // Default 10M Toman
-    }
-  }, [status.data]);
+  const handleSimulate = () => {
+    setIsSimulating(true);
+    setSimResult(null);
+    // Mock network request
+    setTimeout(() => {
+      setIsSimulating(false);
+      setSimResult({
+        regime: "uptrend",
+        confidence: 0.82,
+        msg: "این یک شبیه‌سازی آزمایشی است. در نسخه‌های بعدی، داده‌های واقعی بازار برای این تاریخ واکشی می‌شود."
+      });
+    }, 1500);
+  };
 
   if (status.isLoading) {
     return (
@@ -95,13 +106,6 @@ export default function SarvRouterPage() {
   const regime = REGIME_FA[d.regime] || REGIME_FA.unknown;
   const RegimeIcon = regime.icon;
 
-  // Calculator Math
-  const amount = Number(calcAmount) || 0;
-  const feePct = last?.risk?.estimated_cost_pct || 0.55; // default 0.55%
-  const estimatedFee = (amount * feePct) / 100;
-  const netAmount = amount - estimatedFee;
-  const breakevenPct = feePct; // To profit, price must rise by at least feePct
-
   return (
     <div className="container max-w-5xl py-8 space-y-8">
       
@@ -114,10 +118,9 @@ export default function SarvRouterPage() {
               دستیار معامله‌گر هوشمند (Copilot)
             </h1>
             <p className="text-sm text-muted-foreground mt-3 leading-relaxed max-w-3xl text-justify">
-              به سروباتس خوش آمدید. من یک ربات معامله‌گر خودکار نیستم که بدون اجازه شما پول را جابه‌جا کنم. 
-              من یک <b>دستیار تحلیل‌گر</b> هستم. من میلیون‌ها داده و کندل را در ثانیه بررسی می‌کنم تا روند بازار را تشخیص دهم. 
-              سپس با ارائه دلایل شفاف، به شما پیشنهاد می‌دهم که چه کاری انجام دهید. 
-              <b> تصمیم نهایی، کلیک روی دکمه تایید، و مدیریت سرمایه کاملاً در اختیار شماست.</b>
+              به سروباتس خوش آمدید. من یک ربات معامله‌گر خودکار نیستم. من یک <b>دستیار تحلیل‌گر</b> هستم. 
+              میلیون‌ها داده و کندل را بررسی می‌کنم تا روند بازار را تشخیص دهم. سپس با ارائه دلایل شفاف، به شما پیشنهاد می‌دهم. 
+              <b> تصمیم نهایی و مدیریت سرمایه کاملاً در اختیار شماست.</b>
             </p>
           </div>
           <Link href="/bots/sarv_router" className="hidden md:flex text-xs text-muted-foreground hover:text-violet-400 items-center gap-1 mt-2">
@@ -131,6 +134,12 @@ export default function SarvRouterPage() {
               <Info className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
                 <b>چطور روند را تشخیص می‌دهم؟</b> من از ترکیب شاخص‌های قدرت روند (ADX) و میانگین‌های متحرک (EMA) استفاده می‌کنم. وقتی ADX از حد آستانه (معمولاً ۲۵) عبور کند و EMAها به درستی مرتب شوند، یعنی روند شکل گرفته است.
+              </p>
+            </div>
+            <div className="flex-1 flex items-start gap-2">
+              <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <b>نکته مهم درباره کارمزد:</b> صرافی‌ها برای هر خرید و فروش یک درصد کمی کارمزد برمی‌دارند. لطفاً قبل از ورود، به این هزینه‌های پنهان توجه کنید تا سود شما تحت تاثیر قرار نگیرد.
               </p>
             </div>
           </CardContent>
@@ -191,16 +200,16 @@ export default function SarvRouterPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         
         {/* WHY CARD */}
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Sparkles className="h-5 w-5 text-violet-400" /> چرا این تصمیم را گرفتم؟
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 flex-1">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">میزان اطمینان من به این تحلیل:</span>
@@ -216,7 +225,7 @@ export default function SarvRouterPage() {
               </div>
             </div>
             
-            <div className="p-5 bg-violet-500/5 border border-violet-500/20 rounded-xl text-[13px] md:text-sm text-foreground leading-loose text-justify shadow-inner min-h-[160px]">
+            <div className="p-5 bg-violet-500/5 border border-violet-500/20 rounded-xl text-[13px] md:text-sm text-foreground leading-loose text-justify shadow-inner">
               {why.isLoading ? (
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" /> در حال استخراج دلایل...
@@ -230,45 +239,65 @@ export default function SarvRouterPage() {
           </CardContent>
         </Card>
 
-        {/* INTERACTIVE RISK CALCULATOR CARD */}
-        <Card className="h-full border-border/50">
+        {/* INTERACTIVE PLAYGROUND (Replaces Calculator) */}
+        <Card className="h-full flex flex-col border-violet-500/20 shadow-lg shadow-violet-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Calculator className="h-5 w-5 text-rose-400" /> ماشین‌حساب هزینه و ریسک
+              <LineChart className="h-5 w-5 text-blue-400" /> شبیه‌ساز تحلیل (Playground)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">مبلغی که می‌خواهید وارد کنید (تومان):</label>
-              <Input 
-                type="number" 
-                value={calcAmount} 
-                onChange={(e) => setCalcAmount(e.target.value)}
-                placeholder="مثلا ۱۰,۰۰۰,۰۰۰"
-                className="text-left font-mono text-lg h-12"
-                dir="ltr"
-              />
-            </div>
-
-            <div className="space-y-3 p-4 bg-secondary/30 rounded-xl border border-border">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">کارمزد صرافی و لغزش قیمت ({feePct}%):</span>
-                <span className="font-bold text-rose-400">
-                  {Math.round(estimatedFee).toLocaleString("fa-IR")} تومان
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-t border-border/50 pt-3">
-                <span className="text-muted-foreground">سرمایه خالصی که درگیر می‌شود:</span>
-                <span className="font-bold text-emerald-400">
-                  {Math.round(netAmount).toLocaleString("fa-IR")} تومان
-                </span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground leading-relaxed text-justify">
-              * برای اینکه این معامله شما را وارد سود کند، قیمت باید حداقل <b>{breakevenPct}%</b> رشد کند تا فقط کارمزدها جبران شوند. 
-              بازارهای مالی پرریسک هستند، با آگاهی وارد شوید.
+          <CardContent className="space-y-5 flex-1 flex flex-col">
+            <p className="text-xs text-muted-foreground">
+              می‌خواهید بدانید من در گذشته یا در تایم‌فریم‌های دیگر چه تحلیلی می‌دادم؟ تنظیمات زیر را تغییر دهید.
             </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-foreground mb-2 block">انتخاب تایم‌فریم:</label>
+                <div className="flex gap-2">
+                  {["15m", "1h", "4h", "1d"].map((tf) => (
+                    <Button 
+                      key={tf}
+                      variant={simTf === tf ? "default" : "outline"} 
+                      size="sm"
+                      className={`flex-1 ${simTf === tf ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                      onClick={() => setSimTf(tf)}
+                    >
+                      {tf}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground mb-2 flex items-center gap-1">
+                  <Calendar className="h-3 w-3" /> انتخاب تاریخ:
+                </label>
+                <Input 
+                  type="date" 
+                  value={simDate} 
+                  onChange={(e) => setSimDate(e.target.value)}
+                  className="text-left font-mono"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            <Button 
+              className="w-full mt-auto bg-blue-500 hover:bg-blue-600 text-white" 
+              onClick={handleSimulate}
+              disabled={isSimulating}
+            >
+              {isSimulating ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Play className="h-4 w-4 ml-2" />}
+              اجرای تحلیل در این تاریخ
+            </Button>
+
+            {simResult && (
+              <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs leading-relaxed text-blue-200">
+                <p className="font-bold mb-1">نتیجه شبیه‌سازی:</p>
+                <p>{simResult.msg}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
