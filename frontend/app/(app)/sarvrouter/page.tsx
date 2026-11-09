@@ -59,7 +59,6 @@ export default function SarvRouterPage() {
   const feedback = useSarvRouterFeedback();
   
   const [confirmKill, setConfirmKill] = useState(false);
-  const [showWhy, setShowWhy] = useState(false);
 
   if (status.isLoading) {
     return (
@@ -188,22 +187,27 @@ export default function SarvRouterPage() {
               />
             </div>
             
+            <div className="mt-4 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg text-sm text-violet-200 min-h-[80px] flex items-center">
+              {why.isLoading ? (
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> در حال دریافت دلیل از دستیار...
+                </span>
+              ) : why.data ? (
+                <p className="leading-relaxed text-foreground">{why.data.answer}</p>
+              ) : (
+                <span className="text-muted-foreground">دلیلی برای این تصمیم ثبت نشده است.</span>
+              )}
+            </div>
+
             <Button 
               variant="outline" 
-              className="w-full mt-2" 
-              onClick={() => { setShowWhy(true); why.refetch(); }}
+              className="w-full mt-4" 
+              onClick={() => why.refetch()}
               disabled={why.isFetching}
             >
               {why.isFetching ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <MessageCircleQuestion className="h-4 w-4 ml-2" />}
-              سوال دیگری دارم
+              دریافت مجدد دلیل / سوال دیگر
             </Button>
-
-            {showWhy && why.data && (
-              <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-md text-sm text-violet-200">
-                <p className="font-medium mb-1">پاسخ دستیار:</p>
-                <p className="leading-relaxed">{why.data.answer}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 

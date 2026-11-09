@@ -1347,11 +1347,9 @@ export function useToggleTradingMode() {
 export function useSarvRouterWhy() {
   return useQuery({
     queryKey: ["sarvrouter", "why"],
-    queryFn: async () => {
-      const res = await api.getSarvRouterWhy();
-      return res.data;
-    },
-    enabled: false, // don't fetch on mount
+    queryFn: () => api.getSarvRouterWhy(),
+    enabled: true, // Auto-fetch on mount
+    staleTime: 60000, // 1 minute
   });
 }
 
