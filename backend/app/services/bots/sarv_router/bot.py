@@ -7,6 +7,7 @@ from app.domain.entities.candle import Candle
 from app.services.bots.sarv_router.audit import AuditEntry, AuditTrail
 from app.services.bots.sarv_router.bot_lifecycle import BotLifecycleManager
 from app.services.bots.sarv_router.capital_allocator import allocate_capital
+from app.services.bots.sarv_router.alternatives import generate_alternatives
 from app.services.bots.sarv_router.config import SarvRouterConfig
 from app.services.bots.sarv_router.decision import DecisionReason, RiskProfile
 from app.services.bots.sarv_router.gate import write_gate
@@ -50,6 +51,7 @@ class SarvRouter:
         evidence: dict,
         confidence: float = 1.0,
         risk: dict | None = None,
+        alternatives: list[dict] | None = None,
     ) -> dict:
         """Wrap a decision in DecisionReason per ADR-0040 Addendum 1.1."""
         return DecisionReason(
@@ -59,6 +61,7 @@ class SarvRouter:
             confidence=confidence,
             tick_id=str(uuid.uuid4()),
             risk=risk,
+            alternatives=alternatives or [],
         ).to_dict()
 
     def _make_risk(
@@ -196,11 +199,23 @@ class SarvRouter:
             risk_dict = None
 
         # Always persist (regime + any switch changes)
+        # Generate alternatives (Phase 5)
+        raw_alts = generate_alternatives(regime, state.total_capital, self.config)
+        alternatives_list = []
+        for alt in raw_alts:
+            alt_risk = self._make_risk(alt, state.total_capital, is_hypothetical=True).to_dict()
+            alternatives_list.append({
+                "regime": alt["regime"],
+                "active_bots": alt["active_bots"],
+                "risk": alt_risk
+            })
+
         decision = self._decision(
             action=action.get("action", "unknown"),
             why=str(action.get("reason", action.get("action", ""))),
             evidence={**action, "path": "lifecycle", "regime": regime_str},
             risk=risk_dict,
+            alternatives=alternatives_list,
         )
         state.last_decision = decision
         self.store.save(user_id, state)
