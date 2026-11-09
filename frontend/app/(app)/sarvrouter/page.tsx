@@ -311,7 +311,7 @@ export default function SarvRouterPage() {
                   </div>
                 ) : simResult.stats ? (
                   <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
-                    <p className="font-bold mb-3">آمار شبیه‌سازی در این بازه (۳۰۰ کندل):</p>
+                    <p className="font-bold mb-3">آمار شبیه‌سازی در این بازه ({simResult.stats.total_ticks} کندل):</p>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="bg-background/50 p-2 rounded">
                         <span className="text-[10px] text-muted-foreground block">تعداد تغییر رژیم:</span>

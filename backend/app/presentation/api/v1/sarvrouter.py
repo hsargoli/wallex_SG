@@ -147,7 +147,7 @@ async def simulate_sarvrouter(body: SimulateInput) -> dict:
         if len(df) < 300:
             raise HTTPException(400, "Not enough historical data before this date (need 300 candles)")
             
-        df = df.tail(300)
+        df = df.tail(1000)
         
         candles = []
         for idx, row in df.iterrows():
