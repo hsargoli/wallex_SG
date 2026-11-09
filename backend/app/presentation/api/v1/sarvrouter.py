@@ -116,7 +116,75 @@ async def post_feedback(body: FeedbackInput) -> dict:
     trail.write("production-default", entry)
     return {"ok": True, "recorded": entry.to_dict()}
 
+
+class SimulateInput(BaseModel):
+    symbol: str
+    date: str
+    timeframe: str
+
+@router.post("/simulate")
+async def simulate_sarvrouter(body: SimulateInput) -> dict:
+    file_path = _DATA_FILE.parent / f"{body.symbol}_1h.csv"
+    if not file_path.exists():
+        raise HTTPException(404, f"Data for {body.symbol} not found")
+    
+    try:
+        df = pd.read_csv(file_path)
+        df['datetime'] = pd.to_datetime(df['open_time'].apply(lambda x: int(x) // 1000 if int(x) > 10**12 else int(x)), unit='s')
+        df = df.set_index('datetime')
+        
+        if body.timeframe == "4h":
+            df = df.resample('4h').agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
+        elif body.timeframe == "1d":
+            df = df.resample('1D').agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
+        
+        target_dt = pd.to_datetime(body.date)
+        df = df[df.index <= target_dt]
+        
+        if len(df) < 300:
+            raise HTTPException(400, "Not enough historical data before this date (need 300 candles)")
+            
+        df = df.tail(300)
+        
+        candles = []
+        for idx, row in df.iterrows():
+            candles.append(Candle(
+                time=int(idx.timestamp()),
+                open=Decimal(str(row['open'])),
+                high=Decimal(str(row['high'])),
+                low=Decimal(str(row['low'])),
+                close=Decimal(str(row['close'])),
+                volume=Decimal(str(row['volume']))
+            ))
+            
+        tmp = Path(tempfile.mkdtemp())
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None, stop_bot=lambda s: None, stop_all=lambda: None,
+            store=SarvStore(base_dir=tmp), audit=AuditTrail(base_dir=tmp)
+        )
+        
+        run_sarv_backtest(router, "sim-user", candles)
+        
+        state = router.store.load("sim-user")
+        last_decision = state.last_decision
+        
+        if not last_decision:
+            return {"error": "No decision could be made for this date"}
+            
+        explanation = ConversationEngine.explain(last_decision)
+        
+        return {
+            "decision": last_decision,
+            "explanation": explanation
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
 @router.post("/kill-switch")
+
 async def kill_switch() -> dict:
     """Emergency stop: block new entries + mark state killed."""
     state = _load(_state_file())

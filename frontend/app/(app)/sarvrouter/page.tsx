@@ -28,6 +28,7 @@ import {
   useSarvRouterStatus,
   useSarvRouterWhy,
   useSarvRouterFeedback,
+  useSarvRouterSimulate,
 } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,25 +54,22 @@ export default function SarvRouterPage() {
   const status = useSarvRouterStatus();
   const why = useSarvRouterWhy();
   const feedback = useSarvRouterFeedback();
+  const simulate = useSarvRouterSimulate();
   
   // Playground State
   const [simTf, setSimTf] = useState("1h");
   const [simDate, setSimDate] = useState("2026-11-01");
-  const [isSimulating, setIsSimulating] = useState(false);
   const [simResult, setSimResult] = useState<any>(null);
 
   const handleSimulate = () => {
-    setIsSimulating(true);
     setSimResult(null);
-    // Mock network request
-    setTimeout(() => {
-      setIsSimulating(false);
-      setSimResult({
-        regime: "uptrend",
-        confidence: 0.82,
-        msg: "این یک شبیه‌سازی آزمایشی است. در نسخه‌های بعدی، داده‌های واقعی بازار برای این تاریخ واکشی می‌شود."
-      });
-    }, 1500);
+    simulate.mutate(
+      { symbol: "BTCUSDT", date: simDate, timeframe: simTf },
+      {
+        onSuccess: (data) => setSimResult(data),
+        onError: (err: any) => setSimResult({ error: err.response?.data?.detail || "خطا در اجرای شبیه‌سازی" })
+      }
+    );
   };
 
   if (status.isLoading) {
@@ -286,16 +284,28 @@ export default function SarvRouterPage() {
             <Button 
               className="w-full mt-auto bg-blue-500 hover:bg-blue-600 text-white" 
               onClick={handleSimulate}
-              disabled={isSimulating}
+              disabled={simulate.isPending}
             >
-              {isSimulating ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Play className="h-4 w-4 ml-2" />}
+              {simulate.isPending ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Play className="h-4 w-4 ml-2" />}
               اجرای تحلیل در این تاریخ
             </Button>
 
             {simResult && (
-              <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs leading-relaxed text-blue-200">
-                <p className="font-bold mb-1">نتیجه شبیه‌سازی:</p>
-                <p>{simResult.msg}</p>
+              <div className="mt-4 space-y-3">
+                {simResult.error ? (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-rose-400">
+                    {simResult.error}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
+                    <p className="font-bold mb-2">نتیجه شبیه‌سازی در این تاریخ:</p>
+                    <div className="flex gap-2 items-center mb-3">
+                      <Badge variant="outline" className="bg-blue-500/20 text-blue-300">{simResult.decision.action}</Badge>
+                      <span className="text-xs">اطمینان: {Math.round(simResult.decision.confidence * 100)}%</span>
+                    </div>
+                    <p className="text-xs leading-loose whitespace-pre-line text-foreground">{simResult.explanation}</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

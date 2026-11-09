@@ -1364,3 +1364,10 @@ export function useSarvRouterFeedback() {
     },
   });
 }
+
+export function useSarvRouterSimulate() {
+  return useMutation({
+    mutationFn: (data: { symbol: string, date: string, timeframe: string }) => 
+      api.simulateSarvRouter(data.symbol, data.date, data.timeframe),
+  });
+}
