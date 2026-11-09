@@ -1343,3 +1343,14 @@ export function useToggleTradingMode() {
     }
   });
 }
+
+export function useSarvRouterWhy() {
+  return useQuery({
+    queryKey: ["sarvrouter", "why"],
+    queryFn: async () => {
+      const res = await api.getSarvRouterWhy();
+      return res.data;
+    },
+    enabled: false, // don't fetch on mount
+  });
+}

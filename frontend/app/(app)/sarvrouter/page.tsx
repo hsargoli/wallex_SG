@@ -14,11 +14,13 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  MessageCircleQuestion,
 } from "lucide-react";
 import {
   useSarvRouterStatus,
   useSarvRouterKill,
   useSarvRouterReenable,
+  useSarvRouterWhy,
 } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +39,9 @@ export default function SarvRouterPage() {
   const status = useSarvRouterStatus();
   const kill = useSarvRouterKill();
   const reenable = useSarvRouterReenable();
+  const why = useSarvRouterWhy();
   const [confirmKill, setConfirmKill] = useState(false);
+  const [showWhy, setShowWhy] = useState(false);
 
   if (status.isLoading) {
     return (
@@ -196,12 +200,37 @@ export default function SarvRouterPage() {
                   <span className="font-medium">مسیر:</span>{" "}
                   {String(d.last_decision.evidence.path ?? "—")}
                 </div>
-                <div className="col-span-2">
-                  <span className="font-medium">tick:</span>{" "}
-                  <code className="text-[10px]">
-                    {d.last_decision.tick_id.slice(0, 8)}
-                  </code>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">tick:</span>{" "}
+                    <code className="text-[10px]">
+                      {d.last_decision.tick_id.slice(0, 8)}
+                    </code>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setShowWhy(true);
+                      why.refetch();
+                    }}
+                    disabled={why.isFetching}
+                  >
+                    <MessageCircleQuestion className="h-3 w-3 ml-1" />
+                    چرا؟
+                  </Button>
                 </div>
+
+                {showWhy && why.data && (
+                  <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-md text-sm text-violet-200">
+                    <p className="font-medium mb-1">پاسخ Copilot:</p>
+                    <p>{why.data.answer}</p>
+                  </div>
+                )}
+                {showWhy && why.isError && (
+                  <p className="mt-2 text-xs text-rose-400">خطا در دریافت پاسخ.</p>
+                )}
               </div>
             </div>
           )}
