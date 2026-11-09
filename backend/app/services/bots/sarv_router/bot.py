@@ -8,7 +8,7 @@ from app.services.bots.sarv_router.audit import AuditEntry, AuditTrail
 from app.services.bots.sarv_router.bot_lifecycle import BotLifecycleManager
 from app.services.bots.sarv_router.capital_allocator import allocate_capital
 from app.services.bots.sarv_router.config import SarvRouterConfig
-from app.services.bots.sarv_router.decision import DecisionReason
+from app.services.bots.sarv_router.decision import DecisionReason, RiskProfile
 from app.services.bots.sarv_router.gate import write_gate
 from app.services.bots.sarv_router.regime import Regime, detect_regime, detect_regime_multi_tf
 from app.services.bots.sarv_router.store import SarvState, SarvStore
@@ -49,6 +49,7 @@ class SarvRouter:
         why: str,
         evidence: dict,
         confidence: float = 1.0,
+        risk: dict | None = None,
     ) -> dict:
         """Wrap a decision in DecisionReason per ADR-0040 Addendum 1.1."""
         return DecisionReason(
@@ -57,7 +58,32 @@ class SarvRouter:
             evidence=evidence,
             confidence=confidence,
             tick_id=str(uuid.uuid4()),
+            risk=risk,
         ).to_dict()
+
+    def _make_risk(
+        self,
+        alloc: dict,
+        total_capital: float,
+        is_hypothetical: bool,
+    ) -> RiskProfile:
+        """Build RiskProfile from allocation dict (ADR-0041)."""
+        total_pct = sum(alloc.get("allocations", {}).values())
+        capital_at_risk = total_capital * total_pct / 100.0
+        fee = self.config.fee_pct
+        slip = self.config.slippage_pct
+        spread = self.config.spread_pct
+        cost_pct = 2 * fee + slip + spread
+        cost_tmn = capital_at_risk * cost_pct / 100.0
+        return RiskProfile(
+            fee_pct=fee,
+            slippage_pct=slip,
+            spread_pct=spread,
+            estimated_cost_pct=cost_pct,
+            capital_at_risk_tmn=capital_at_risk,
+            estimated_cost_tmn=cost_tmn,
+            is_hypothetical=is_hypothetical,
+        )
 
     def tick(
         self,
@@ -156,12 +182,25 @@ class SarvRouter:
                 allocations=alloc["allocations"],
                 cash=alloc["cash"],
             ))
+            risk_dict = self._make_risk(
+                alloc, state.total_capital, is_hypothetical=False
+            ).to_dict()
+
+        # Hypothetical risk for pending/no_change/cooldown
+        if action.get("action") in ("pending", "no_change", "cooldown"):
+            hypo_alloc = allocate_capital(state.total_capital, regime, self.config)
+            risk_dict = self._make_risk(
+                hypo_alloc, state.total_capital, is_hypothetical=True
+            ).to_dict()
+        elif action.get("action") != "switched":
+            risk_dict = None
 
         # Always persist (regime + any switch changes)
         decision = self._decision(
             action=action.get("action", "unknown"),
             why=str(action.get("reason", action.get("action", ""))),
             evidence={**action, "path": "lifecycle", "regime": regime_str},
+            risk=risk_dict,
         )
         state.last_decision = decision
         self.store.save(user_id, state)

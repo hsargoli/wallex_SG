@@ -31,3 +31,8 @@ class SarvRouterConfig:
     # ── Risk ──
     daily_loss_limit_pct: float = 2.0
     max_per_bot_pct: float = 60.0
+
+    # ── Risk (ADR-0041 phase 2) ──
+    fee_pct: float = 0.2
+    slippage_pct: float = 0.1
+    spread_pct: float = 0.05

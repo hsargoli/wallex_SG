@@ -143,3 +143,216 @@ class TestLastDecisionPersistence:
         assert st.last_decision is not None
         assert "why" in st.last_decision
         assert st.last_decision["evidence"]["path"] == "lifecycle"
+
+
+class TestRiskProfile:
+    """Phase 2 (ADR-0041): RiskProfile contract."""
+
+    def _mk(self, tmp_path):
+        from decimal import Decimal
+        from app.domain.entities.candle import Candle
+        from app.services.bots.sarv_router.audit import AuditTrail
+        from app.services.bots.sarv_router.bot import SarvRouter
+        from app.services.bots.sarv_router.config import SarvRouterConfig
+        from app.services.bots.sarv_router.store import SarvStore
+
+        def _c(t, price):
+            p = Decimal(str(price))
+            return Candle(time=t, open=p, high=p+1, low=p-1, close=p, volume=Decimal("100"))
+
+        def _uptrend(n=300):
+            return [_c(i*3600, 100 + i*2) for i in range(n)]
+
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None, stop_bot=lambda s: None, stop_all=lambda: None,
+            store=SarvStore(base_dir=tmp_path), audit=AuditTrail(base_dir=tmp_path),
+        )
+        return router, _uptrend
+
+    def test_risk_profile_to_dict(self):
+        from app.services.bots.sarv_router.decision import RiskProfile
+        rp = RiskProfile(
+            fee_pct=0.2, slippage_pct=0.1, spread_pct=0.05,
+            estimated_cost_pct=0.55, capital_at_risk_tmn=1_000_000.0,
+            estimated_cost_tmn=5500.0, is_hypothetical=False,
+        )
+        d = rp.to_dict()
+        assert d["fee_pct"] == 0.2
+        assert d["estimated_cost_pct"] == 0.55
+        assert d["is_hypothetical"] is False
+
+    def test_risk_hypothetical_in_pending(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        r = router.tick("u-pending", _uptrend(300), now_idx=0)
+        assert r["action"] == "pending"
+        assert "risk" in r
+        assert r["risk"]["is_hypothetical"] is True
+
+    def test_risk_real_in_switched(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-sw", _uptrend(300), now_idx=0)
+        r = router.tick("u-sw", _uptrend(300), now_idx=router.config.stability_window)
+        assert r["action"] == "switched"
+        assert r["risk"]["is_hypothetical"] is False
+
+    def test_risk_none_in_kill_switch(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-kill", _uptrend(300), now_idx=0)
+        st = router.store.load("u-kill")
+        st.kill_switch_manual = True
+        router.store.save("u-kill", st)
+        r = router.tick("u-kill", _uptrend(300), now_idx=1)
+        assert r["action"] == "kill_switch_active"
+        assert "risk" not in r
+
+    def test_risk_capital_matches_allocation(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-cap", _uptrend(300), now_idx=0)
+        r = router.tick("u-cap", _uptrend(300), now_idx=router.config.stability_window)
+        st = router.store.load("u-cap")
+        expected_pct = sum(st.allocations.values())
+        expected = st.total_capital * expected_pct / 100.0
+        assert abs(r["risk"]["capital_at_risk_tmn"] - expected) < 0.01
+
+
+class TestRiskProfile:
+    """Phase 2 (ADR-0041): RiskProfile contract."""
+
+    def _mk(self, tmp_path):
+        from decimal import Decimal
+        from app.domain.entities.candle import Candle
+        from app.services.bots.sarv_router.audit import AuditTrail
+        from app.services.bots.sarv_router.bot import SarvRouter
+        from app.services.bots.sarv_router.config import SarvRouterConfig
+        from app.services.bots.sarv_router.store import SarvStore
+
+        def _c(t, price):
+            p = Decimal(str(price))
+            return Candle(time=t, open=p, high=p+1, low=p-1, close=p, volume=Decimal("100"))
+
+        def _uptrend(n=300):
+            return [_c(i*3600, 100 + i*2) for i in range(n)]
+
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None, stop_bot=lambda s: None, stop_all=lambda: None,
+            store=SarvStore(base_dir=tmp_path), audit=AuditTrail(base_dir=tmp_path),
+        )
+        return router, _uptrend
+
+    def test_risk_profile_to_dict(self):
+        from app.services.bots.sarv_router.decision import RiskProfile
+        rp = RiskProfile(
+            fee_pct=0.2, slippage_pct=0.1, spread_pct=0.05,
+            estimated_cost_pct=0.55, capital_at_risk_tmn=1_000_000.0,
+            estimated_cost_tmn=5500.0, is_hypothetical=False,
+        )
+        d = rp.to_dict()
+        assert d["fee_pct"] == 0.2
+        assert d["estimated_cost_pct"] == 0.55
+        assert d["is_hypothetical"] is False
+
+    def test_risk_hypothetical_in_pending(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        r = router.tick("u-pending", _uptrend(300), now_idx=0)
+        assert r["action"] == "pending"
+        assert "risk" in r
+        assert r["risk"]["is_hypothetical"] is True
+
+    def test_risk_real_in_switched(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-sw", _uptrend(300), now_idx=0)
+        r = router.tick("u-sw", _uptrend(300), now_idx=router.config.stability_window)
+        assert r["action"] == "switched"
+        assert r["risk"]["is_hypothetical"] is False
+
+    def test_risk_none_in_kill_switch(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-kill", _uptrend(300), now_idx=0)
+        st = router.store.load("u-kill")
+        st.kill_switch_manual = True
+        router.store.save("u-kill", st)
+        r = router.tick("u-kill", _uptrend(300), now_idx=1)
+        assert r["action"] == "kill_switch_active"
+        assert "risk" not in r
+
+    def test_risk_capital_matches_allocation(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-cap", _uptrend(300), now_idx=0)
+        r = router.tick("u-cap", _uptrend(300), now_idx=router.config.stability_window)
+        st = router.store.load("u-cap")
+        expected_pct = sum(st.allocations.values())
+        expected = st.total_capital * expected_pct / 100.0
+        assert abs(r["risk"]["capital_at_risk_tmn"] - expected) < 0.01
+
+
+class TestRiskProfile:
+    """Phase 2 (ADR-0041): RiskProfile contract."""
+
+    def _mk(self, tmp_path):
+        from decimal import Decimal
+        from app.domain.entities.candle import Candle
+        from app.services.bots.sarv_router.audit import AuditTrail
+        from app.services.bots.sarv_router.bot import SarvRouter
+        from app.services.bots.sarv_router.config import SarvRouterConfig
+        from app.services.bots.sarv_router.store import SarvStore
+
+        def _c(t, price):
+            p = Decimal(str(price))
+            return Candle(time=t, open=p, high=p+1, low=p-1, close=p, volume=Decimal("100"))
+
+        def _uptrend(n=300):
+            return [_c(i*3600, 100 + i*2) for i in range(n)]
+
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: None, stop_bot=lambda s: None, stop_all=lambda: None,
+            store=SarvStore(base_dir=tmp_path), audit=AuditTrail(base_dir=tmp_path),
+        )
+        return router, _uptrend
+
+    def test_risk_profile_to_dict(self):
+        from app.services.bots.sarv_router.decision import RiskProfile
+        rp = RiskProfile(
+            fee_pct=0.2, slippage_pct=0.1, spread_pct=0.05,
+            estimated_cost_pct=0.55, capital_at_risk_tmn=1_000_000.0,
+            estimated_cost_tmn=5500.0, is_hypothetical=False,
+        )
+        d = rp.to_dict()
+        assert d["fee_pct"] == 0.2
+        assert d["estimated_cost_pct"] == 0.55
+        assert d["is_hypothetical"] is False
+
+    def test_risk_hypothetical_in_pending(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        r = router.tick("u-pending", _uptrend(300), now_idx=0)
+        assert r["action"] == "pending"
+        assert "risk" in r
+        assert r["risk"]["is_hypothetical"] is True
+
+    def test_risk_real_in_switched(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-sw", _uptrend(300), now_idx=0)
+        r = router.tick("u-sw", _uptrend(300), now_idx=router.config.stability_window)
+        assert r["action"] == "switched"
+        assert r["risk"]["is_hypothetical"] is False
+
+    def test_risk_none_in_kill_switch(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-kill", _uptrend(300), now_idx=0)
+        st = router.store.load("u-kill")
+        st.kill_switch_manual = True
+        router.store.save("u-kill", st)
+        r = router.tick("u-kill", _uptrend(300), now_idx=1)
+        assert r["action"] == "kill_switch_active"
+        assert "risk" not in r
+
+    def test_risk_capital_matches_allocation(self, tmp_path):
+        router, _uptrend = self._mk(tmp_path)
+        router.tick("u-cap", _uptrend(300), now_idx=0)
+        r = router.tick("u-cap", _uptrend(300), now_idx=router.config.stability_window)
+        st = router.store.load("u-cap")
+        expected_pct = sum(st.allocations.values())
+        expected = st.total_capital * expected_pct / 100.0
+        assert abs(r["risk"]["capital_at_risk_tmn"] - expected) < 0.01

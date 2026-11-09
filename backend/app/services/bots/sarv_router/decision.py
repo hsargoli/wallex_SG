@@ -30,3 +30,26 @@ class DecisionReason:
         if self.alternatives:
             out["alternatives"] = list(self.alternatives)
         return out
+
+
+@dataclass(frozen=True)
+class RiskProfile:
+    """Risk per ADR-0041. Fields frozen; to_dict for JSON."""
+    fee_pct: float
+    slippage_pct: float
+    spread_pct: float
+    estimated_cost_pct: float
+    capital_at_risk_tmn: float
+    estimated_cost_tmn: float
+    is_hypothetical: bool
+
+    def to_dict(self) -> dict:
+        return {
+            "fee_pct": self.fee_pct,
+            "slippage_pct": self.slippage_pct,
+            "spread_pct": self.spread_pct,
+            "estimated_cost_pct": self.estimated_cost_pct,
+            "capital_at_risk_tmn": self.capital_at_risk_tmn,
+            "estimated_cost_tmn": self.estimated_cost_tmn,
+            "is_hypothetical": self.is_hypothetical,
+        }
