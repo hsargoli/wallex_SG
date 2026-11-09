@@ -1,3 +1,76 @@
+# ADR-0041 — Risk Profile (Phase 2 Copilot)
+
+- **Status:** Proposed
+- **Date:** 2026-11-09
+- **Author:** دی دریا (CTO)
+- **Reviewers:** حسین (رهبر), دی کویر (مسئول SarvRouter)
+- **Related:** ADR-0039 (Copilot), ADR-0040 (Decision Contract)
+
+---
+
+## 1. Context
+
+فاز ۱ (بامعنا) کامل شد: هر tick `why`, `evidence`, `confidence`, `tick_id` دارد.
+ADR-0040 فیلد `risk: dict | None` را در `DecisionReason` رزرو کرد، ولی خالی ماند.
+
+فاز ۲ می‌خواهد این فیلد را پر کند تا Copilot بگوید:
+«این پیشنهاد، با fee، slippage، و spread، تقریباً X تومان هزینه دارد.»
+
+**شاهد از کد (۲۰۲۶-۱۱-۰۹):**
+- `SarvRouterConfig` هیچ فیلد `fee_pct` / `slippage_pct` / `spread_pct` ندارد.
+- fee فقط در `_archive/` هست (bear_hunter: `entry_fee_pct=0.2`).
+- `backtest_adapter.run_sarv_backtest` هیچ هزینه‌ای محاسبه نمی‌کند.
+
+## 2. Decision
+
+`RiskProfile` به عنوان dataclass در `decision.py` اضافه می‌شود.
+
+### 2.1. مقادیر پیش‌فرض (محافظه‌کارانه)
+
+    fee_pct: float = 0.2
+    slippage_pct: float = 0.1
+    spread_pct: float = 0.05
+
+اینها از درس پرایمر (Fee ۰.۲٪ × ۲) و تجربه bear_hunter. هیچ‌کدام از backtest کالیبره نشده.
+
+### 2.2. ساختار RiskProfile
+
+    @dataclass(frozen=True)
+    class RiskProfile:
+        fee_pct: float
+        slippage_pct: float
+        spread_pct: float
+        estimated_cost_pct: float
+        capital_at_risk_tmn: float
+        estimated_cost_tmn: float
+        is_hypothetical: bool
+
+        def to_dict(self) -> dict: ...
+
+### 2.3. چه زمانی پر می‌شود؟
+
+(در Addendum 1.1 بازنگری شد — پایین را ببینید.)
+
+## 3. Consequences
+
+- `config.py`: سه فیلد جدید
+- `decision.py`: `RiskProfile` dataclass
+- `bot.py`: در مسیرهای مختلف `risk` پر یا None
+- API: `risk` در `last_decision` ظاهر می‌شود
+- UI: در فاز ۲ب، `risk` نمایش داده می‌شود
+
+## 4. Open Questions
+
+۱. slippage و spread — تخمینی یا اندازه‌گیری‌شده؟
+۲. نمایش در UI — درصد یا تومان؟
+۳. آیا `RiskProfile` در audit هم ثبت شود؟
+
+## 5. Witness
+
+پذیرش با سه تست اولیه + پنج تست Addendum 1.1.
+
+---
+
 
 ---
 
