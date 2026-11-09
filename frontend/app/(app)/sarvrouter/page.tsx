@@ -304,21 +304,38 @@ export default function SarvRouterPage() {
               <ShieldAlert className="h-4 w-4" /> تحلیل ریسک
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <Stat
-              label={d.last_decision.risk.is_hypothetical ? "هزینه فرضی (اگر وارد شویم)" : "هزینه پیشنهادی"}
-              value={`${Math.round(d.last_decision.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان`}
-              tone="bad"
-            />
-            <Stat
-              label="درصد هزینه (رفت و برگشت)"
-              value={`${d.last_decision.risk.estimated_cost_pct.toFixed(2)}%`}
-              tone="bad"
-            />
-            <Stat
-              label="سرمایه درگیر"
-              value={`${Math.round(d.last_decision.risk.capital_at_risk_tmn).toLocaleString("fa-IR")} تومان`}
-            />
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">
+                {d.last_decision.risk.is_hypothetical ? "تخمین هزینه معامله (فرضی)" : "تخمین هزینه معامله"}
+              </p>
+              <p className="text-xl font-bold text-rose-400">
+                {Math.round(d.last_decision.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                اگر الان وارد معامله شوید، این مبلغ بابت کارمزد صرافی، لغزش قیمت و اختلاف خرید/فروش از بین می‌رود.
+              </p>
+            </div>
+            
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">هزینه نسبت به سرمایه</p>
+              <p className="text-xl font-bold text-rose-400">
+                {d.last_decision.risk.estimated_cost_pct.toFixed(2)}%
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                این یعنی ۰.۵۵ درصد از سرمایه‌ای که وارد می‌کنید، صرف هزینه‌های رفت و برگشت می‌شود.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">سرمایه درگیر در معامله</p>
+              <p className="text-xl font-bold text-foreground">
+                {Math.round(d.last_decision.risk.capital_at_risk_tmn).toLocaleString("fa-IR")} تومان
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                این مبلغ از کل دارایی شما در این معامله قفل خواهد شد. (باقی دارایی شما به صورت نقدی می‌ماند).
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
