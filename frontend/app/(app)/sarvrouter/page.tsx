@@ -15,6 +15,12 @@ import {
   RefreshCw,
   Sparkles,
   MessageCircleQuestion,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  HelpCircle,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 import {
   useSarvRouterStatus,
@@ -24,10 +30,17 @@ import {
   useSarvRouterFeedback,
 } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTime, formatPct } from "@/lib/format";
+import { formatTime } from "@/lib/format";
+
+const REGIME_FA: Record<string, { label: string; icon: any; color: string }> = {
+  uptrend: { label: "صعودی", icon: TrendingUp, color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+  downtrend: { label: "نزولی", icon: TrendingDown, color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
+  range: { label: "رنج (خنثی)", icon: Minus, color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  unknown: { label: "نامشخص", icon: HelpCircle, color: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
+};
 
 const ACTION_FA: Record<string, string> = {
   switched: "تغییر روند و ورود جدید",
@@ -38,55 +51,38 @@ const ACTION_FA: Record<string, string> = {
   daily_loss_kill: "توقف به دلیل حد ضرر",
 };
 
-const PATH_FA: Record<string, string> = {
-  lifecycle: "چرخه عادی ربات",
-  kill_switch: "دستور توقف",
-  daily_loss: "حد ضرر روزانه",
-};
-
-const REGIME_FA: Record<string, { label: string; color: string }> = {
-  uptrend: { label: "صعودی", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  downtrend: { label: "نزولی", color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
-  range: { label: "رنج", color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  unknown: { label: "نامشخص", color: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
-};
-
 export default function SarvRouterPage() {
   const status = useSarvRouterStatus();
   const kill = useSarvRouterKill();
   const reenable = useSarvRouterReenable();
   const why = useSarvRouterWhy();
   const feedback = useSarvRouterFeedback();
+  
   const [confirmKill, setConfirmKill] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
 
   if (status.isLoading) {
     return (
-      <div className="container py-8 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-40 w-full" />
+      <div className="container max-w-4xl py-8 space-y-4">
+        <Skeleton className="h-12 w-64" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
 
   if (status.isError || !status.data) {
     return (
-      <div className="container py-8">
-        <Card className="border-rose-500/30">
+      <div className="container max-w-4xl py-8">
+        <Card className="border-rose-500/30 bg-rose-500/5">
           <CardHeader>
-            <CardTitle className="text-rose-400">خطا در دریافت وضعیت SarvRouter</CardTitle>
+            <CardTitle className="text-rose-400">خطا در ارتباط با دستیار</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              state یا gate در دسترس نیست. لطفاً بعداً تلاش کنید.
+            <p className="text-sm text-muted-foreground mb-4">
+              اطلاعات وضعیت در دسترس نیست. لطفاً مجدداً تلاش کنید.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => status.refetch()}
-            >
+            <Button variant="outline" onClick={() => status.refetch()}>
               <RefreshCw className="h-4 w-4 ml-2" /> تلاش دوباره
             </Button>
           </CardContent>
@@ -95,438 +91,255 @@ export default function SarvRouterPage() {
     );
   }
 
-  const d = status.data as unknown as {
-    regime: string;
-    active_bots: string[];
-    allocations: Record<string, number>;
-    capital_total: number;
-    cash: number;
-    daily_pnl_pct: number;
-    kill_switch_manual: boolean;
-    kill_switch_auto: boolean;
-    gate: { allow_new_entries: boolean; updated_at: string; killed_by?: string };
-    last_decision?: {
-      action: string;
-      why: string;
-      evidence: Record<string, unknown>;
-      confidence: number;
-      tick_id: string;
-      risk?: {
-        fee_pct: number;
-        slippage_pct: number;
-        spread_pct: number;
-        estimated_cost_pct: number;
-        capital_at_risk_tmn: number;
-        estimated_cost_tmn: number;
-        is_hypothetical: boolean;
-      } | null;
-      alternatives?: Array<{
-        regime: string;
-        active_bots: string[];
-        risk: {
-          estimated_cost_pct: number;
-          estimated_cost_tmn: number;
-          is_hypothetical: boolean;
-        };
-      }>;
-    } | null;
-  };
-
-  const regime = REGIME_FA[d.regime] ?? REGIME_FA.unknown;
+  const d = status.data as any;
+  const last = d.last_decision;
+  const regime = REGIME_FA[d.regime] || REGIME_FA.unknown;
+  const RegimeIcon = regime.icon;
   const isKilled = d.kill_switch_manual || d.kill_switch_auto;
   const allowNew = d.gate?.allow_new_entries ?? false;
 
   return (
-    <div className="container py-8 space-y-4">
-      <div className="flex items-center gap-3">
-        <Link href="/bots" className="text-muted-foreground hover:text-foreground">
-          <ArrowRight className="h-4 w-4 inline" />
-        </Link>
+    <div className="container max-w-4xl py-8 space-y-6">
+      
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">SarvRouter</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            دستیار هوشمند تشخیص روند بازار. این سیستم به شما پیشنهاد می‌دهد، اما تصمیم نهایی و تایید معامله همیشه با خود شماست.
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            دستیار SarvRouter
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+            من یک دستیار هوشمند هستم. بازار را تحلیل می‌کنم و به شما پیشنهاد می‌دهم. 
+            <b> تصمیم نهایی و تایید معامله همیشه با شماست.</b>
           </p>
         </div>
-        <Link
-          href="/bots/sarv_router"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-violet-400"
-        >
-          نمای کلی ربات
-          <ExternalLink className="h-3 w-3" />
+        <Link href="/bots/sarv_router" className="text-xs text-muted-foreground hover:text-violet-400 flex items-center gap-1 mt-2">
+          نمای کلی ربات <ExternalLink className="h-3 w-3" />
         </Link>
-        <Badge variant="outline" className={regime.color}>
-          رژیم: {regime.label}
-        </Badge>
-        {isKilled && (
-          <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/30">
-            <ShieldAlert className="h-3 w-3 ml-1" /> متوقف
-          </Badge>
-        )}
       </div>
 
-      {/* Card 1: Regime + Gate */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4" /> وضعیت رژیم و Gate
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">ربات به طور مداوم کندل‌ها را بررسی می‌کند تا بفهمد بازار در حالت صعودی، نزولی یا رنج است.</p>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Stat label="رژیم" value={regime.label} />
-          <Stat
-            label="ورود جدید"
-            value={allowNew ? "مجاز" : "مسدود"}
-            tone={allowNew ? "good" : "bad"}
-          />
-          <Stat
-            label="توقف اضطراری"
-            value={isKilled ? "فعال" : "غیرفعال"}
-            tone={isKilled ? "bad" : "good"}
-          />
-          <Stat
-            label="آخرین به‌روزرسانی وضعیت"
-            value={d.gate?.updated_at ? formatTime(new Date(d.gate.updated_at).getTime() / 1000) : "—"}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Card: Last Copilot Decision (phase 1) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="h-4 w-4" /> آخرین تصمیم دستیار
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">دلیل پیشنهاد ربات و میزان اطمینان آن در این بخش قابل مشاهده است.</p>
-        </CardHeader>
-        <CardContent>
-          {!d.last_decision ? (
-            <p className="text-sm text-muted-foreground">
-              هنوز تصمیمی ثبت نشده — منتظر اولین tick.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium">
-                  {d.last_decision.why || d.last_decision.action}
-                </p>
-                <Badge
-                  variant="outline"
-                  className={
-                    d.last_decision.confidence >= 0.8
-                      ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                      : d.last_decision.confidence >= 0.5
-                      ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                      : "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                  }
-                >
-                  اطمینان: {Math.round(d.last_decision.confidence * 100)}%
+      {/* HERO CARD: The Main Suggestion */}
+      <Card className="border-violet-500/30 bg-gradient-to-b from-violet-500/10 to-transparent">
+        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-4 text-center md:text-right">
+            <div className="flex items-center justify-center md:justify-start gap-3">
+              <Badge variant="outline" className={`px-3 py-1 text-sm ${regime.color}`}>
+                <RegimeIcon className="h-4 w-4 ml-1" />
+                روند بازار: {regime.label}
+              </Badge>
+              {isKilled && (
+                <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/30 text-sm">
+                  <ShieldAlert className="h-4 w-4 ml-1" /> متوقف شده
                 </Badge>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-                <div>
-                  <span className="font-medium">اقدام:</span>{" "}
-                  {ACTION_FA[d.last_decision.action] || d.last_decision.action}
-                </div>
-                <div>
-                  <span className="font-medium">مسیر:</span>{" "}
-                  {PATH_FA[String(d.last_decision.evidence.path)] || "—"}
-                </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">شناسه تصمیم:</span>{" "}
-                    <code className="text-[10px]">
-                      {d.last_decision.tick_id.slice(0, 8)}
-                    </code>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-7 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                      onClick={() => feedback.mutate({ tick_id: d.last_decision!.tick_id, choice: "accept" })}
-                      disabled={feedback.isPending || feedback.isSuccess}
-                    >
-                      تایید
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-7 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30"
-                      onClick={() => feedback.mutate({ tick_id: d.last_decision!.tick_id, choice: "reject" })}
-                      disabled={feedback.isPending || feedback.isSuccess}
-                    >
-                      رد
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-7 text-xs"
-                      onClick={() => {
-                        setShowWhy(true);
-                        why.refetch();
-                      }}
-                      disabled={why.isFetching}
-                    >
-                      <MessageCircleQuestion className="h-3 w-3 ml-1" />
-                      چرا؟
-                    </Button>
-                  </div>
-                </div>
-
-                {feedback.isSuccess && (
-                  <p className="mt-2 text-xs text-emerald-400">بازخورد شما با موفقیت ثبت شد.</p>
-                )}
-                {feedback.isError && (
-                  <p className="mt-2 text-xs text-rose-400">خطا در ثبت بازخورد.</p>
-                )}
-                {showWhy && why.data && (
-                  <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-md text-sm text-violet-200">
-                    <p className="font-medium mb-1">پاسخ Copilot:</p>
-                    <p>{why.data.answer}</p>
-                  </div>
-                )}
-                {showWhy && why.isError && (
-                  <p className="mt-2 text-xs text-rose-400">خطا در دریافت پاسخ.</p>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Card: Risk Analysis (phase 2) */}
-      {d.last_decision?.risk && (
-        <Card className={d.last_decision.risk.is_hypothetical ? "border-slate-500/30" : "border-amber-500/40"}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldAlert className="h-4 w-4" /> تحلیل ریسک
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">
-                {d.last_decision.risk.is_hypothetical ? "تخمین هزینه معامله (فرضی)" : "تخمین هزینه معامله"}
-              </p>
-              <p className="text-xl font-bold text-rose-400">
-                {Math.round(d.last_decision.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                این مبلغ در واقع ۰.۵۵ درصد از سرمایه درگیر شماست. به زبان ساده: به ازای هر <b>۱ میلیون تومان</b> سرمایه‌گذاری، حدود <b>۵,۵۰۰ تومان</b> بابت کارمزد و اختلاف قیمت پرداخت می‌کنید.
-              </p>
+              )}
             </div>
             
             <div>
-              <p className="text-sm font-medium text-foreground mb-1">هزینه نسبت به سرمایه</p>
-              <p className="text-xl font-bold text-rose-400">
-                {d.last_decision.risk.estimated_cost_pct.toFixed(2)}%
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                این یعنی ۰.۵۵ درصد از سرمایه‌ای که وارد می‌کنید، صرف هزینه‌های رفت و برگشت می‌شود.
-              </p>
+              <p className="text-sm text-muted-foreground mb-1">پیشنهاد فعلی من:</p>
+              <h2 className="text-2xl font-bold text-foreground">
+                {last ? ACTION_FA[last.action] || last.action : "در حال تحلیل..."}
+              </h2>
             </div>
+          </div>
 
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">سرمایه درگیر در معامله</p>
-              <p className="text-xl font-bold text-foreground">
-                {Math.round(d.last_decision.risk.capital_at_risk_tmn).toLocaleString("fa-IR")} تومان
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                این مبلغ از کل دارایی شما در این معامله قفل خواهد شد. (باقی دارایی شما به صورت نقدی می‌ماند).
-              </p>
+          {/* Action Buttons (Feedback loop) */}
+          <div className="flex flex-col gap-2 w-full md:w-auto">
+            <Button 
+              className="w-full md:w-40 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 h-12 text-base"
+              onClick={() => feedback.mutate({ tick_id: last.tick_id, choice: "accept" })}
+              disabled={!last || feedback.isPending || feedback.isSuccess}
+            >
+              <CheckCircle2 className="h-5 w-5 ml-2" /> موافقم
+            </Button>
+            <Button 
+              className="w-full md:w-40 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 h-12 text-base"
+              onClick={() => feedback.mutate({ tick_id: last.tick_id, choice: "reject" })}
+              disabled={!last || feedback.isPending || feedback.isSuccess}
+            >
+              <XCircle className="h-5 w-5 ml-2" /> مخالفم
+            </Button>
+            {feedback.isSuccess && (
+              <p className="text-xs text-emerald-400 text-center mt-1">بازخورد شما ثبت شد.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* WHY CARD */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Sparkles className="h-5 w-5 text-violet-400" /> چرا این پیشنهاد را دادم؟
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">میزان اطمینان من:</span>
+              <span className="font-bold text-violet-400">
+                {last ? Math.round(last.confidence * 100) : 0}%
+              </span>
             </div>
+            {/* Confidence Bar */}
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-violet-500 rounded-full transition-all" 
+                style={{ width: `${(last?.confidence || 0) * 100}%` }}
+              />
+            </div>
+            
+            <Button 
+              variant="outline" 
+              className="w-full mt-2" 
+              onClick={() => { setShowWhy(true); why.refetch(); }}
+              disabled={why.isFetching}
+            >
+              {why.isFetching ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <MessageCircleQuestion className="h-4 w-4 ml-2" />}
+              سوال دیگری دارم
+            </Button>
+
+            {showWhy && why.data && (
+              <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-md text-sm text-violet-200">
+                <p className="font-medium mb-1">پاسخ دستیار:</p>
+                <p className="leading-relaxed">{why.data.answer}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Card: Alternative Scenarios (phase 5) */}
-      {d.last_decision?.alternatives && d.last_decision.alternatives.length > 0 && (
-        <Card className="border-slate-500/30">
+        {/* RISK CARD */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4" /> سناریوهای جایگزین
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldAlert className="h-5 w-5 text-rose-400" /> تحلیل هزینه و ریسک
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {last?.risk ? (
+              <>
+                <div className="flex justify-between items-end border-b border-border/50 pb-2">
+                  <span className="text-sm text-muted-foreground">هزینه تخمینی معامله:</span>
+                  <div className="text-left">
+                    <span className="text-lg font-bold text-rose-400">
+                      {Math.round(last.risk.estimated_cost_tmn).toLocaleString("fa-IR")}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">تومان</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end border-b border-border/50 pb-2">
+                  <span className="text-sm text-muted-foreground">سرمایه درگیر:</span>
+                  <div className="text-left">
+                    <span className="text-sm font-bold">
+                      {Math.round(last.risk.capital_at_risk_tmn).toLocaleString("fa-IR")}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">تومان</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+                  * این یعنی به ازای هر <b>۱ میلیون تومان</b> سرمایه‌گذاری، حدود <b>۵,۵۰۰ تومان</b> بابت کارمزد و اختلاف قیمت کسر می‌شود.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">هزینه‌ای برای این پیشنهاد محاسبه نشده است.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ALTERNATIVES CARD */}
+      {last?.alternatives && last.alternatives.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Activity className="h-5 w-5 text-amber-400" /> اگر بازار تغییر کند چه می‌شود؟
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-xs text-muted-foreground mb-3">
-              اگر روند تغییر کند، Copilot این سناریوها را پیشنهاد می‌دهد:
-            </p>
-            {d.last_decision.alternatives.map((alt, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded bg-black/[0.03] dark:bg-white/[0.05] text-xs">
-                <div>
-                  <Badge variant="outline" className="mr-2">
-                    {REGIME_FA[alt.regime]?.label ?? alt.regime}
+            {last.alternatives.map((alt: any, i: number) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={REGIME_FA[alt.regime]?.color || ""}>
+                    روند {REGIME_FA[alt.regime]?.label || alt.regime}
                   </Badge>
                   <span className="text-muted-foreground">
-                    {alt.active_bots.length > 0 ? `ربات: ${alt.active_bots.join("، ")}` : "Cash"}
+                    {alt.active_bots.length > 0 ? `پیشنهاد ورود به ربات ${alt.active_bots.join("، ")}` : "ماندن در حالت نقد (Cash)"}
                   </span>
                 </div>
-                <div className="text-rose-400 font-medium">
-                  هزینه: {Math.round(alt.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
-                </div>
+                {alt.risk && (
+                  <span className="text-xs font-medium text-rose-400">
+                    هزینه: {Math.round(alt.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
+                  </span>
+                )}
               </div>
             ))}
           </CardContent>
         </Card>
       )}
 
-      {/* Card 2: Active bots + allocations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BotIcon className="h-4 w-4" /> ربات‌های فعال
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">ربات‌هایی که برای مدیریت سرمایه شما در این روند پیشنهاد شده‌اند.</p>
-        </CardHeader>
-        <CardContent>
-          {d.active_bots.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              هیچ ربات فعالی نیست — Cash
+      {/* FOOTER: CAPITAL & CONTROL */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wallet className="h-5 w-5" /> وضعیت حساب
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">کل سرمایه</p>
+              <p className="font-semibold text-lg">{Number(d.capital_total).toLocaleString("fa-IR")} <span className="text-xs font-normal">تومان</span></p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">موجودی نقدی</p>
+              <p className="font-semibold text-lg">{Number(d.cash).toLocaleString("fa-IR")} <span className="text-xs font-normal">تومان</span></p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">سود/زیان امروز</p>
+              <p className={`font-semibold text-lg ${d.daily_pnl_pct >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {d.daily_pnl_pct}%
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={isKilled ? "border-rose-500/40 bg-rose-500/5" : ""}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldAlert className="h-5 w-5" /> کنترل اضطراری
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              با زدن این دکمه، تمام پیشنهادات ورود جدید فوراً متوقف می‌شوند.
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {d.active_bots.map((slug) => (
-                <Link key={slug} href={`/bots/${slug}`}>
-                  <Badge variant="outline" className="cursor-pointer hover:bg-accent">
-                    {slug} — {(d.allocations[slug] ?? 0).toFixed(0)}%
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Card 3: Capital */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Wallet className="h-4 w-4" /> سرمایه
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-4">
-          <Stat label="کل" value={d.capital_total.toLocaleString("fa-IR")} />
-          <Stat label="Cash" value={d.cash.toLocaleString("fa-IR")} />
-          <Stat
-            label="PnL امروز"
-            value={formatPct(d.daily_pnl_pct)}
-            tone={d.daily_pnl_pct >= 0 ? "good" : "bad"}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Card 4: Kill switch */}
-      <Card className={isKilled ? "border-rose-500/40" : "border-amber-500/30"}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldAlert className="h-4 w-4" /> کنترل اضطراری
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">در صورت نیاز، با این دکمه تمام پیشنهادات ورود جدید را فوراً متوقف کنید.</p>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {!confirmKill && !isKilled && (
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmKill(true)}
-              disabled={kill.isPending}
-            >
-              <ShieldAlert className="h-4 w-4 ml-2" /> توقف اضطراری
-            </Button>
-          )}
-
-          {confirmKill && !isKilled && (
-            <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-3 space-y-2">
-              <p className="text-sm flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-400 mt-0.5 shrink-0" />
-                <span>
-                  ورودهای جدید SarvRouter <b>فوراً مسدود</b> می‌شود. ربات‌های در حال اجرا
-                  به کار خود ادامه می‌دهند، ولی ورود جدید نخواهند داشت. مطمئنید؟
-                </span>
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    kill.mutate(undefined, {
-                      onSuccess: () => setConfirmKill(false),
-                    });
-                  }}
-                  disabled={kill.isPending}
-                >
-                  {kill.isPending ? (
-                    <><Loader2 className="h-4 w-4 ml-2 animate-spin" /> در حال اجرا</>
-                  ) : (
-                    <><ShieldAlert className="h-4 w-4 ml-2" /> بله، متوقف کن</>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setConfirmKill(false)}
-                  disabled={kill.isPending}
-                >
-                  لغو
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {isKilled && (
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-sm flex items-start gap-2">
-                <ShieldAlert className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-                <span>
-                  SarvRouter متوقف است ({d.kill_switch_manual ? "دستی" : "خودکار"}).
-                  ورود جدید مسدود است. برای فعال‌سازی مجدد:
-                </span>
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => reenable.mutate()}
-                disabled={reenable.isPending}
-              >
-                {reenable.isPending ? (
-                  <><Loader2 className="h-4 w-4 ml-2 animate-spin" /> در حال فعال‌سازی</>
-                ) : (
-                  <><ShieldCheck className="h-4 w-4 ml-2" /> فعال‌سازی مجدد</>
-                )}
+            
+            {!confirmKill && !isKilled && (
+              <Button variant="destructive" className="w-full" onClick={() => setConfirmKill(true)}>
+                توقف اضطراری دستیار
               </Button>
-            </div>
-          )}
+            )}
 
-          {(kill.isError || reenable.isError) && (
-            <p className="text-xs text-rose-400">
-              خطا در اعمال تغییر. لطفاً دوباره تلاش کنید.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+            {confirmKill && !isKilled && (
+              <div className="space-y-2">
+                <p className="text-xs text-rose-400">آیا مطمئنید؟</p>
+                <div className="flex gap-2">
+                  <Button variant="destructive" className="flex-1" onClick={() => { kill.mutate(); setConfirmKill(false); }} disabled={kill.isPending}>
+                    بله، متوقف کن
+                  </Button>
+                  <Button variant="outline" className="flex-1" onClick={() => setConfirmKill(false)}>لغو</Button>
+                </div>
+              </div>
+            )}
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "good" | "bad";
-}) {
-  const color =
-    tone === "good"
-      ? "text-emerald-400"
-      : tone === "bad"
-      ? "text-rose-400"
-      : "text-foreground";
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className={`text-sm font-semibold ${color}`}>{value}</p>
+            {isKilled && (
+              <Button variant="outline" className="w-full border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => reenable.mutate()} disabled={reenable.isPending}>
+                <ShieldCheck className="h-4 w-4 ml-2" /> فعال‌سازی مجدد دستیار
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
 }
