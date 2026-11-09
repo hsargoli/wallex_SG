@@ -18,6 +18,8 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from app.services.bots.sarv_router.conversation import ConversationEngine
+from app.services.bots.sarv_router.feedback import FeedbackTrail, FeedbackEntry
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/sarvrouter", tags=["SarvRouter"])
 
@@ -86,6 +88,33 @@ async def get_why() -> dict:
         "is_mvp": True,
     }
 
+
+class FeedbackInput(BaseModel):
+    tick_id: str
+    user_choice: str  # "accept" | "reject"
+
+@router.post("/feedback")
+async def post_feedback(body: FeedbackInput) -> dict:
+    """Record user feedback on the last decision (ADR-0043)."""
+    state = _load(_state_file())
+    last = state.get("last_decision")
+    if not last:
+        raise HTTPException(status_code=503, detail="no decision yet")
+    
+    if last.get("tick_id") != body.tick_id:
+        raise HTTPException(status_code=409, detail="tick_id mismatch with last decision")
+    
+    if body.user_choice not in ("accept", "reject"):
+        raise HTTPException(status_code=400, detail="invalid user_choice")
+
+    trail = FeedbackTrail(base_dir=SARV_DIR / "users")
+    entry = FeedbackEntry(
+        tick_id=body.tick_id,
+        action=last.get("action", "unknown"),
+        user_choice=body.user_choice,
+    )
+    trail.write("production-default", entry)
+    return {"ok": True, "recorded": entry.to_dict()}
 
 @router.post("/kill-switch")
 async def kill_switch() -> dict:
