@@ -12,6 +12,9 @@ Reenable = reverse of both.
 """
 from __future__ import annotations
 
+import pandas as pd
+import tempfile
+from decimal import Decimal
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -164,17 +167,19 @@ async def simulate_sarvrouter(body: SimulateInput) -> dict:
             store=SarvStore(base_dir=tmp), audit=AuditTrail(base_dir=tmp)
         )
         
-        run_sarv_backtest(router, "sim-user", candles)
+        stats = run_sarv_backtest(router, "sim-user", candles)
         
         state = router.store.load("sim-user")
         last_decision = state.last_decision
         
-        if not last_decision:
-            return {"error": "No decision could be made for this date"}
+        explanation = ""
+        if last_decision:
+            explanation = ConversationEngine.explain(last_decision)
+        else:
+            explanation = "در این بازه، ربات به تصمیم مشخصی نرسید."
             
-        explanation = ConversationEngine.explain(last_decision)
-        
         return {
+            "stats": stats,
             "decision": last_decision,
             "explanation": explanation
         }
@@ -228,7 +233,6 @@ async def reenable() -> dict:
 # ─── Backtest Builder (ADR-0035) ─────────────────────────────────────
 import sys
 from pathlib import Path
-from decimal import Decimal
 from typing import Any
 from pydantic import BaseModel
 from app.domain.entities.candle import Candle

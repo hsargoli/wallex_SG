@@ -298,12 +298,29 @@ export default function SarvRouterPage() {
                   </div>
                 ) : (
                   <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200">
-                    <p className="font-bold mb-2">نتیجه شبیه‌سازی در این تاریخ:</p>
-                    <div className="flex gap-2 items-center mb-3">
-                      <Badge variant="outline" className="bg-blue-500/20 text-blue-300">{simResult.decision.action}</Badge>
-                      <span className="text-xs">اطمینان: {Math.round(simResult.decision.confidence * 100)}%</span>
+                    <p className="font-bold mb-3">آمار شبیه‌سازی در این بازه (۳۰۰ کندل):</p>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-background/50 p-2 rounded">
+                        <span className="text-[10px] text-muted-foreground block">تعداد تغییر رژیم:</span>
+                        <span className="font-bold text-foreground">{simResult.stats.switches} بار</span>
+                      </div>
+                      <div className="bg-background/50 p-2 rounded">
+                        <span className="text-[10px] text-muted-foreground block">رژیم نهایی:</span>
+                        <span className="font-bold text-foreground">{REGIME_FA[simResult.stats.final_regime]?.label || simResult.stats.final_regime}</span>
+                      </div>
+                      <div className="bg-background/50 p-2 rounded">
+                        <span className="text-[10px] text-muted-foreground block">ربات‌های فعال در پایان:</span>
+                        <span className="font-bold text-foreground">{simResult.stats.final_active_bots?.join("، ") || "نقد (Cash)"}</span>
+                      </div>
+                      <div className="bg-background/50 p-2 rounded">
+                        <span className="text-[10px] text-muted-foreground block">مجموع تحلیل‌ها:</span>
+                        <span className="font-bold text-foreground">{simResult.stats.total_ticks} کندل</span>
+                      </div>
                     </div>
-                    <p className="text-xs leading-loose whitespace-pre-line text-foreground">{simResult.explanation}</p>
+                    <div className="bg-background/50 p-3 rounded text-xs leading-relaxed">
+                      <p className="font-bold mb-1">دلیل آخرین تصمیم:</p>
+                      <p className="text-foreground whitespace-pre-line">{simResult.explanation}</p>
+                    </div>
                   </div>
                 )}
               </div>
