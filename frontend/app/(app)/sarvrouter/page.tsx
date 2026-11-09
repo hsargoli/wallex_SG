@@ -29,6 +29,21 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTime, formatPct } from "@/lib/format";
 
+const ACTION_FA: Record<string, string> = {
+  switched: "تغییر روند و ورود جدید",
+  pending: "در انتظار تثبیت روند",
+  no_change: "بدون تغییر",
+  cooldown: "دوره خنک‌سازی (مکث پس از تغییر)",
+  kill_switch_active: "توقف اضطراری فعال",
+  daily_loss_kill: "توقف به دلیل حد ضرر",
+};
+
+const PATH_FA: Record<string, string> = {
+  lifecycle: "چرخه عادی ربات",
+  kill_switch: "دستور توقف",
+  daily_loss: "حد ضرر روزانه",
+};
+
 const REGIME_FA: Record<string, { label: string; color: string }> = {
   uptrend: { label: "صعودی", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
   downtrend: { label: "نزولی", color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
@@ -166,12 +181,12 @@ export default function SarvRouterPage() {
             tone={allowNew ? "good" : "bad"}
           />
           <Stat
-            label="Kill Switch"
+            label="توقف اضطراری"
             value={isKilled ? "فعال" : "غیرفعال"}
             tone={isKilled ? "bad" : "good"}
           />
           <Stat
-            label="آخرین به‌روزرسانی gate"
+            label="آخرین به‌روزرسانی وضعیت"
             value={d.gate?.updated_at ? formatTime(new Date(d.gate.updated_at).getTime() / 1000) : "—"}
           />
         </CardContent>
@@ -181,7 +196,7 @@ export default function SarvRouterPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="h-4 w-4" /> آخرین تصمیم Copilot
+            <Sparkles className="h-4 w-4" /> آخرین تصمیم دستیار
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">دلیل پیشنهاد ربات و میزان اطمینان آن در این بخش قابل مشاهده است.</p>
         </CardHeader>
@@ -211,16 +226,16 @@ export default function SarvRouterPage() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
                 <div>
-                  <span className="font-medium">action:</span>{" "}
-                  {d.last_decision.action}
+                  <span className="font-medium">اقدام:</span>{" "}
+                  {ACTION_FA[d.last_decision.action] || d.last_decision.action}
                 </div>
                 <div>
                   <span className="font-medium">مسیر:</span>{" "}
-                  {String(d.last_decision.evidence.path ?? "—")}
+                  {PATH_FA[String(d.last_decision.evidence.path)] || "—"}
                 </div>
                 <div className="col-span-2 flex items-center justify-between">
                   <div>
-                    <span className="font-medium">tick:</span>{" "}
+                    <span className="font-medium">شناسه تصمیم:</span>{" "}
                     <code className="text-[10px]">
                       {d.last_decision.tick_id.slice(0, 8)}
                     </code>
