@@ -313,7 +313,7 @@ export default function SarvRouterPage() {
                 {Math.round(d.last_decision.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
               </p>
               <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                اگر الان وارد معامله شوید، این مبلغ بابت کارمزد صرافی، لغزش قیمت و اختلاف خرید/فروش از بین می‌رود.
+                این مبلغ در واقع ۰.۵۵ درصد از سرمایه درگیر شماست. به زبان ساده: به ازای هر <b>۱ میلیون تومان</b> سرمایه‌گذاری، حدود <b>۵,۵۰۰ تومان</b> بابت کارمزد و اختلاف قیمت پرداخت می‌کنید.
               </p>
             </div>
             
@@ -389,7 +389,7 @@ export default function SarvRouterPage() {
               {d.active_bots.map((slug) => (
                 <Link key={slug} href={`/bots/${slug}`}>
                   <Badge variant="outline" className="cursor-pointer hover:bg-accent">
-                    {slug} — {formatPct(d.allocations[slug] ?? 0)}
+                    {slug} — {(d.allocations[slug] ?? 0).toFixed(0)}%
                   </Badge>
                 </Link>
               ))}
