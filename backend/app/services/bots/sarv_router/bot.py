@@ -49,7 +49,7 @@ class SarvRouter:
         action: str,
         why: str,
         evidence: dict,
-        confidence: float = 1.0,
+        confidence: float = 0.75,
         risk: dict | None = None,
         alternatives: list[dict] | None = None,
     ) -> dict:
@@ -210,10 +210,21 @@ class SarvRouter:
                 "risk": alt_risk
             })
 
+        # Dynamic Confidence (never 100%)
+        act = action.get("action", "unknown")
+        conf = 0.75
+        if act == "switched":
+            conf = 0.85  # High but realistic
+        elif act == "no_change":
+            conf = 0.90  # Very high for stable regime
+        elif act in ("pending", "cooldown"):
+            conf = 0.60  # Lower confidence when waiting
+
         decision = self._decision(
-            action=action.get("action", "unknown"),
+            action=act,
             why=str(action.get("reason", action.get("action", ""))),
             evidence={**action, "path": "lifecycle", "regime": regime_str},
+            confidence=conf,
             risk=risk_dict,
             alternatives=alternatives_list,
         )
