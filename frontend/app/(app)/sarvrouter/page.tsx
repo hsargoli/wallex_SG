@@ -105,6 +105,15 @@ export default function SarvRouterPage() {
         estimated_cost_tmn: number;
         is_hypothetical: boolean;
       } | null;
+      alternatives?: Array<{
+        regime: string;
+        active_bots: string[];
+        risk: {
+          estimated_cost_pct: number;
+          estimated_cost_tmn: number;
+          is_hypothetical: boolean;
+        };
+      }>;
     } | null;
   };
 
@@ -288,6 +297,37 @@ export default function SarvRouterPage() {
               label="سرمایه درگیر"
               value={`${Math.round(d.last_decision.risk.capital_at_risk_tmn).toLocaleString("fa-IR")} تومان`}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Card: Alternative Scenarios (phase 5) */}
+      {d.last_decision?.alternatives && d.last_decision.alternatives.length > 0 && (
+        <Card className="border-slate-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4" /> سناریوهای جایگزین
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-xs text-muted-foreground mb-3">
+              اگر روند تغییر کند، Copilot این سناریوها را پیشنهاد می‌دهد:
+            </p>
+            {d.last_decision.alternatives.map((alt, i) => (
+              <div key={i} className="flex items-center justify-between p-2 rounded bg-black/[0.03] dark:bg-white/[0.05] text-xs">
+                <div>
+                  <Badge variant="outline" className="mr-2">
+                    {REGIME_FA[alt.regime]?.label ?? alt.regime}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    {alt.active_bots.length > 0 ? `ربات: ${alt.active_bots.join("، ")}` : "Cash"}
+                  </span>
+                </div>
+                <div className="text-rose-400 font-medium">
+                  هزینه: {Math.round(alt.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
