@@ -6,7 +6,6 @@ import {
   Activity,
   ExternalLink,
   ShieldAlert,
-  Wallet,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -356,68 +355,35 @@ export default function SarvRouterPage() {
         </Card>
       </div>
 
-      {/* ALTERNATIVES & ACCOUNT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        {last?.alternatives && last.alternatives.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Activity className="h-5 w-5 text-amber-400" /> سناریوهای فرضی
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {last.alternatives.map((alt: any, i: number) => (
-                <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border text-sm gap-2">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={`px-3 py-1 ${REGIME_FA[alt.regime]?.color || ""}`}>
-                      روند {REGIME_FA[alt.regime]?.label || alt.regime}
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      {alt.active_bots.length > 0 ? `پیشنهاد: ${alt.active_bots.join("، ")}` : "پیشنهاد: نقد (Cash)"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Activity className="h-5 w-5 text-amber-400" /> سناریوهای فرضی
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">در حال حاضر سناریوی جایگزینی برای این تحلیل وجود ندارد.</p>
-            </CardContent>
-          </Card>
-        )}
-
+      {/* ALTERNATIVES */}
+      {last?.alternatives && last.alternatives.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Wallet className="h-5 w-5" /> وضعیت حساب شما
+              <Activity className="h-5 w-5 text-amber-400" /> سناریوهای فرضی
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">کل سرمایه</p>
-              <p className="font-semibold text-lg">{Number(d.capital_total).toLocaleString("fa-IR")} <span className="text-xs font-normal">تومان</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">موجودی نقدی</p>
-              <p className="font-semibold text-lg">{Number(d.cash).toLocaleString("fa-IR")} <span className="text-xs font-normal">تومان</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">سود/زیان امروز</p>
-              <p className={`font-semibold text-lg ${d.daily_pnl_pct >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                {d.daily_pnl_pct}%
-              </p>
-            </div>
+          <CardContent className="space-y-3">
+            {last.alternatives.map((alt: any, i: number) => (
+              <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border text-sm gap-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className={`px-3 py-1 ${REGIME_FA[alt.regime]?.color || ""}`}>
+                    روند {REGIME_FA[alt.regime]?.label || alt.regime}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    {alt.active_bots.length > 0 ? `پیشنهاد: ${alt.active_bots.join("، ")}` : "پیشنهاد: نقد (Cash)"}
+                  </span>
+                </div>
+                {alt.risk && (
+                  <span className="text-xs font-medium text-rose-400 bg-rose-500/10 px-2 py-1 rounded">
+                    هزینه فرضی: {Math.round(alt.risk.estimated_cost_tmn).toLocaleString("fa-IR")} تومان
+                  </span>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
-      </div>
-
+      )}
     </div>
   );
 }
