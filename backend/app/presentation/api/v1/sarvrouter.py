@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from app.services.bots.sarv_router.conversation import ConversationEngine
 
 router = APIRouter(prefix="/sarvrouter", tags=["SarvRouter"])
 
@@ -67,6 +68,22 @@ async def get_status() -> dict:
         "kill_switch_auto": state.get("kill_switch_auto", False),
         "gate": gate,
         "last_decision": state.get("last_decision"),
+    }
+
+
+@router.get("/why")
+async def get_why() -> dict:
+    """MVP: Explain last decision (ADR-0042)."""
+    state = _load(_state_file())
+    last = state.get("last_decision")
+    if not last:
+        raise HTTPException(status_code=503, detail="no decision yet — wait for first tick")
+    return {
+        "answer": ConversationEngine.explain(last),
+        "action": last.get("action"),
+        "confidence": last.get("confidence"),
+        "evidence": last.get("evidence"),
+        "is_mvp": True,
     }
 
 
