@@ -1,4 +1,5 @@
 """SarvRouter — Regime-Based Bot Orchestrator (integration layer)."""
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -7,6 +8,7 @@ from app.services.bots.sarv_router.audit import AuditEntry, AuditTrail
 from app.services.bots.sarv_router.bot_lifecycle import BotLifecycleManager
 from app.services.bots.sarv_router.capital_allocator import allocate_capital
 from app.services.bots.sarv_router.config import SarvRouterConfig
+from app.services.bots.sarv_router.decision import DecisionReason
 from app.services.bots.sarv_router.gate import write_gate
 from app.services.bots.sarv_router.regime import Regime, detect_regime, detect_regime_multi_tf
 from app.services.bots.sarv_router.store import SarvState, SarvStore
@@ -41,6 +43,22 @@ class SarvRouter:
         except Exception:
             pass
 
+    def _decision(
+        self,
+        action: str,
+        why: str,
+        evidence: dict,
+        confidence: float = 1.0,
+    ) -> dict:
+        """Wrap a decision in DecisionReason per ADR-0040 Addendum 1.1."""
+        return DecisionReason(
+            action=action,
+            why=why,
+            evidence=evidence,
+            confidence=confidence,
+            tick_id=str(uuid.uuid4()),
+        ).to_dict()
+
     def tick(
         self,
         user_id: str,
@@ -56,10 +74,17 @@ class SarvRouter:
         if state.kill_switch_manual or state.kill_switch_auto:
             self._safe_stop_all()
             self.lifecycle.active_bots = []
-            return {
-                "action": "kill_switch_active",
-                "reason": "manual" if state.kill_switch_manual else "auto",
-            }
+            kill_reason = "manual" if state.kill_switch_manual else "auto"
+            return self._decision(
+                action="kill_switch_active",
+                why=f"kill_switch_{kill_reason}",
+                evidence={
+                    "reason": kill_reason,
+                    "regime": state.current_regime,
+                    "active_bots": [],
+                    "path": "kill_switch",
+                },
+            )
 
         # 2) Daily loss limit
         if state.daily_pnl_pct <= -self.config.daily_loss_limit_pct:
@@ -78,10 +103,16 @@ class SarvRouter:
                 allocations={},
                 cash=state.total_capital,
             ))
-            return {
-                "action": "daily_loss_kill",
-                "daily_pnl_pct": state.daily_pnl_pct,
-            }
+            return self._decision(
+                action="daily_loss_kill",
+                why=f"daily_loss={state.daily_pnl_pct}",
+                evidence={
+                    "daily_pnl_pct": state.daily_pnl_pct,
+                    "regime": state.current_regime,
+                    "active_bots": [],
+                    "path": "daily_loss",
+                },
+            )
 
         # 3) Detect regime + lifecycle
         if getattr(self.config, "enable_multi_tf", False):
@@ -122,4 +153,8 @@ class SarvRouter:
 
         # Always persist (regime + any switch changes)
         self.store.save(user_id, state)
-        return action
+        return self._decision(
+            action=action.get("action", "unknown"),
+            why=str(action.get("reason", action.get("action", ""))),
+            evidence={**action, "path": "lifecycle", "regime": regime_str},
+        )

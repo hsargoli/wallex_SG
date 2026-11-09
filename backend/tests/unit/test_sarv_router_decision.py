@@ -43,3 +43,55 @@ class TestDecisionReasonContract:
         assert "confidence" in d
         assert "tick_id" in d
         assert d["evidence"] == dr.evidence
+
+
+class TestDecisionReasonUniformShape:
+    """ADR-0040 Addendum 1.1: all tick paths have evidence.regime."""
+
+    def _mk(self, tmp_path):
+        from decimal import Decimal
+        from app.domain.entities.candle import Candle
+        from app.services.bots.sarv_router.audit import AuditTrail
+        from app.services.bots.sarv_router.bot import SarvRouter
+        from app.services.bots.sarv_router.config import SarvRouterConfig
+        from app.services.bots.sarv_router.store import SarvStore
+
+        def _c(t, price):
+            p = Decimal(str(price))
+            return Candle(time=t, open=p, high=p+1, low=p-1, close=p, volume=Decimal("100"))
+
+        def _uptrend(n=300):
+            return [_c(i*3600, 100 + i*2) for i in range(n)]
+
+        calls = {"start": [], "stop": [], "stop_all": 0}
+        router = SarvRouter(
+            config=SarvRouterConfig(),
+            start_bot=lambda s: calls["start"].append(s),
+            stop_bot=lambda s: calls["stop"].append(s),
+            stop_all=lambda: calls.__setitem__("stop_all", calls["stop_all"]+1),
+            store=SarvStore(base_dir=tmp_path),
+            audit=AuditTrail(base_dir=tmp_path),
+        )
+        return router, calls, _uptrend
+
+    def test_kill_switch_has_regime_in_evidence(self, tmp_path):
+        router, calls, _uptrend = self._mk(tmp_path)
+        uid = "test-user-kill"
+        router.tick(uid, _uptrend(300), now_idx=0)
+        router.tick(uid, _uptrend(300), now_idx=router.config.stability_window)
+        st = router.store.load(uid)
+        st.kill_switch_manual = True
+        router.store.save(uid, st)
+        r = router.tick(uid, _uptrend(300), now_idx=router.config.stability_window + 1)
+        assert r["action"] == "kill_switch_active"
+        assert "evidence" in r
+        assert r["evidence"]["regime"] == "uptrend"
+        assert r["evidence"]["path"] == "kill_switch"
+
+    def test_lifecycle_has_path_in_evidence(self, tmp_path):
+        router, calls, _uptrend = self._mk(tmp_path)
+        uid = "test-user-lifecycle"
+        r = router.tick(uid, _uptrend(300), now_idx=0)
+        assert "evidence" in r
+        assert r["evidence"]["path"] == "lifecycle"
+        assert r["evidence"]["regime"] == "uptrend"
